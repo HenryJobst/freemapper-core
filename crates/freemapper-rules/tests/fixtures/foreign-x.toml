@@ -1,0 +1,11 @@
+# An overlay of other-base, so it does not fit base-x.
+format = 1
+
+[profile]
+id = "foreign-x"
+kind = "overlay"
+base = "other-base"
+name = { en = "Foreign" }
+
+[sources.DOC]
+title = "Other rules"

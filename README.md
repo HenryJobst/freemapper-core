@@ -17,25 +17,26 @@ als Kopie in jeder:
 
 ## Stand
 
-Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-fs` und `freemapper-text`, die anderen Bibliotheken sind
-geplant:
+Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-fs`, `freemapper-rules` und `freemapper-text`, die anderen
+Bibliotheken sind geplant:
 
-| Bibliothek | Inhalt | kommt aus |
-|---|---|---|
-| `freemapper-text` | Programmtexte mit Fluent, Spracherkennung | freemapper-courseplan |
-| `freemapper-rules` | Format der Regelprofile für Prüfungen | freemapper-courseplan |
-| `freemapper-georef` | Georeferenzierung, Deklination, UTM | freemapper |
-| `freemapper-fs` | Schreiben, Kopieren und Löschen im Projektordner, ohne einer Verknüpfung zu folgen | freemapper |
-| `freemapper-omap` | .omap lesen und schreiben, Symbolsätze | freemapper, freemapper-print |
-| `freemapper-render` | Kartendarstellung, Schriften, PDF | freemapper-print |
-| `freemapper-course` | Bahnen, .ppen und IOF-XML lesen, Nummernplatzierung | freemapper-print, freemapper-courseplan |
+| Bibliothek | Inhalt | kommt aus | Stand |
+|---|---|---|---|
+| `freemapper-text` | Programmtexte mit Fluent, Spracherkennung | freemapper-courseplan | enthalten |
+| `freemapper-rules` | Regelprofile für Prüfungen, gelesen und geprüft nach einem Schema der Anwendung | freemapper-courseplan, freemapper-print | enthalten |
+| `freemapper-georef` | Georeferenzierung, Deklination, UTM | freemapper | geplant |
+| `freemapper-fs` | Schreiben, Kopieren und Löschen im Projektordner, ohne einer Verknüpfung zu folgen | freemapper | enthalten |
+| `freemapper-omap` | .omap lesen und schreiben, Symbolsätze | freemapper, freemapper-print | geplant |
+| `freemapper-render` | Kartendarstellung, Schriften, PDF | freemapper-print | geplant |
+| `freemapper-course` | Bahnen, .ppen und IOF-XML lesen, Nummernplatzierung | freemapper-print, freemapper-courseplan | geplant |
 
 ## Nutzung
 
-Die Anwendungen binden eine Bibliothek über Git mit fester Version ein:
+Die Anwendungen binden die Bibliotheken, die sie brauchen, über Git mit fester Version ein:
 
 ```toml
-freemapper-text = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.1.0" }
+freemapper-text = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.2.0" }
+freemapper-rules = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.2.0" }
 ```
 
 Wer eine Anwendung und eine Bibliothek zugleich ändert, legt freemapper-core neben die Anwendung
@@ -44,6 +45,7 @@ Wer eine Anwendung und eine Bibliothek zugleich ändert, legt freemapper-core ne
 ```toml
 [patch."https://github.com/HenryJobst/freemapper-core"]
 freemapper-text = { path = "../freemapper-core/crates/freemapper-text" }
+freemapper-rules = { path = "../freemapper-core/crates/freemapper-rules" }
 ```
 
 Der Eintrag gilt nur zum Entwickeln. Vor dem Merge der Anwendung kommt er wieder heraus, nachdem die Änderung in

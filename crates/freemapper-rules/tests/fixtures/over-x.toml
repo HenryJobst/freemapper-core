@@ -1,0 +1,25 @@
+# An overlay of base-x: it replaces one rule and adds another.
+format = 1
+
+[profile]
+id = "over-x"
+kind = "overlay"
+base = "base-x"
+name = { de = "Aufsatz", en = "Overlay" }
+
+[sources.REG]
+title = "Regional rules"
+
+[[rules]]
+id = "basex.distance.min"
+key = "min_distance"
+severity = "warning"
+values = { metres = 50.0 }
+source = { doc = "REG", section = "§ 4" }
+
+[[rules]]
+id = "overx.map.edge"
+key = "map_edge"
+severity = "warning"
+values = { metres = 10.0 }
+source = { doc = "REG", section = "§ 5" }
