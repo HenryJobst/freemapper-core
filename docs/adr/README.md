@@ -16,3 +16,5 @@ status to `Superseded by NNNN`.
 | [0005](0005-the-contributing-session-owns-a-crate.md) | The contributing session owns a crate |
 | [0006](0006-apps-pin-a-tag-and-patch-locally.md) | Apps pin a tag and patch locally |
 | [0007](0007-no-network-access-in-core.md) | No network access in core |
+| [0008](0008-project-files-never-name-paths.md) | Project files never name paths |
+| [0009](0009-writes-never-follow-links.md) | Writes never follow links |
