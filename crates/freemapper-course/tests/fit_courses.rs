@@ -114,6 +114,7 @@ fn event(controls: Vec<Control<RawPoint>>) -> RawEvent {
             format: SourceFormat::IofXml,
             event_name: None,
             map_scale: None,
+            item_scaling: None,
         },
         notes: Vec::new(),
     }

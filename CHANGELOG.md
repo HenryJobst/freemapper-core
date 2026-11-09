@@ -7,6 +7,21 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- freemapper-course: Jede Variante von `Special` hat ein neues erstes Feld `id: Option<u32>` und
+  `CourseSource` das Feld `item_scaling: Option<ItemScaling>`. Anwendungen, die `Special`-Varianten oder
+  `CourseSource` aufbauen oder ohne `..` zerlegen, ergänzen `id: None` und `item_scaling: None`; wer
+  `Special` mit `..` zerlegt, ändert nichts.
+
+### Hinzugefügt
+
+- freemapper-course: `Special::id` liefert die ID aus `special-object/@id` der `.ppen` (`None` bei einer ID
+  außerhalb von `u32`), `Special::courses` den Bahnfilter. `ItemScaling` (bisher intern im Leser) ist
+  öffentlich, `CourseSource::item_scaling` hält die Einstellung der Datei (`None` bei IOF-XML), und
+  `course_obj_ratio` rechnet den Bahnobjektfaktor aus Skalierung, Karten- und Druckmaßstab aus. Der Leser
+  nutzt dieselbe Funktion. Das braucht der `.ppen`-Schreiber von freemapper-courseplan.
+
 ## [0.3.0] - 2026-11-10
 
 ### Hinzugefügt

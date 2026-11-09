@@ -28,10 +28,11 @@ pub use iof_xml::read_iof_xml;
 pub use model::FittedEvent;
 pub use model::{
     Control, ControlKind, Course, CourseEvent, CourseFilter, CourseKind, CourseNote, CourseSource,
-    Description, Leg, NumberPlacement, RawEvent, RawPoint, SourceFormat, Special, Stop,
+    Description, ItemScaling, Leg, NumberPlacement, RawEvent, RawPoint, SourceFormat, Special,
+    Stop,
 };
 pub use number_offset::{offset_from_placement, placement_from_offset};
-pub use ppen::read_ppen;
+pub use ppen::{course_obj_ratio, read_ppen};
 
 /// Why a course file could not be read.
 #[derive(Debug, thiserror::Error)]

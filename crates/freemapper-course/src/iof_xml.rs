@@ -442,6 +442,7 @@ impl State {
                 format: SourceFormat::IofXml,
                 event_name: self.event_name,
                 map_scale: self.map_scale,
+                item_scaling: None,
             },
             notes: self.notes.into_vec(),
         })

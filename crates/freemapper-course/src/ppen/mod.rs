@@ -253,6 +253,7 @@ struct PLeg {
 }
 
 struct PSpecial {
+    id: Option<u32>,
     kind: String,
     locations: Vec<RawPoint>,
     all: bool,
@@ -263,12 +264,29 @@ struct PSpecial {
     font_height: Option<f64>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-enum ItemScaling {
-    #[default]
-    None,
-    RelativeToMap,
-    RelativeTo15000,
+/// `CourseView.CourseObjRatio`: map mm per mm of a course symbol's nominal size. `ScaleRatio` (print scale
+/// over map scale, 1 when either is unknown) without item scaling; 1 relative to the map; 15000 over the map
+/// scale relative to 1:15000. The print scale defaults to 15000.
+pub fn course_obj_ratio(
+    scaling: ItemScaling,
+    map_scale: Option<f64>,
+    print_scale: Option<f64>,
+) -> f64 {
+    let print = print_scale.unwrap_or(DEFAULT_PRINT_SCALE);
+    let map = map_scale.filter(|m| *m > 0.0 && m.is_finite());
+    let ratio = match (scaling, map) {
+        (_, None) => 1.0,
+        (ItemScaling::None, Some(m)) if print > 0.0 && print.is_finite() => print / m,
+        (ItemScaling::None, Some(_)) => 1.0,
+        (ItemScaling::RelativeToMap, Some(_)) => 1.0,
+        (ItemScaling::RelativeTo15000, Some(m)) => 15000.0 / m,
+    };
+    // Purple Pen rounds a ratio this close to 1 to 1.
+    if (ratio - 1.0).abs() < 1e-5 {
+        1.0
+    } else {
+        ratio
+    }
 }
 
 #[derive(Default)]
@@ -729,6 +747,9 @@ impl State {
                     )));
                 }
                 self.special = Some(PSpecial {
+                    id: attr(e, "id")?
+                        .and_then(|v| v.trim().parse::<i64>().ok())
+                        .and_then(|v| u32::try_from(v).ok()),
                     kind: attr(e, "kind")?.unwrap_or_default().trim().to_string(),
                     locations: Vec::new(),
                     all: true,
@@ -930,24 +951,8 @@ impl State {
         }
     }
 
-    /// `CourseView.CourseObjRatio`: map mm per mm of a course symbol's nominal size. `ScaleRatio` (print scale
-    /// over map scale, 1 when either is unknown) without item scaling.
     fn course_obj_ratio(&self, course: &PCourse) -> f64 {
-        let print = course.print_scale.unwrap_or(DEFAULT_PRINT_SCALE);
-        let map = self.map_scale.filter(|m| *m > 0.0 && m.is_finite());
-        let ratio = match (self.item_scaling, map) {
-            (_, None) => 1.0,
-            (ItemScaling::None, Some(m)) if print > 0.0 && print.is_finite() => print / m,
-            (ItemScaling::None, Some(_)) => 1.0,
-            (ItemScaling::RelativeToMap, Some(_)) => 1.0,
-            (ItemScaling::RelativeTo15000, Some(m)) => 15000.0 / m,
-        };
-        // Purple Pen rounds a ratio this close to 1 to 1.
-        if (ratio - 1.0).abs() < 1e-5 {
-            1.0
-        } else {
-            ratio
-        }
+        course_obj_ratio(self.item_scaling, self.map_scale, course.print_scale)
     }
 
     /// `CourseView.CircleGapScale`, rounded as Purple Pen keys the gaps.
@@ -1204,6 +1209,7 @@ impl State {
                 format: SourceFormat::PurplePen,
                 event_name: self.title,
                 map_scale: self.map_scale.and_then(scale),
+                item_scaling: Some(self.item_scaling),
             },
             notes: self.notes.into_vec(),
         })
@@ -1255,31 +1261,45 @@ impl State {
             CourseFilter::Only(only)
         };
         Ok(Some(match s.kind.as_str() {
-            "first-aid" => Special::FirstAid { pt: first, courses },
-            "water" => Special::Water { pt: first, courses },
+            "first-aid" => Special::FirstAid {
+                id: s.id,
+                pt: first,
+                courses,
+            },
+            "water" => Special::Water {
+                id: s.id,
+                pt: first,
+                courses,
+            },
             "forbidden-route" => Special::ForbiddenRoute {
+                id: s.id,
                 path: vec![first],
                 courses,
             },
             "boundary" => Special::Boundary {
+                id: s.id,
                 path: s.locations,
                 courses,
             },
             "line" => Special::Line {
+                id: s.id,
                 path: s.locations,
                 courses,
             },
             "out-of-bounds" => Special::OutOfBounds {
+                id: s.id,
                 rings: vec![s.locations],
                 courses,
             },
             "dangerous-area" => Special::Dangerous {
+                id: s.id,
                 rings: vec![s.locations],
                 courses,
             },
             "white-out" => {
                 self.notes.add(CourseNote::WhiteOutLaterInM4);
                 Special::WhiteOut {
+                    id: s.id,
                     rings: vec![s.locations],
                     courses,
                 }
@@ -1289,6 +1309,7 @@ impl State {
                 // Without a font height Purple Pen sizes the text, possibly several lines, to fit the box;
                 // the box height is only an approximation of the letter height.
                 Special::Text {
+                    id: s.id,
                     pt: RawPoint {
                         x_mm: first.x_mm.min(second.x_mm),
                         y_mm: first.y_mm.max(second.y_mm),

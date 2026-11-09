@@ -7,6 +7,21 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- freemapper-course: every variant of `Special` has a new first field `id: Option<u32>`, and `CourseSource`
+  has the field `item_scaling: Option<ItemScaling>`. Apps that build `Special` variants or `CourseSource`, or
+  destructure them without `..`, add `id: None` and `item_scaling: None`; code that destructures `Special`
+  with `..` needs no change.
+
+### Added
+
+- freemapper-course: `Special::id` returns the id from `special-object/@id` of the `.ppen` (`None` for an id
+  outside `u32`), and `Special::courses` returns the course filter. `ItemScaling` (so far private to the
+  reader) is public, `CourseSource::item_scaling` holds the file's setting (`None` for IOF XML), and
+  `course_obj_ratio` computes the course object ratio from scaling, map scale and print scale. The reader
+  calls the same function. freemapper-courseplan's `.ppen` writer needs this.
+
 ## [0.3.0] - 2026-11-10
 
 ### Added

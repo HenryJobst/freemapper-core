@@ -108,3 +108,37 @@ fn fitting_keeps_the_ids() {
         courses
     );
 }
+
+#[test]
+fn reader_fills_special_ids() {
+    for name in ["overlapper.ppen", "sampleevent8.ppen"] {
+        let bytes = fixture(&format!("ppen/{name}"));
+        let text = String::from_utf8_lossy(&bytes);
+        let in_file: Vec<u32> = text
+            .match_indices("<special-object id=")
+            .map(|(i, _)| id_of(&text[i..]))
+            .collect();
+        assert!(!in_file.is_empty(), "{name}");
+        let ev = read_ppen(&bytes).unwrap();
+        // The reader drops kinds it has no variant for (`descriptions`), so the read ids are a subsequence.
+        let read: Vec<u32> = ev.specials.iter().map(|s| s.id().unwrap()).collect();
+        assert!(!read.is_empty(), "{name}");
+        let mut rest = in_file.iter();
+        assert!(
+            read.iter().all(|id| rest.any(|f| f == id)),
+            "{name}: {read:?} in {in_file:?}"
+        );
+    }
+}
+
+#[test]
+fn a_special_id_outside_u32_reads_as_none() {
+    let file = r#"<course-scribe-event>
+  <event id="1"><title>T</title></event>
+  <special-object id="-2" kind="water"><location x="1" y="2" /><courses all="true" /></special-object>
+  <special-object id="5" kind="water"><location x="1" y="2" /><courses all="true" /></special-object>
+</course-scribe-event>"#;
+    let ev = read_ppen(file.as_bytes()).unwrap();
+    let ids: Vec<Option<u32>> = ev.specials.iter().map(|s| s.id()).collect();
+    assert_eq!(ids, [None, Some(5)]);
+}

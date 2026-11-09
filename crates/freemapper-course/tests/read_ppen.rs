@@ -6,7 +6,7 @@ use freemapper_course::model::{
     MAX_STANDARD_LEN, MAX_STOPS_PER_COURSE, MAX_TOTAL_POINTS, MAX_TOTAL_TEXT_BYTES, MAX_XML_DEPTH,
     Offset, RawPoint, SourceFormat, Special,
 };
-use freemapper_course::{CourseError, RawEvent, read_ppen};
+use freemapper_course::{CourseError, ItemScaling, RawEvent, course_obj_ratio, read_ppen};
 
 fn fixture(name: &str) -> Vec<u8> {
     let path = format!(
@@ -110,6 +110,7 @@ fn reads_sample_event() {
     assert_eq!(
         ev.specials,
         vec![Special::Water {
+            id: Some(4),
             pt: RawPoint {
                 x_mm: 72.67218,
                 y_mm: 10.4624271
@@ -231,7 +232,7 @@ fn score_course_read() {
     // Forbidden-route crosses are one-point paths.
     assert_eq!(ev.specials.len(), 3);
     assert!(
-        matches!(&ev.specials[1], Special::ForbiddenRoute { path, courses: CourseFilter::All } if path.len() == 1)
+        matches!(&ev.specials[1], Special::ForbiddenRoute { path, courses: CourseFilter::All, .. } if path.len() == 1)
     );
 }
 
@@ -350,46 +351,56 @@ fn specials_read_with_course_filter() {
         ev.specials,
         vec![
             Special::OutOfBounds {
+                id: Some(1),
                 rings: ring_pts.clone(),
                 courses: b.clone()
             },
             Special::Dangerous {
+                id: Some(2),
                 rings: ring_pts.clone(),
                 courses: CourseFilter::All
             },
             Special::ForbiddenRoute {
+                id: Some(3),
                 path: vec![p(1.0, 2.0)],
                 courses: CourseFilter::All
             },
             Special::Boundary {
+                id: Some(4),
                 path: vec![p(0.0, 0.0), p(1.0, 1.0)],
                 courses: CourseFilter::All
             },
             Special::FirstAid {
+                id: Some(5),
                 pt: p(3.0, 4.0),
                 courses: b
             },
             Special::Water {
+                id: Some(6),
                 pt: p(5.0, 6.0),
                 courses: CourseFilter::All
             },
             Special::Text {
+                id: Some(7),
                 pt: p(10.0, 20.0),
                 text: "Hello".into(),
                 size_mm: 4.5,
                 courses: CourseFilter::All
             },
             Special::Text {
+                id: Some(8),
                 pt: p(10.0, 20.0),
                 text: "Auto".into(),
                 size_mm: 8.0,
                 courses: CourseFilter::All
             },
             Special::Line {
+                id: Some(9),
                 path: vec![p(0.0, 0.0), p(2.0, 2.0)],
                 courses: CourseFilter::All
             },
             Special::WhiteOut {
+                id: Some(10),
                 rings: ring_pts,
                 courses: CourseFilter::All
             },
@@ -1069,4 +1080,51 @@ fn map_flip_and_secondary_title_read() {
     );
     let ev = read_ppen(with.as_bytes()).unwrap();
     assert_eq!(ev.courses[0].secondary_title.as_deref(), Some("Damen|Lang"));
+}
+
+#[test]
+fn item_scaling_is_read() {
+    assert_eq!(
+        read("sampleevent8.ppen").source.item_scaling,
+        Some(ItemScaling::None)
+    );
+    let with = |scale: &str| {
+        let file = format!(
+            "<course-scribe-event><event id=\"1\"><title>T</title>\
+             <map kind=\"none\" scale=\"10000\"></map><course-appearance scale-sizes=\"{scale}\"/>\
+             </event>{TWO}</course-scribe-event>"
+        );
+        read_ppen(file.as_bytes()).unwrap().source.item_scaling
+    };
+    assert_eq!(with("RelativeToMap"), Some(ItemScaling::RelativeToMap));
+    assert_eq!(with("RelativeTo15000"), Some(ItemScaling::RelativeTo15000));
+    let iof = std::fs::read(format!(
+        "{}/tests/fixtures/courses/y-up.xml",
+        env!("CARGO_MANIFEST_DIR")
+    ))
+    .unwrap();
+    assert_eq!(
+        freemapper_course::read_iof_xml(&iof)
+            .unwrap()
+            .source
+            .item_scaling,
+        None
+    );
+}
+
+#[test]
+fn course_obj_ratio_is_public() {
+    assert_eq!(
+        course_obj_ratio(ItemScaling::None, Some(10000.0), Some(7500.0)),
+        0.75
+    );
+    assert_eq!(
+        course_obj_ratio(ItemScaling::RelativeTo15000, Some(10000.0), None),
+        1.5
+    );
+    assert_eq!(
+        course_obj_ratio(ItemScaling::RelativeToMap, Some(10000.0), Some(7500.0)),
+        1.0
+    );
+    assert_eq!(course_obj_ratio(ItemScaling::None, None, Some(7500.0)), 1.0);
 }
