@@ -2,6 +2,11 @@
 
 [Deutsche Version](README.md)
 
+<!-- claude-cost:start -->
+<!-- claude-cost:end -->
+
+The libraries were built mostly in the sessions of the apps, above all freemapper and freemapper-courseplan, and that effort is counted there; this badge counts only sessions started directly in freemapper-core.
+
 Shared libraries of the freemapper suite. Code that more than one of the apps needs is kept here once instead of
 as a copy in each:
 

@@ -2,6 +2,11 @@
 
 [English version](README.en.md)
 
+<!-- claude-cost:start -->
+<!-- claude-cost:end -->
+
+Die Entstehung der Bibliotheken ist im KI-Aufwand der Anwendungen erfasst, vor allem in freemapper und freemapper-courseplan; das Badge zählt nur Sessions, die direkt in freemapper-core gestartet wurden.
+
 Gemeinsame Bibliotheken der freemapper-Suite. Was mehr als eine der Anwendungen braucht, steht hier einmal statt
 als Kopie in jeder:
 
