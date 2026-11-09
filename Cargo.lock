@@ -83,6 +83,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "freemapper-course"
+version = "0.2.0"
+dependencies = [
+ "freemapper-omap",
+ "quick-xml",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "freemapper-fs"
 version = "0.2.0"
 dependencies = [

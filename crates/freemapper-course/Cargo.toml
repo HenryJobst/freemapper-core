@@ -1,0 +1,18 @@
+[package]
+name = "freemapper-course"
+description = "Orienteering courses: course model, Purple Pen and IOF XML readers, fitting to the map, number placement"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+include = ["Cargo.toml", "README.md", "src/**/*.rs", "tests/**/*"]
+
+[dependencies]
+freemapper-omap.workspace = true
+quick-xml.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
