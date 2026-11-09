@@ -11,14 +11,14 @@ as a copy in each:
 
 ## Status
 
-The project is just starting. It contains no library yet. Planned:
+The project is just starting. So far it contains `freemapper-fs`; the other libraries are planned:
 
 | Library | Content | comes from |
 |---|---|---|
 | `freemapper-text` | program texts with Fluent, language detection | freemapper-courseplan |
 | `freemapper-rules` | format of the rule profiles for checks | freemapper-courseplan |
 | `freemapper-georef` | georeferencing, declination, UTM | freemapper |
-| `freemapper-fs` | safe writing inside the project folder | freemapper |
+| `freemapper-fs` | writing, copying and removing inside the project folder without following a link | freemapper |
 | `freemapper-omap` | reading and writing .omap, symbol sets | freemapper, freemapper-print |
 | `freemapper-render` | map rendering, fonts, PDF | freemapper-print |
 | `freemapper-course` | courses, reading .ppen and IOF XML, number placement | freemapper-print, freemapper-courseplan |

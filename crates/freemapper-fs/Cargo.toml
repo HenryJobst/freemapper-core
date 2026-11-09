@@ -1,0 +1,17 @@
+[package]
+name = "freemapper-fs"
+description = "Writes, copies and removals inside a project folder that never follow a link"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+same-file.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

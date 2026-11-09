@@ -12,3 +12,9 @@ hier unverändert, mit denselben Code-Bezeichnern. Eine Bibliothek, die einen Be
 |---|---|---|---|
 | Kernbibliothek | core crate | eine Bibliothek dieses Arbeitsbereichs, die mehrere Anwendungen nutzen | `crates/freemapper-*` |
 | Eigentümer | owner | die Session, die eine Bibliothek eingebracht hat und pflegt (ADR 0005) | – |
+| Projektordner | project folder | Ordner eines Projekts; `freemapper-fs` schreibt, kopiert und löscht nur darin (ADR 0009) | `root` |
+| Verknüpfung | link | symbolischer Link, unter Windows auch Junction; Schreiben folgt ihr nie, sondern ersetzt sie (ADR 0009) | `is_symlink`, `is_reparse_point` |
+| Teildatei | partial file | neue Datei `<Datei>.<Prozess-ID>.<Zähler>.part` neben dem Ziel; erst wenn sie vollständig auf dem Datenträger steht, wird sie über das Ziel umbenannt | `part_name`, `create_part` |
+| veraltete Teildatei | stale partial file | Teildatei eines abgebrochenen Laufs, älter als das vom Aufrufer genannte Alter; wird gelöscht | `remove_stale_parts_inside`, `remove_stale_cache_parts` |
+| schlichter Dateiname | plain name | ein einzelner Dateiname ohne Pfadtrenner, `..`, Laufwerk oder Steuerzeichen; nur solche Namen aus Dateien oder von Servern kommen in einen Pfad (ADR 0008) | `is_plain_name` |
+| Zwischenspeicher | cache | lokaler, projektübergreifender Speicher einer Anwendung; Ordner darin dürfen Verknüpfungen sein | `write_cache_file`, `rename_cache_file` |

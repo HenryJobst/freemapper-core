@@ -10,3 +10,9 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Skeleton: workspace, CI on Linux, macOS and Windows, decisions 0001 to 0007.
+- freemapper-fs: writes, copies and removals inside the project folder that never follow a link. Each file is
+  written as a new partial file and then renamed over the target, so a link at the target is replaced and its
+  target stays untouched. A path whose folder leads out of the project folder through a link is refused. Copies
+  read only files of the project itself. Moved from freemapper 0.6.2 with the same behaviour, except that the
+  error texts name no app and `remove_stale_parts_inside` returns a refused folder as an error instead of
+  printing a warning itself. Decisions 0008 and 0009 come along (formerly freemapper 0059 and 0060).
