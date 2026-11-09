@@ -20,7 +20,7 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
   `course/` und `placement/`) mit gleichen Pfaden, gleichem Verhalten, gleichen Lesegrenzen und gleichen
   `CourseError`- und `FitError`-Texten. Neu sind `Control::id` und `Course::id` mit den IDs aus der `.ppen`
   (`None` bei IOF-XML) und `placement_from_offset` und `offset_from_placement`, die einen Nummernversatz in eine
-  Nummernlage umrechnen und zurück. Neu öffentlich sind `tm` und aus `xml` die Teile, die der Leser der
+  Nummernlage umrechnen und zurück. Neu öffentlich sind die Teile von `xml`, die der Leser der
   Beschreibungssymbole in freemapper-print braucht. Wer `Control` oder `Course` selbst baut, ergänzt `id: None`.
   Entscheidung 0013.
 

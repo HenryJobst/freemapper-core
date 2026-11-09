@@ -14,7 +14,7 @@ pub mod model;
 pub mod number_offset;
 pub mod placement;
 pub mod ppen;
-pub mod tm;
+mod tm;
 pub mod xml;
 
 pub use fit::{Fit, FitError, FitNote, SkipReason, fit};

@@ -20,8 +20,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `placement/`) with the same paths, the same behaviour, the same reader limits and the same `CourseError` and
   `FitError` texts. New are `Control::id` and `Course::id`, holding the ids from the `.ppen` (`None` for IOF
   XML), and `placement_from_offset` and `offset_from_placement`, which turn a number offset into a number
-  placement and back. `tm` is public now, and so are the parts of `xml` that freemapper-print's description
-  symbol reader needs. Code that builds `Control` or `Course` itself adds `id: None`. Decision 0013.
+  placement and back. The parts of `xml` that freemapper-print's description symbol reader needs are public
+  now. Code that builds `Control` or `Course` itself adds `id: None`. Decision 0013.
 
 ## [0.2.0] - 2026-11-09
 

@@ -19,8 +19,8 @@ ADR 0039 kept these modules apart). freemapper-courseplan places numbers by the 
 - `placement_from_offset` and `offset_from_placement` are print's `numbers.rs` formula: reference point the
   circle centre, offset in map mm with y down, gap in mm at nominal size. The `From` conversions between
   `NumberPlacement` and `placement::Placement` come along, since print may not implement them any more.
-- `xml::{Handler, drive, local, attr, number}`, used by print's description symbol reader, and `tm` are public.
-  Error `Display` stays English, with no Fluent (ADR 0010).
+- `xml::{Handler, drive, local, attr, number}` are public for print's description symbol reader. `tm` stays
+  private, since UTM belongs to the planned `freemapper-georef`. Error `Display` stays English, no Fluent.
 
 ## Consequences
 - Code that builds `Control` or `Course` literals adds `id: None`. `xml::Handler` and `attr` take quick-xml
