@@ -5,6 +5,19 @@
 Hier stehen alle wichtigen Änderungen an freemapper-core, die neueste zuerst, jeweils mit der betroffenen
 Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [Unveröffentlicht]
+
+### Hinzugefügt
+
+- freemapper-rules: Regelprofile für Prüfungen als TOML-Dateien, gelesen und zu einem Regelsatz zusammengeführt.
+  Die Anwendung beschreibt in einem `Schema`, welche Prüfregel-Schlüssel, Wertnamen, Einheiten, Tabellen und
+  Filter es gibt. Übernommen aus freemapper-courseplan 0.4.0 mit gleichem Dateiformat, gleichem Zusammenführen
+  und gleichen Fehlertexten. Aus freemapper-print kommen dazu: Wertnamen je Schlüssel, Bereichsprüfung der Zahlen
+  nach Einheit, Schlüssel ohne Filter, eigene Prüfungen der Anwendung für Tabellen und Werte, und
+  `RuleSet::pick`, das bei zwei passenden Regeln mit dem neuen Fehler `Ambiguous` abbricht. Filter heißen jetzt
+  nach ihrem Feld (`map_kinds`, `disciplines`, `print_scales`) statt fester Felder der Regel. Eine Regel, die
+  die eigenen Vorschläge des Programms zitiert, braucht eine Notiz. Entscheidung 0011.
+
 ## [0.1.0] - 2026-11-09
 
 ### Hinzugefügt

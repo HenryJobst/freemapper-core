@@ -1,0 +1,18 @@
+# An overlay of base-x that switches the rule off-x switched off back on.
+format = 1
+
+[profile]
+id = "back-x"
+kind = "overlay"
+base = "base-x"
+name = { en = "Back on" }
+
+[sources.REG]
+title = "Regional rules"
+
+[[rules]]
+id = "basex.code.range"
+key = "code_range"
+severity = "warning"
+values = { range = [100, 199] }
+source = { doc = "REG", section = "§ 8" }

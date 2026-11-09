@@ -1,0 +1,30 @@
+# A small base profile for the loader tests, shaped like freemapper-courseplan's wkb-2026.
+format = 1
+
+[profile]
+id = "base-x"
+kind = "base"
+name = { de = "Basis", en = "Base" }
+valid_from = 2026-03-01
+
+[sources.DOC]
+title = "Some rules"
+url = "https://example.org/rules.pdf"
+
+[sources.claude]
+title = "Proposals of the program"
+
+[[rules]]
+id = "basex.distance.min"
+key = "min_distance"
+severity = "error"
+values = { metres = 30.0 }
+source = { doc = "DOC", section = "1.1" }
+
+[[rules]]
+id = "basex.code.range"
+key = "code_range"
+severity = "error"
+values = { range = [31, 599] }
+source = { doc = "DOC", section = "1.2" }
+note = { de = "Codes von 31 bis 599", en = "Codes from 31 to 599" }

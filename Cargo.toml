@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/HenryJobst/freemapper-core"
@@ -11,10 +11,14 @@ rust-version = "1.88"
 
 [workspace.dependencies]
 freemapper-text = { path = "crates/freemapper-text" }
+freemapper-rules = { path = "crates/freemapper-rules" }
 # Pinned to the versions in freemapper-courseplan's Cargo.lock. Fluent catalogs for program texts.
 fluent-bundle = "=0.16.0"
 fluent-syntax = "=0.12.0"
 unic-langid = "=0.9.6"
+# Pinned to the versions in freemapper-courseplan's Cargo.lock. Rule profiles.
+thiserror = "=2.0.21"
+toml = "=1.2.1"
 # Pinned to the version in freemapper's Cargo.lock. Windows file identity (volume serial number
 # and file index) without unsafe code of our own.
 same-file = "=1.0.6"

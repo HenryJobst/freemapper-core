@@ -1,0 +1,10 @@
+# A second base profile without rules.
+format = 1
+
+[profile]
+id = "other-base"
+kind = "base"
+name = { en = "Other" }
+
+[sources.DOC]
+title = "Other rules"
