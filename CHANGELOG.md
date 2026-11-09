@@ -15,6 +15,14 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
   samt der Verschachtelungsgrenze `MAX_XML_DEPTH`. Neu öffentlich sind `too_deep`, `symbol_set::attribute`
   und `SymbolSet::without_codes`, weil der Renderer und die Tests von freemapper-print sie brauchen.
   Entscheidung 0012.
+- freemapper-course: Bahnmodell, Leser für Purple Pen (`.ppen`) und IOF-XML 3.0, Einpassung einer Bahndatei in
+  die Karte und Platzierung der Postennummern. Übernommen aus freemapper-print (Commit `918cec2`, Module
+  `course/` und `placement/`) mit gleichen Pfaden, gleichem Verhalten, gleichen Lesegrenzen und gleichen
+  `CourseError`- und `FitError`-Texten. Neu sind `Control::id` und `Course::id` mit den IDs aus der `.ppen`
+  (`None` bei IOF-XML) und `placement_from_offset` und `offset_from_placement`, die einen Nummernversatz in eine
+  Nummernlage umrechnen und zurück. Neu öffentlich sind `tm` und aus `xml` die Teile, die der Leser der
+  Beschreibungssymbole in freemapper-print braucht. Wer `Control` oder `Course` selbst baut, ergänzt `id: None`.
+  Entscheidung 0013.
 
 ## [0.2.0] - 2026-11-09
 
