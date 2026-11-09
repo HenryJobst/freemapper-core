@@ -1,6 +1,7 @@
-//! What the course readers and the description symbol reader share: the streaming loop over quick-xml events
-//! with the ADR 0019 guards (file size, no DOCTYPE, only the five predefined entities), attribute and number
-//! parsing, and the note list.
+//! The streaming XML loop of the course readers. [`drive`] runs a [`Handler`] over the quick-xml events of a
+//! file and refuses a file larger than `MAX_COURSE_FILE_BYTES`, a DOCTYPE and any entity other than the five
+//! predefined ones (ADR 0019). [`local`], [`attr`] and [`number`] read element names, attributes and finite
+//! numbers. These five are public so that another reader of XML in an app gets the same guards and errors.
 
 use std::collections::HashSet;
 
@@ -64,10 +65,12 @@ pub(super) fn xml_err(e: impl std::fmt::Display) -> CourseError {
     CourseError::Xml(e.to_string())
 }
 
+/// The local name of the element, without a namespace prefix.
 pub fn local(e: &BytesStart<'_>) -> String {
     e.local_name().as_ref().to_string()
 }
 
+/// The value of attribute `name`, normalised as XML 1.0 prescribes (references resolved), `None` if missing.
 pub fn attr(e: &BytesStart<'_>, name: &str) -> Result<Option<String>, CourseError> {
     let a = e.try_get_attribute(name).map_err(xml_err)?;
     a.map(|a| {

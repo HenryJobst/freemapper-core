@@ -22,6 +22,7 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
   (`None` bei IOF-XML) und `placement_from_offset` und `offset_from_placement`, die einen Nummernversatz in eine
   Nummernlage umrechnen und zurück. Neu öffentlich sind die Teile von `xml`, die der Leser der
   Beschreibungssymbole in freemapper-print braucht. Wer `Control` oder `Course` selbst baut, ergänzt `id: None`.
+  Die Einpassung hängt am Feature `fit` (standardmäßig an); ohne es baut die Bibliothek ohne `freemapper-omap`.
   Entscheidung 0013.
 
 ## [0.2.0] - 2026-11-09
