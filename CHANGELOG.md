@@ -5,6 +5,17 @@
 Hier stehen alle wichtigen Änderungen an freemapper-core, die neueste zuerst, jeweils mit der betroffenen
 Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
+## [Unveröffentlicht]
+
+### Hinzugefügt
+
+- freemapper-omap: Kartenmodell und Leser für Karten von OpenOrienteering Mapper (`.omap`, `.xmap`) mit den
+  eingebetteten Symbolsätzen ISSprOM 2019 und Schulkarte 2019 und den Randsymbolen 991–994. Übernommen aus
+  freemapper-print (Commit `918cec2`) mit gleichen Pfaden, gleichem Verhalten und gleichen `OmapError`-Texten,
+  samt der Verschachtelungsgrenze `MAX_XML_DEPTH`. Neu öffentlich sind `too_deep`, `symbol_set::attribute`
+  und `SymbolSet::without_codes`, weil der Renderer und die Tests von freemapper-print sie brauchen.
+  Entscheidung 0012.
+
 ## [0.2.0] - 2026-11-09
 
 ### Hinzugefügt

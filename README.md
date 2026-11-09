@@ -17,8 +17,8 @@ als Kopie in jeder:
 
 ## Stand
 
-Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-fs`, `freemapper-rules` und `freemapper-text`, die anderen
-Bibliotheken sind geplant:
+Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-fs`, `freemapper-omap`, `freemapper-rules` und `freemapper-text`,
+die anderen Bibliotheken sind geplant:
 
 | Bibliothek | Inhalt | kommt aus | Stand |
 |---|---|---|---|
@@ -26,7 +26,7 @@ Bibliotheken sind geplant:
 | `freemapper-rules` | Regelprofile für Prüfungen, gelesen und geprüft nach einem Schema der Anwendung | freemapper-courseplan, freemapper-print | enthalten |
 | `freemapper-georef` | Georeferenzierung, Deklination, UTM | freemapper | geplant |
 | `freemapper-fs` | Schreiben, Kopieren und Löschen im Projektordner, ohne einer Verknüpfung zu folgen | freemapper | enthalten |
-| `freemapper-omap` | .omap lesen und schreiben, Symbolsätze | freemapper, freemapper-print | geplant |
+| `freemapper-omap` | Kartenmodell, .omap lesen, eingebettete Symbolsätze ISSprOM 2019 und Schulkarte 2019; noch ohne Schreiben | freemapper, freemapper-print | enthalten |
 | `freemapper-render` | Kartendarstellung, Schriften, PDF | freemapper-print | geplant |
 | `freemapper-course` | Bahnen, .ppen und IOF-XML lesen, Nummernplatzierung | freemapper-print, freemapper-courseplan | geplant |
 

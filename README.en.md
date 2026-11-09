@@ -17,8 +17,8 @@ as a copy in each:
 
 ## Status
 
-The project is just starting. So far it contains `freemapper-fs`, `freemapper-rules` and `freemapper-text`; the other
-libraries are planned:
+The project is just starting. So far it contains `freemapper-fs`, `freemapper-omap`, `freemapper-rules` and
+`freemapper-text`; the other libraries are planned:
 
 | Library | Content | comes from | Status |
 |---|---|---|---|
@@ -26,7 +26,7 @@ libraries are planned:
 | `freemapper-rules` | rule profiles for checks, read and validated against an app schema | freemapper-courseplan, freemapper-print | included |
 | `freemapper-georef` | georeferencing, declination, UTM | freemapper | planned |
 | `freemapper-fs` | writing, copying and removing inside the project folder without following a link | freemapper | included |
-| `freemapper-omap` | reading and writing .omap, symbol sets | freemapper, freemapper-print | planned |
+| `freemapper-omap` | map model, reading .omap, embedded symbol sets ISSprOM 2019 and school map 2019; no writer yet | freemapper, freemapper-print | included |
 | `freemapper-render` | map rendering, fonts, PDF | freemapper-print | planned |
 | `freemapper-course` | courses, reading .ppen and IOF XML, number placement | freemapper-print, freemapper-courseplan | planned |
 

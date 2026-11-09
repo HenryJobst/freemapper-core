@@ -1,0 +1,20 @@
+[package]
+name = "freemapper-omap"
+description = "OpenOrienteering Mapper files: map model, .omap reader, embedded symbol sets"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+# The symbol sets under assets/ are embedded with include_str! and must ship with the crate.
+include = ["Cargo.toml", "README.md", "src/**/*.rs", "tests/**/*.rs", "assets/symbol-sets/*"]
+
+[dependencies]
+quick-xml.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true
