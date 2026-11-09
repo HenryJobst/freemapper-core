@@ -11,7 +11,8 @@ as a copy in each:
 
 ## Status
 
-The project is just starting. So far it contains `freemapper-fs`; the other libraries are planned:
+The project is just starting. So far it contains `freemapper-fs` and `freemapper-text`; the other libraries are
+planned:
 
 | Library | Content | comes from |
 |---|---|---|

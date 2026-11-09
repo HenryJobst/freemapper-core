@@ -18,3 +18,4 @@ status to `Superseded by NNNN`.
 | [0007](0007-no-network-access-in-core.md) | No network access in core |
 | [0008](0008-project-files-never-name-paths.md) | Project files never name paths |
 | [0009](0009-writes-never-follow-links.md) | Writes never follow links |
+| [0010](0010-fluent-catalogs-supplied-by-the-app.md) | Fluent catalogs are supplied by the app |

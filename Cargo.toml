@@ -10,6 +10,11 @@ repository = "https://github.com/HenryJobst/freemapper-core"
 rust-version = "1.88"
 
 [workspace.dependencies]
+freemapper-text = { path = "crates/freemapper-text" }
+# Pinned to the versions in freemapper-courseplan's Cargo.lock. Fluent catalogs for program texts.
+fluent-bundle = "=0.16.0"
+fluent-syntax = "=0.12.0"
+unic-langid = "=0.9.6"
 # Pinned to the version in freemapper's Cargo.lock. Windows file identity (volume serial number
 # and file index) without unsafe code of our own.
 same-file = "=1.0.6"
