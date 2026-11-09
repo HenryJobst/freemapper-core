@@ -238,16 +238,27 @@ impl Catalog {
         if *first != "en" {
             out.push(format!("{first}: English must be the first source"));
         }
+        let mut seen = BTreeSet::new();
+        for (code, _) in self.sources {
+            if !seen.insert(*code) {
+                out.push(format!("{code}: language code appears twice"));
+            }
+        }
         let parsed: Vec<_> = self
             .sources
             .iter()
             .map(|(code, source)| {
                 let (resource, errors) = parse_tolerant(source);
-                if lang_of(code).is_none() {
-                    out.push(format!("{code}: not a valid language code"));
+                match lang_of(code) {
+                    None => out.push(format!("{code}: language code is not valid")),
+                    Some(lang) if lang.code() != *code => out.push(format!(
+                        "{code}: language code is not in canonical form, use {}",
+                        lang.code()
+                    )),
+                    Some(_) => {}
                 }
                 for error in errors {
-                    out.push(format!("{code}: syntax error: {error}"));
+                    out.push(format!("{code}: {error}"));
                 }
                 (*code, resource)
             })
@@ -282,6 +293,7 @@ impl Catalog {
             };
             for id in &ids {
                 let Some(pattern) = bundle.get_message(id).and_then(|m| m.value()) else {
+                    out.push(format!("{code}/{id}: message has no value"));
                     continue;
                 };
                 let mut errors = Vec::new();
@@ -302,13 +314,21 @@ impl Catalog {
 }
 
 /// Parses a source; a source with syntax errors still yields its valid entries. The errors come
-/// back as text.
+/// back as text, each naming its line.
 fn parse_tolerant(source: &str) -> (fluent_syntax::ast::Resource<&str>, Vec<String>) {
     match fluent_syntax::parser::parse(source) {
         Ok(resource) => (resource, Vec::new()),
         Err((resource, errors)) => (
             resource,
-            errors.iter().map(|e| format!("{:?}", e.kind)).collect(),
+            errors
+                .iter()
+                .map(|e| {
+                    let line = 1 + source[..e.pos.start.min(source.len())]
+                        .matches('\n')
+                        .count();
+                    format!("line {line}: syntax error: {:?}", e.kind)
+                })
+                .collect(),
         ),
     }
 }
@@ -426,6 +446,10 @@ mod tests {
 
     fn env_of<'a>(pairs: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<String> + 'a {
         move |name| {
+            assert!(
+                ["FREEMAPPER_LANG", "LC_ALL", "LC_MESSAGES", "LANG"].contains(&name),
+                "unexpected variable {name}"
+            );
             pairs
                 .iter()
                 .find(|(n, _)| *n == name)
@@ -521,10 +545,12 @@ mod tests {
 
     #[test]
     fn problems_report_syntax_errors() {
-        static BROKEN: Catalog = Catalog::new(&[("en", "ok = fine\nbroken = { \n")]);
+        static BROKEN: Catalog = Catalog::new(&[("en", "ok = fine\nbroken = {}\n")]);
         let problems = BROKEN.problems(&[]);
         assert!(
-            problems.iter().any(|p| p.starts_with("en: syntax error")),
+            problems
+                .iter()
+                .any(|p| p.starts_with("en: line 2: syntax error")),
             "{problems:?}"
         );
     }
@@ -563,6 +589,63 @@ mod tests {
     }
 
     #[test]
+    fn problems_report_messages_without_value() {
+        static C: Catalog = Catalog::new(&[("en", "a = A\nb =\n    .title = T\n")]);
+        let problems = C.problems(&[]);
+        assert!(
+            problems.iter().any(|p| p == "en/b: message has no value"),
+            "{problems:?}"
+        );
+    }
+
+    #[test]
+    fn problems_report_codes_not_in_canonical_form() {
+        static C: Catalog = Catalog::new(&[("en", "a = A\n"), ("DE", "a = A\n")]);
+        let problems = C.problems(&[]);
+        assert!(
+            problems.iter().any(|p| p.starts_with("DE: language code")),
+            "{problems:?}"
+        );
+    }
+
+    #[test]
+    fn problems_report_duplicate_codes() {
+        static C: Catalog =
+            Catalog::new(&[("en", "a = A\n"), ("de", "a = A\n"), ("de", "a = B\n")]);
+        let problems = C.problems(&[]);
+        assert!(
+            problems
+                .iter()
+                .any(|p| p == "de: language code appears twice"),
+            "{problems:?}"
+        );
+    }
+
+    #[test]
+    fn syntax_errors_name_the_line() {
+        static C: Catalog = Catalog::new(&[("en", "ok = fine\n\nbroken = {}\nnext = n\n")]);
+        let problems = C.problems(&[]);
+        assert!(
+            problems
+                .iter()
+                .any(|p| p.starts_with("en: line 3: syntax error")),
+            "{problems:?}"
+        );
+    }
+
+    #[test]
+    fn problems_report_isolation_marks() {
+        static C: Catalog = Catalog::new(&[("en", "a = x \u{2068}y\n")]);
+        let problems = C.problems(&[]);
+        assert!(
+            problems
+                .iter()
+                .any(|p| p == "en/a: output contains isolation marks"),
+            "{problems:?}"
+        );
+    }
+
+    #[test]
     fn problems_require_english_first() {
         static C: Catalog = Catalog::new(&[("de", "a = A\n"), ("en", "a = A\n")]);
         let problems = C.problems(&[]);
@@ -573,6 +656,10 @@ mod tests {
             "{problems:?}"
         );
         assert_eq!(Catalog::new(&[]).problems(&[]).len(), 1);
+        // Without a source coded "en" there is no fallback: the id comes back.
+        assert_eq!(C.text(&de(), "a", &[]), "A");
+        static NO_EN: Catalog = Catalog::new(&[("de", "a = A\n")]);
+        assert_eq!(NO_EN.text(&Lang::english(), "a", &[]), "a");
     }
 
     #[test]
