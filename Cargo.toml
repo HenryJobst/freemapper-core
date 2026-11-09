@@ -10,6 +10,11 @@ repository = "https://github.com/HenryJobst/freemapper-core"
 rust-version = "1.88"
 
 [workspace.dependencies]
+# Pinned to the version in freemapper's Cargo.lock. Windows file identity (volume serial number
+# and file index) without unsafe code of our own.
+same-file = "=1.0.6"
+# Test only: temporary folders.
+tempfile = "3.27.0"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
