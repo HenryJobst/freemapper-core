@@ -320,8 +320,10 @@ fn severities_enabled_and_notes() {
         );
         assert_eq!(parse("base-x", &text).unwrap().rules[0].severity, severity);
         assert_eq!(severity.as_str(), name);
+        assert_eq!(Severity::parse(name), Some(severity));
     }
     assert!(Severity::Error < Severity::Warning && Severity::Warning < Severity::Hint);
+    assert_eq!(Severity::parse("Error"), None);
     let fatal = base_with_rule(&rule_text("basex.x.y", "map_edge", "").replace("error", "fatal"));
     assert_eq!(
         malformed(parse("base-x", &fatal)),

@@ -203,7 +203,8 @@ impl Severity {
         }
     }
 
-    pub(crate) fn parse(text: &str) -> Option<Severity> {
+    /// The severity with this name in profile files (`error`, `warning`, `hint`).
+    pub fn parse(text: &str) -> Option<Severity> {
         [Severity::Error, Severity::Warning, Severity::Hint]
             .into_iter()
             .find(|s| s.as_str() == text)
