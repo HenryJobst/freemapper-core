@@ -12,6 +12,7 @@ rust-version = "1.88"
 [workspace.dependencies]
 freemapper-text = { path = "crates/freemapper-text" }
 freemapper-rules = { path = "crates/freemapper-rules" }
+freemapper-omap = { path = "crates/freemapper-omap" }
 # Pinned to the versions in freemapper-courseplan's Cargo.lock. Fluent catalogs for program texts.
 fluent-bundle = "=0.16.0"
 fluent-syntax = "=0.12.0"
@@ -22,6 +23,8 @@ toml = "=1.2.1"
 # Pinned to the version in freemapper's Cargo.lock. Windows file identity (volume serial number
 # and file index) without unsafe code of our own.
 same-file = "=1.0.6"
+# Pinned to the version in freemapper-print's Cargo.lock. The .omap reader.
+quick-xml = "=0.42.0"
 # Test only: temporary folders.
 tempfile = "3.27.0"
 
