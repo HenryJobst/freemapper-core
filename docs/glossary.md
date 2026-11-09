@@ -18,3 +18,5 @@ hier unverändert, mit denselben Code-Bezeichnern. Eine Bibliothek, die einen Be
 | veraltete Teildatei | stale partial file | Teildatei eines abgebrochenen Laufs, älter als das vom Aufrufer genannte Alter; wird gelöscht | `remove_stale_parts_inside`, `remove_stale_cache_parts` |
 | schlichter Dateiname | plain name | ein einzelner Dateiname ohne Pfadtrenner, `..`, Laufwerk oder Steuerzeichen; nur solche Namen aus Dateien oder von Servern kommen in einen Pfad (ADR 0008) | `is_plain_name` |
 | Zwischenspeicher | cache | lokaler, projektübergreifender Speicher einer Anwendung; Ordner darin dürfen Verknüpfungen sein | `write_cache_file`, `rename_cache_file` |
+| Textkatalog | catalog | die Fluent-Texte einer Anwendung in allen Sprachen, Englisch zuerst; die Bibliothek enthält selbst keine Texte (ADR 0010) | `Catalog` |
+| Sprache | language | Sprache der Programmtexte, bestimmt durch ihren Sprachteil (`en`, `de`) | `Lang` |

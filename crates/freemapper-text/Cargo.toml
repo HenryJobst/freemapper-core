@@ -1,0 +1,16 @@
+[package]
+name = "freemapper-text"
+description = "Program texts from Fluent catalogs: language detection, lookup with English fallback, catalog checks"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+fluent-bundle.workspace = true
+fluent-syntax.workspace = true
+unic-langid.workspace = true
+
+[lints]
+workspace = true
