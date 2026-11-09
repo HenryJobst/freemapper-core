@@ -23,6 +23,13 @@ own messages and its own words.
   variables, and print every defect at once. It returns plain English lines that name the language and the
   message id. `ids_in_source` supports the second half of that test: it lists the ids named in the app's code,
   and the app checks that each one exists.
+- The fallback goes to the source with the code `en`, as in freemapper-courseplan. A catalog without such a
+  source has no fallback, and `text` returns the id for a message the requested language lacks. `problems`
+  requires English as the first source.
+- An invalid language code does not panic, as the first draft did: `available()` skips it and `problems`
+  reports it, together with codes that are not in canonical form (`DE`) and codes that appear twice.
+  `message_ids` tolerates syntax errors and returns the ids of the valid messages; `problems` reports the errors
+  with their line numbers.
 
 ## Consequences
 

@@ -11,7 +11,8 @@ als Kopie in jeder:
 
 ## Stand
 
-Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-fs` und `freemapper-text`, die anderen Bibliotheken sind geplant:
+Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-fs` und `freemapper-text`, die anderen Bibliotheken sind
+geplant:
 
 | Bibliothek | Inhalt | kommt aus |
 |---|---|---|
