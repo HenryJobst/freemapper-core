@@ -35,15 +35,15 @@ The other apps write into project folders that people share in the same way.
   project folder. In freemapper this includes the downloads into `data/` and the derived templates: the source
   and derive writers get the project folder as a parameter. Before each write, the crate resolves the folder
   of the file and refuses it if it leads out of the project folder, before any folder is created and again
-  once it exists. The error names the file: `<path>: a link leads out of the project folder, so freemapper
-  writes nothing there`. Removing a stale project file (`remove_inside`) follows the same check.
+  once it exists. The error names the file: `<path>: a link leads out of the project folder, so nothing is
+  written there`. Removing a stale project file (`remove_inside`) follows the same check.
 - The apps check their project subfolders once at the start of a command (`check_folder_inside`). In
   freemapper, `fetch`, `derive`, `run` and a new map area from `select` check `data/` and `templates/`, and the
   OCAD export (`--ocad`) checks `ocad/`. A linked folder then stops the command before any download, with the
   same message naming the folder. `data/berlin` keeps its own check and warning (ADR 0008).
 - A copy reads only files of the project itself. `copy_inside` refuses a source that is a link or whose folder
-  leads out of the project folder: `<path>: a link or outside the project folder, so freemapper does not copy
-  it`. It then opens the source and checks the opened file again. It must be a regular file. The path,
+  leads out of the project folder: `<path>: a link or outside the project folder, so it is not copied`. It
+  then opens the source and checks the opened file again. It must be a regular file. The path,
   resolved after the open, must lie inside the project and name the opened file: `same-file` compares the
   two handles by volume serial number and file index on Windows, by device and inode on Unix. On Unix the
   device and inode must also match those of the path before and after the open. On Windows the source is
@@ -75,8 +75,11 @@ The other apps write into project folders that people share in the same way.
   to a place only they can write to first.
 - Stale `.part` files of interrupted runs are cleaned up after `max_age`, which the caller passes (freemapper
   uses one hour). In project folders `remove_stale_parts_inside` checks the folder against the project root
-  and skips entries that are links. Only the apps' own cache folders use the unchecked
+  and skips entries that are links. A refused folder comes back as an error, and the app decides whether to
+  warn; the crate itself never prints. Only the apps' own cache folders use the unchecked
   `remove_stale_cache_parts`.
+- The error texts name no app, since every app of the suite shows them. freemapper up to 0.6.2 said
+  "so freemapper writes nothing there" and "so freemapper does not copy it".
 
 ## Consequences
 
@@ -88,7 +91,5 @@ The other apps write into project folders that people share in the same way.
   project. Other reads still follow links (the map file, the stored data); what they read stays inside the
   process.
 - Each file costs one flush to the disk.
-- The error texts `OUTSIDE_PROJECT` and `NOT_COPIED` name freemapper, since they moved unchanged. An app that
-  wants its own name in them maps the error before it shows it.
 
 Source: freemapper ADR 0060 (security hotfix after freemapper v0.6.1, branch `hotfix-final-writes`).

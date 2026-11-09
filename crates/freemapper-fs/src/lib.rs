@@ -19,6 +19,7 @@
 //!   included, is removed first.
 //! - [`remove_stale_parts_inside`] removes partial files of interrupted runs only in a folder
 //!   inside `root` and skips links. The caller passes the age after which a partial file is stale.
+//!   A refused folder comes back as an error; the crate never prints.
 //! - [`is_plain_name`] tells whether a name read from a file or a server can go into a path.
 //!
 //! Errors are `(path, io::Error)`, where `path` is the file the caller knows (never a partial
@@ -41,11 +42,11 @@ const PART_NAME_ATTEMPTS: u32 = 16;
 static NEXT_PART: AtomicU64 = AtomicU64::new(0);
 
 /// What a copy says about a source that is a link or lies outside the project folder.
-pub const NOT_COPIED: &str = "a link or outside the project folder, so freemapper does not copy it";
+pub const NOT_COPIED: &str = "a link or outside the project folder, so it is not copied";
 
 /// What a write into the project folder says when a link would lead it elsewhere.
 pub const OUTSIDE_PROJECT: &str =
-    "a link leads out of the project folder, so freemapper writes nothing there";
+    "a link leads out of the project folder, so nothing is written there";
 
 /// Writes the cache file `path`: `bytes` go into a new partial file in the same folder, which is
 /// then renamed, so `path` never holds a partial file. Never follows a link: the partial file
@@ -379,16 +380,19 @@ pub fn remove_stale_cache_parts(dir: &Path, max_age: std::time::Duration) {
 /// Project variant of [`remove_stale_cache_parts`]: does nothing unless `folder` stays inside
 /// `root` (a link leading out of the project is not followed), and skips entries that are
 /// links themselves.
-pub fn remove_stale_parts_inside(root: &Path, folder: &Path, max_age: std::time::Duration) {
-    if let Err((path, e)) = check_folder_inside(root, folder) {
-        eprintln!(
-            "warning: not cleaning stale parts in {}: {e}",
-            path.display()
-        );
-        return;
-    }
+///
+/// A refused folder comes back as an error with [`OUTSIDE_PROJECT`] that names `folder`; the
+/// caller decides whether to warn (freemapper prints
+/// `warning: not cleaning stale parts in <folder>: <error>`). Removing the files themselves is
+/// best effort: a folder that cannot be read or a file that cannot be removed is no error.
+pub fn remove_stale_parts_inside(
+    root: &Path,
+    folder: &Path,
+    max_age: std::time::Duration,
+) -> Result<(), (PathBuf, io::Error)> {
+    check_folder_inside(root, folder)?;
     let Ok(entries) = std::fs::read_dir(folder) else {
-        return;
+        return Ok(());
     };
     for entry in entries.flatten() {
         let is_part = entry.file_name().to_string_lossy().ends_with(".part");
@@ -401,6 +405,7 @@ pub fn remove_stale_parts_inside(root: &Path, folder: &Path, max_age: std::time:
             let _ = std::fs::remove_file(entry.path());
         }
     }
+    Ok(())
 }
 
 /// Whether `name`, read from a project file or a server, is one plain file name: no path
@@ -445,6 +450,40 @@ mod tests {
     use super::*;
     use std::cell::Cell;
 
+    #[test]
+    fn error_texts_name_no_app() {
+        for text in [OUTSIDE_PROJECT, NOT_COPIED] {
+            assert!(!text.contains("freemapper"), "{text}");
+        }
+        assert_eq!(
+            OUTSIDE_PROJECT,
+            "a link leads out of the project folder, so nothing is written there"
+        );
+        assert_eq!(
+            NOT_COPIED,
+            "a link or outside the project folder, so it is not copied"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn stale_part_cleanup_returns_the_refusal_instead_of_printing_it() {
+        let root = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        let templates = root.path().join("templates");
+        std::os::unix::fs::symlink(outside.path(), &templates).unwrap();
+        let (path, e) =
+            remove_stale_parts_inside(root.path(), &templates, std::time::Duration::ZERO)
+                .unwrap_err();
+        assert_eq!(
+            (path, e.to_string()),
+            (templates, OUTSIDE_PROJECT.to_string())
+        );
+        // A folder inside the project, or one that does not exist yet, is fine.
+        let data = root.path().join("data");
+        assert!(remove_stale_parts_inside(root.path(), &data, std::time::Duration::ZERO).is_ok());
+    }
+
     #[cfg(unix)]
     #[test]
     fn stale_part_cleanup_does_not_follow_a_templates_link() {
@@ -453,11 +492,12 @@ mod tests {
         std::fs::write(outside.path().join("x.part"), b"keep").unwrap();
         std::os::unix::fs::symlink(outside.path(), root.path().join("templates")).unwrap();
         std::thread::sleep(std::time::Duration::from_millis(20));
-        remove_stale_parts_inside(
+        let refused = remove_stale_parts_inside(
             root.path(),
             &root.path().join("templates"),
             std::time::Duration::ZERO,
         );
+        assert!(refused.is_err());
         assert!(outside.path().join("x.part").exists());
     }
 
@@ -473,7 +513,7 @@ mod tests {
         std::os::unix::fs::symlink(&victim, templates.join("l.part")).unwrap();
         std::fs::write(templates.join("old.part"), b"x").unwrap();
         std::thread::sleep(std::time::Duration::from_millis(20));
-        remove_stale_parts_inside(root.path(), &templates, std::time::Duration::ZERO);
+        remove_stale_parts_inside(root.path(), &templates, std::time::Duration::ZERO).unwrap();
         assert!(victim.exists());
         assert!(std::fs::symlink_metadata(templates.join("l.part")).is_ok());
         assert!(!templates.join("old.part").exists());
