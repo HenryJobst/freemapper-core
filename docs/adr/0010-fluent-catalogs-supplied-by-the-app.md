@@ -36,8 +36,16 @@ own messages and its own words.
 - Each app writes one short test that calls `problems` and asserts that the list is empty. A catalog that the
   test does not cover is not checked.
 - An app that adds a language adds a file and a line in its source list; this crate does not change.
-- `Localize` stays a trait here, but the implementations for an app's error types live in the app.
+- `Localize` stays a trait here, but the implementations for an app's error types live in the app. Dropped in
+  0.2.0, see the amendment below.
 - The crate depends on `fluent-bundle`, `fluent-syntax` and `unic-langid`, pinned to the versions in
   freemapper-courseplan's lock file.
+
+## Amendment 2026-11-09: `Localize` dropped in 0.2.0
+
+No app could use the trait. Courseplan implements its translated texts for error types of its model crate as
+well, such as `ModelError` and `ProjectError`, and the orphan rule forbids implementing a trait from a third
+crate for them. Both apps keep a local `Localize` trait, so `freemapper-text` 0.2.0 no longer has one
+*(agreed with freemapper-print)*.
 
 Source: freemapper-courseplan ADR 0022.

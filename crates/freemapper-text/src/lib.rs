@@ -43,6 +43,12 @@
 //! [`Catalog::problems`] is meant for a test in the app: it returns one line per defect and the
 //! test asserts that the list is empty. [`ids_in_source`] finds the message ids named in the
 //! app's code, so the same test can check that each of them exists.
+//!
+//! # Translated errors
+//!
+//! The crate has no trait for translated error texts. An app that translates its errors defines
+//! that trait itself: it implements it for error types of its other crates too, and the orphan
+//! rule forbids that for a trait from this crate (ADR 0010).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
@@ -397,12 +403,6 @@ fn variables_of(
         }
     }
     map
-}
-
-/// Program texts for a value, for example an error.
-pub trait Localize {
-    /// The text in `lang`. In English it equals `to_string()` for error types.
-    fn localize(&self, lang: &Lang) -> String;
 }
 
 /// Message ids written as string literals in `source` above its first `#[cfg(test)]`: literals

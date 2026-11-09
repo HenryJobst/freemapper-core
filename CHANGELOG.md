@@ -18,6 +18,12 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
   nach ihrem Feld (`map_kinds`, `disciplines`, `print_scales`) statt fester Felder der Regel. Eine Regel, die
   die eigenen Vorschläge des Programms zitiert, braucht eine Notiz. Entscheidung 0011.
 
+### Entfernt
+
+- freemapper-text: der Trait `Localize`. Keine Anwendung konnte ihn nutzen, weil die Orphan-Regel verbietet,
+  ihn für Fehlertypen aus einer dritten Bibliothek zu implementieren. Anwendungen behalten ihren eigenen Trait;
+  wer `freemapper_text::Localize` importiert, definiert ihn selbst (Nachtrag zu Entscheidung 0010).
+
 ## [0.1.0] - 2026-11-09
 
 ### Hinzugefügt

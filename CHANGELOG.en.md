@@ -17,6 +17,12 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   two rules match. Filters are now named by their field (`map_kinds`, `disciplines`, `print_scales`) instead of
   being fixed fields of a rule. A rule that cites the program's own proposals needs a note. Decision 0011.
 
+### Removed
+
+- freemapper-text: the trait `Localize`. No app could use it, because the orphan rule forbids implementing it
+  for error types from a third crate. The apps keep their own trait; code that imports
+  `freemapper_text::Localize` defines it itself (amendment to decision 0010).
+
 ## [0.1.0] - 2026-11-09
 
 ### Added
