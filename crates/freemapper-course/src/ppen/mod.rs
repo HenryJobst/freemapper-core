@@ -53,6 +53,8 @@
 //! and the like) are skipped silently (`labels` is read for the note above); any other element is noted once
 //! by name.
 
+pub mod write;
+
 use std::collections::{HashMap, HashSet};
 
 use quick_xml::events::BytesStart;

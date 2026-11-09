@@ -32,6 +32,7 @@ pub use model::{
     Stop,
 };
 pub use number_offset::{offset_from_placement, placement_from_offset};
+pub use ppen::write::{LineEnding, PpenWriteError};
 pub use ppen::{course_obj_ratio, read_ppen};
 
 /// Why a course file could not be read.

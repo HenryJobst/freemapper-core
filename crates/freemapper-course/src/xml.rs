@@ -20,15 +20,12 @@ pub trait Handler {
 
 /// Runs `h` over `bytes`. An empty element is a `begin` followed by an `end`.
 pub fn drive(bytes: &[u8], h: &mut impl Handler) -> Result<(), CourseError> {
-    if bytes.len() > MAX_COURSE_FILE_BYTES {
-        return Err(CourseError::Limit(format!(
-            "file larger than {} MiB",
-            MAX_COURSE_FILE_BYTES / (1024 * 1024)
-        )));
-    }
+    check_size(bytes.len())?;
     let mut reader = Reader::from_reader(bytes);
     loop {
-        match reader.read_event().map_err(xml_err)? {
+        let event = reader.read_event().map_err(xml_err)?;
+        let reference = guard(&event)?;
+        match event {
             Event::Start(e) => h.begin(&e)?,
             Event::Empty(e) => {
                 h.begin(&e)?;
@@ -37,27 +34,51 @@ pub fn drive(bytes: &[u8], h: &mut impl Handler) -> Result<(), CourseError> {
             Event::End(_) => h.end()?,
             Event::Text(t) => h.text(&t.xml_content(XmlVersion::Explicit1_0)),
             Event::CData(t) => h.text(&t.xml_content(XmlVersion::Explicit1_0)),
-            Event::GeneralRef(r) => {
-                if let Some(c) = r.resolve_char_ref().map_err(xml_err)? {
+            Event::GeneralRef(_) => {
+                if let Some(c) = reference {
                     h.text(c.encode_utf8(&mut [0; 4]));
-                } else {
-                    let s = match r.xml_content(XmlVersion::Explicit1_0).as_ref() {
-                        "lt" => "<",
-                        "gt" => ">",
-                        "amp" => "&",
-                        "apos" => "'",
-                        "quot" => "\"",
-                        other => {
-                            return Err(CourseError::Xml(format!("entity &{other}; is refused")));
-                        }
-                    };
-                    h.text(s);
                 }
             }
-            Event::DocType(_) => return Err(CourseError::Xml("a DOCTYPE is refused".into())),
             Event::Eof => return Ok(()),
             _ => {}
         }
+    }
+}
+
+/// Refuses a file of `len` bytes if it is larger than `MAX_COURSE_FILE_BYTES`.
+pub(crate) fn check_size(len: usize) -> Result<(), CourseError> {
+    if len > MAX_COURSE_FILE_BYTES {
+        return Err(CourseError::Limit(format!(
+            "file larger than {} MiB",
+            MAX_COURSE_FILE_BYTES / (1024 * 1024)
+        )));
+    }
+    Ok(())
+}
+
+/// The refusals of ADR 0019 for one event, shared by every XML pass of the crate. A DOCTYPE is refused, and
+/// so is a general reference other than a character reference or one of the five predefined entities. For a
+/// reference, returns the character it stands for.
+pub(crate) fn guard(event: &Event<'_>) -> Result<Option<char>, CourseError> {
+    match event {
+        Event::DocType(_) => Err(CourseError::Xml("a DOCTYPE is refused".into())),
+        Event::GeneralRef(r) => {
+            if let Some(c) = r.resolve_char_ref().map_err(xml_err)? {
+                return Ok(Some(c));
+            }
+            let c = match r.xml_content(XmlVersion::Explicit1_0).as_ref() {
+                "lt" => '<',
+                "gt" => '>',
+                "amp" => '&',
+                "apos" => '\'',
+                "quot" => '"',
+                other => {
+                    return Err(CourseError::Xml(format!("entity &{other}; is refused")));
+                }
+            };
+            Ok(Some(c))
+        }
+        _ => Ok(None),
     }
 }
 

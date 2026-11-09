@@ -21,6 +21,9 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
   öffentlich, `CourseSource::item_scaling` hält die Einstellung der Datei (`None` bei IOF-XML), und
   `course_obj_ratio` rechnet den Bahnobjektfaktor aus Skalierung, Karten- und Druckmaßstab aus. Der Leser
   nutzt dieselbe Funktion. Das braucht der `.ppen`-Schreiber von freemapper-courseplan.
+- freemapper-course: `PpenWriteError` sagt, warum eine Veranstaltung nicht als `.ppen` geschrieben werden
+  kann. `LineEnding` wählt das Zeilenende CRLF oder LF; Vorgabe ist CRLF, so schreibt Purple Pen unter
+  Windows. Beide gehören zum `.ppen`-Schreiber im neuen Modul `ppen::write`, der noch nicht fertig ist.
 
 ## [0.3.0] - 2026-11-10
 

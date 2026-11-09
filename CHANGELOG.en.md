@@ -21,6 +21,9 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   reader) is public, `CourseSource::item_scaling` holds the file's setting (`None` for IOF XML), and
   `course_obj_ratio` computes the course object ratio from scaling, map scale and print scale. The reader
   calls the same function. freemapper-courseplan's `.ppen` writer needs this.
+- freemapper-course: `PpenWriteError` says why an event cannot be written as a `.ppen`. `LineEnding` picks
+  the line end, CRLF or LF; the default is CRLF, which Purple Pen writes on Windows. Both are part of the
+  `.ppen` writer in the new module `ppen::write`, which is not finished yet.
 
 ## [0.3.0] - 2026-11-10
 
