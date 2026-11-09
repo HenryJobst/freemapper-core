@@ -32,6 +32,17 @@ The apps include a library through git with a fixed version:
 freemapper-text = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.1.0" }
 ```
 
+To change an app and a library together, check freemapper-core out next to the app (`../freemapper-core`) and
+point the app's `Cargo.toml` at the local folder for the time being:
+
+```toml
+[patch."https://github.com/HenryJobst/freemapper-core"]
+freemapper-text = { path = "../freemapper-core/crates/freemapper-text" }
+```
+
+The entry is for development only. It comes out again before the app is merged, once the change is released in
+freemapper-core and the app pins the new version (decision 0006).
+
 Decisions are in [`docs/adr/`](docs/adr/README.md), changes in the [changelog](CHANGELOG.en.md).
 
 ## Licence

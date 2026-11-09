@@ -32,6 +32,17 @@ Die Anwendungen binden eine Bibliothek über Git mit fester Version ein:
 freemapper-text = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.1.0" }
 ```
 
+Wer eine Anwendung und eine Bibliothek zugleich ändert, legt freemapper-core neben die Anwendung
+(`../freemapper-core`) und trägt in der `Cargo.toml` der Anwendung vorübergehend den lokalen Ordner ein:
+
+```toml
+[patch."https://github.com/HenryJobst/freemapper-core"]
+freemapper-text = { path = "../freemapper-core/crates/freemapper-text" }
+```
+
+Der Eintrag gilt nur zum Entwickeln. Vor dem Merge der Anwendung kommt er wieder heraus, nachdem die Änderung in
+freemapper-core veröffentlicht ist und die Anwendung die neue Version einbindet (Entscheidung 0006).
+
 Entscheidungen stehen in [`docs/adr/`](docs/adr/README.md), Änderungen im [Changelog](CHANGELOG.md).
 
 ## Lizenz
