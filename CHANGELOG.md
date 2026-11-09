@@ -24,6 +24,13 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 - freemapper-course: `PpenWriteError` sagt, warum eine Veranstaltung nicht als `.ppen` geschrieben werden
   kann. `LineEnding` wählt das Zeilenende CRLF oder LF; Vorgabe ist CRLF, so schreibt Purple Pen unter
   Windows. Beide gehören zum `.ppen`-Schreiber im neuen Modul `ppen::write`, der noch nicht fertig ist.
+- freemapper-course: `write_ppen` schreibt eine Veranstaltung als neue `.ppen`-Datei, so formatiert, wie
+  Purple Pen sie schreibt. `ScratchOptions` legt die Karte (`PpenMap`), Karten- und Beschreibungsstandard
+  (`MapStandard`, `DescriptionStandard`), die Sprache der Beschreibungen und das Zeilenende fest. Das Ergebnis
+  `Written` enthält den Dateitext, die ID jedes Objekts (`AssignedIds`) und Hinweise (`WriteNote`). Objekte
+  behalten ihre IDs; eine fehlende oder doppelte ID wird zur größten ID ihrer Art plus eins. Der Schreiber
+  prüft die Veranstaltung zuerst gegen die Grenzen des Lesers und lehnt ab, was Purple Pen nicht speichern
+  kann, etwa zwei Bahnen, die dieselbe Strecke verschieden zeichnen.
 
 ## [0.3.0] - 2026-11-10
 

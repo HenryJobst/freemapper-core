@@ -291,6 +291,18 @@ pub fn course_obj_ratio(
     }
 }
 
+/// `CourseView.CircleGapScale` of a course, rounded as Purple Pen keys the gaps: the scale whose circle gaps
+/// the course uses. The writer keys the gaps it writes the same way.
+fn gap_key(scaling: ItemScaling, map_scale: Option<f64>, print_scale: Option<f64>) -> i64 {
+    let print = print_scale.unwrap_or(DEFAULT_PRINT_SCALE);
+    let s = match scaling {
+        ItemScaling::None => print,
+        ItemScaling::RelativeToMap => map_scale.unwrap_or(0.0),
+        ItemScaling::RelativeTo15000 => 15000.0,
+    };
+    s.round() as i64
+}
+
 #[derive(Default)]
 struct State {
     stack: Vec<String>,
@@ -957,15 +969,8 @@ impl State {
         course_obj_ratio(self.item_scaling, self.map_scale, course.print_scale)
     }
 
-    /// `CourseView.CircleGapScale`, rounded as Purple Pen keys the gaps.
     fn gap_key(&self, course: &PCourse) -> i64 {
-        let print = course.print_scale.unwrap_or(DEFAULT_PRINT_SCALE);
-        let s = match self.item_scaling {
-            ItemScaling::None => print,
-            ItemScaling::RelativeToMap => self.map_scale.unwrap_or(0.0),
-            ItemScaling::RelativeTo15000 => 15000.0,
-        };
-        s.round() as i64
+        gap_key(self.item_scaling, self.map_scale, course.print_scale)
     }
 
     fn finish(mut self) -> Result<RawEvent, CourseError> {

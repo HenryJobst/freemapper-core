@@ -24,6 +24,13 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - freemapper-course: `PpenWriteError` says why an event cannot be written as a `.ppen`. `LineEnding` picks
   the line end, CRLF or LF; the default is CRLF, which Purple Pen writes on Windows. Both are part of the
   `.ppen` writer in the new module `ppen::write`, which is not finished yet.
+- freemapper-course: `write_ppen` writes an event as a new `.ppen` file, laid out as Purple Pen writes it.
+  `ScratchOptions` sets the map (`PpenMap`), the map and description standards (`MapStandard`,
+  `DescriptionStandard`), the language of the descriptions and the line end. The result `Written` holds the
+  file text, the id each object got (`AssignedIds`) and notes (`WriteNote`). Objects keep their ids; a
+  missing or repeated id becomes the largest id of its store plus one. The writer checks the event against
+  the reader's limits first and refuses what Purple Pen cannot store, for example two courses that draw the
+  same leg differently.
 
 ## [0.3.0] - 2026-11-10
 

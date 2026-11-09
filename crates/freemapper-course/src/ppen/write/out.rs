@@ -43,6 +43,10 @@ pub(super) enum Body {
 pub(super) enum Child {
     Element(Element),
     /// Bytes carried from a base file, written as they are: they bring their own indent and line end.
+    #[cfg_attr(
+        not(test),
+        expect(dead_code, reason = "carried bytes come with the patch still to come")
+    )]
     Raw(String),
 }
 
