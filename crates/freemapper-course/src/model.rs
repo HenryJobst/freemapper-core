@@ -75,6 +75,7 @@ impl<P> CourseEvent<P> {
                 .controls
                 .into_iter()
                 .map(|c| Control {
+                    id: c.id,
                     code: c.code,
                     kind: c.kind,
                     position: c.position.map(&f),
@@ -86,6 +87,7 @@ impl<P> CourseEvent<P> {
                 .courses
                 .into_iter()
                 .map(|c| Course {
+                    id: c.id,
                     name: c.name,
                     family: c.family,
                     kind: c.kind,
@@ -168,6 +170,9 @@ pub enum ControlKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Control<P> {
+    /// Purple Pen's id of the control (`control/@id` in the `.ppen`), so that a writer can refer to the same
+    /// control again. `None` for IOF XML, which has no such id, and for an id outside `u32`.
+    pub id: Option<u32>,
     pub code: String,
     pub kind: ControlKind,
     /// `None` for a control the file places only by `geo`; the fit computes it.
@@ -185,6 +190,9 @@ pub enum CourseKind {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Course<P> {
+    /// Purple Pen's id of the course (`course/@id` in the `.ppen`). `None` for IOF XML and for an id outside
+    /// `u32`.
+    pub id: Option<u32>,
     pub name: String,
     /// The course family: courses with the same family are the variants of one fork.
     pub family: Option<String>,

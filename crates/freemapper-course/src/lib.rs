@@ -11,6 +11,7 @@
 pub mod fit;
 pub mod iof_xml;
 pub mod model;
+pub mod number_offset;
 pub mod placement;
 pub mod ppen;
 pub mod tm;
@@ -23,6 +24,7 @@ pub use model::{
     Description, FittedEvent, Leg, NumberPlacement, RawEvent, RawPoint, SourceFormat, Special,
     Stop,
 };
+pub use number_offset::{offset_from_placement, placement_from_offset};
 pub use ppen::read_ppen;
 
 /// Why a course file could not be read.

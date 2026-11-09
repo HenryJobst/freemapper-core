@@ -18,6 +18,8 @@
 //!   with `iof-2004-ref` fills [`Description::columns`] (`box="all"`, the one symbol of a finish or crossing
 //!   point, goes to column C); text in box F is kept as [`Description::column_f_text`]. The standard is the
 //!   event's `standards/@description`, 2004 when missing.
+//! - Ids: `control/@id` and `course/@id` become [`Control::id`] and [`Course::id`], so a writer can refer to
+//!   the same objects again; an id outside `u32` reads as `None`.
 //! - Courses: `first` starts a chain of `course-control`s linked by `next`. A course-control with a
 //!   `variation` (fork or loop) makes the course a variation course; it is left out and noted. Courses are
 //!   sorted by `order`. `options/@print-scale` is the print scale hint, `@climb` and `@course-length` the
@@ -1132,6 +1134,7 @@ impl State {
                 });
             }
             courses.push(Course {
+                id: u32::try_from(pc.id).ok(),
                 name: text.copy(&pc.name)?,
                 family: None,
                 kind: pc.kind,
@@ -1166,6 +1169,7 @@ impl State {
             };
             any_description |= c.has_description;
             controls.push(Control {
+                id: u32::try_from(c.id).ok(),
                 code,
                 kind,
                 position: c.position,

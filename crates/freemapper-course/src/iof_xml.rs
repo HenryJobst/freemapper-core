@@ -212,6 +212,8 @@ impl State {
                 self.course_count += 1;
                 self.course = Some(CourseB {
                     course: Course {
+                        // IOF XML has no stable ids.
+                        id: None,
                         name: String::new(),
                         family: None,
                         kind: CourseKind::Normal,
@@ -301,6 +303,7 @@ impl State {
                     )));
                 }
                 self.controls.push(Control {
+                    id: None,
                     code: c.code,
                     kind: c.kind,
                     position: c.position,
