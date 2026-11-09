@@ -33,13 +33,16 @@ loaders would drift apart.
   `Schema::tables`, `KNOWN_KEYS` became `Schema::keys`.
 - Taken from freemapper-print *(agreed with freemapper-print)*: the value names per key ("rule R does not read
   X; it reads A, B"), the range checks, keys without a filter, the table checks, the value check and
-  `RuleSet::pick`. Two rules that `pick` finds give the new error `Ambiguous` with both ids.
+  `RuleSet::pick`. If `pick` finds more than one rule, it returns the new error `Ambiguous`, which names all
+  matching ids.
 - The range checks apply to a value whose name carries a unit and is no table value of its key. The value must
   be a number or a list of numbers, each finite. `mm` and `metres` must be above 0, `factor` 0 or more,
   `percent` from 0 to 100. `degrees` and any other unit take any finite number. A list is checked item by
-  item. A text value under a unit name is refused, because the check that reads it expects a number.
+  item. Any other value under a unit name is refused: a text, a boolean, a date or a list of texts, because
+  the check that reads it expects a number.
 - Filters are named dimensions. A rule stores them as `filters: BTreeMap<String, Vec<FilterItem>>`. An empty
-  list counts as no filter and is not stored. `Rule::applies` takes one argument per dimension by field name
+  list counts as no filter and is not stored. A rule changed by hand with an empty list stored reads the
+  same: `filter`, `admits` and `applies` treat it as no filter. `Rule::applies` takes one argument per dimension by field name
   and is true when every dimension the rule filters on contains the argument for it. A dimension the rule
   filters on and the caller leaves out does not match. A dimension the rule does not filter on matches
   anything. An integer filter refuses a float with a message that names the field, so `print_scales = [4000.0]`
@@ -57,9 +60,11 @@ loaders would drift apart.
 
 - Courseplan switches first (plan Task 2) and keeps a wrapper per function, so its call sites change little.
   Print switches after its M3. Its scale table check and its description cell range become a `TableSchema`
-  check and a `value_check`.
-- A profile that passed courseplan's loader can now fail on the range checks, a text under a unit name or a
-  proposal without a note. Both embedded courseplan profiles load unchanged. Courseplan's snapshot test in
+  check and a `value_check`. The loader accepts a list under a value name that print reads as one number,
+  because it checks lists item by item. Print can refuse such a list in the same `value_check`.
+- A profile that passed courseplan's loader can now fail on the range checks, on a text, boolean, date or
+  list of texts under a unit name, or on a proposal without a note. Some `Malformed` messages read differently
+  than in courseplan: those for filter values, print scales and a filter that is not a list. Both embedded courseplan profiles load unchanged. Courseplan's snapshot test in
   Task 2 compares the merged sets before and after the switch.
 - A new filter dimension or key is a change to the app's schema, not to this crate.
 - `RulesError` has a new variant, so an app that matches on it exhaustively, as courseplan's translated error

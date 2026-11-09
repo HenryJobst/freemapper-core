@@ -26,10 +26,11 @@ Bibliotheken sind geplant:
 
 ## Nutzung
 
-Die Anwendungen binden eine Bibliothek über Git mit fester Version ein:
+Die Anwendungen binden die Bibliotheken, die sie brauchen, über Git mit fester Version ein:
 
 ```toml
-freemapper-text = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.1.0" }
+freemapper-text = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.2.0" }
+freemapper-rules = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.2.0" }
 ```
 
 Wer eine Anwendung und eine Bibliothek zugleich ändert, legt freemapper-core neben die Anwendung
@@ -38,6 +39,7 @@ Wer eine Anwendung und eine Bibliothek zugleich ändert, legt freemapper-core ne
 ```toml
 [patch."https://github.com/HenryJobst/freemapper-core"]
 freemapper-text = { path = "../freemapper-core/crates/freemapper-text" }
+freemapper-rules = { path = "../freemapper-core/crates/freemapper-rules" }
 ```
 
 Der Eintrag gilt nur zum Entwickeln. Vor dem Merge der Anwendung kommt er wieder heraus, nachdem die Änderung in

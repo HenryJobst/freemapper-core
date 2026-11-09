@@ -256,16 +256,25 @@ impl Rule {
     /// Whether the rule's filters select the case described by `args`: one argument per filter
     /// dimension, by field name.
     ///
-    /// Each dimension the rule filters on must contain the argument for it. A dimension the
-    /// rule does not filter on matches anything, also a missing argument. A dimension the rule
-    /// filters on but `args` leaves out does not match. Arguments for other dimensions are
-    /// ignored.
+    /// Each dimension the rule filters on must admit the argument for it ([`Rule::admits`]). A
+    /// dimension the rule does not filter on, absent or with an empty list, matches anything, also
+    /// a missing argument. A dimension the rule filters on but `args` leaves out does not match.
+    /// Arguments for other dimensions are ignored.
     pub fn applies(&self, args: &[(&str, FilterArg<'_>)]) -> bool {
         self.filters.iter().all(|(field, items)| {
-            args.iter()
-                .find(|(name, _)| name == field)
-                .is_some_and(|(_, arg)| items.iter().any(|item| item.matches(*arg)))
+            items.is_empty()
+                || args
+                    .iter()
+                    .find(|(name, _)| name == field)
+                    .is_some_and(|(_, arg)| self.admits(field, *arg))
         })
+    }
+
+    /// Whether the filter on `field` lets `arg` through: true if the rule does not filter on
+    /// `field` (absent or an empty list) or the list contains `arg`.
+    pub fn admits(&self, field: &str, arg: FilterArg<'_>) -> bool {
+        let items = self.filter(field);
+        items.is_empty() || items.iter().any(|item| item.matches(arg))
     }
 
     /// The filter on `field`; empty if the rule does not filter on it.

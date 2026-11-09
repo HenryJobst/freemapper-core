@@ -635,6 +635,35 @@ fn set_filter_changes_the_filters() {
 }
 
 #[test]
+fn a_stored_empty_filter_means_all() {
+    // `filters` is a public field, so an app can store an empty list directly.
+    let mut rule = one_rule("min_distance", "").unwrap();
+    rule.filters.insert(s("disciplines"), vec![]);
+    assert_eq!(rule.filter("disciplines"), []);
+    assert!(rule.applies(&[("disciplines", FilterArg::Text("long"))]));
+    assert!(rule.applies(&[]));
+    assert!(rule.admits("disciplines", FilterArg::Text("long")));
+}
+
+#[test]
+fn admits_checks_one_dimension() {
+    let rule = one_rule(
+        "min_distance",
+        "disciplines = [\"long\"]\nprint_scales = [4000]",
+    )
+    .unwrap();
+    assert!(rule.admits("disciplines", FilterArg::Text("long")));
+    assert!(!rule.admits("disciplines", FilterArg::Text("middle")));
+    assert!(rule.admits("print_scales", FilterArg::Int(4000)));
+    assert!(!rule.admits("print_scales", FilterArg::Int(5000)));
+    // An argument of the wrong kind does not match.
+    assert!(!rule.admits("print_scales", FilterArg::Text("4000")));
+    // A dimension the rule does not filter on admits anything.
+    assert!(rule.admits("map_kinds", FilterArg::Text("forest")));
+    assert!(rule.admits("no_such_filter", FilterArg::Int(1)));
+}
+
+#[test]
 fn filter_values_are_checked() {
     for (more, message) in [
         (

@@ -1,7 +1,7 @@
 # 0010. Fluent catalogs are supplied by the app
 
 Date: 2026-11-09
-Status: Accepted
+Status: Accepted, amended 2026-11-09
 
 ## Context
 
