@@ -8,8 +8,8 @@ freemapper-print copied freemapper's `.omap` model and reader at 743ce4b and dev
 limits for hostile files (print ADR 0014, 0019). freemapper and freemapper-courseplan need the same reader.
 
 ## Decision
-- `freemapper-omap` takes print's module `omap/` from commit `918cec2` unchanged: model, reader, symbol sets,
-  symbol enlargement, `MAX_XML_DEPTH` and `OmapError`. Its paths stay as they were, so
+- `freemapper-omap` takes print's module `omap/` from commit `918cec2` with its behaviour unchanged: model,
+  reader, symbol sets, symbol enlargement, `MAX_XML_DEPTH` and `OmapError`. Its paths stay as they were, so
   `freemapper_omap::coord::MapCoord` replaces `freemapper_print::omap::coord::MapCoord`. The tests move with
   it; only their `crate::omap::` prefixes became `crate::`.
 - freemapper-print owns the crate (ADR 0005). The renderer and everything that prints stay in the app.

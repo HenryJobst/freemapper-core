@@ -5,3 +5,5 @@
 *.zip binary
 *.tif binary
 *.pdf binary
+# Purple Pen fixtures stay byte-identical to the originals (CRLF, BOM); see their README.
+*.ppen -text

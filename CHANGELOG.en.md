@@ -15,6 +15,14 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   including the nesting limit `MAX_XML_DEPTH`. `too_deep`, `symbol_set::attribute` and
   `SymbolSet::without_codes` are public now, because freemapper-print's renderer and tests need them.
   Decision 0012.
+- freemapper-course: course model, readers for Purple Pen (`.ppen`) and IOF XML 3.0, fitting a course file to
+  the map, and control number placement. Moved from freemapper-print (commit `918cec2`, modules `course/` and
+  `placement/`) with the same paths, the same behaviour, the same reader limits and the same `CourseError` and
+  `FitError` texts. New are `Control::id` and `Course::id`, holding the ids from the `.ppen` (`None` for IOF
+  XML), and `placement_from_offset` and `offset_from_placement`, which turn a number offset into a number
+  placement and back. The parts of `xml` that freemapper-print's description symbol reader needs are public
+  now. Code that builds `Control` or `Course` itself adds `id: None`. The fit sits behind the feature `fit`
+  (on by default); without it the crate builds without `freemapper-omap`. Decision 0013.
 
 ## [0.2.0] - 2026-11-09
 

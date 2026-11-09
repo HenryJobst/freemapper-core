@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CourseData xmlns="http://www.orienteering.org/datastandard/3.0" iofVersion="3.0">
+  <RaceCourseData>
+    <Control type="Start"><Id>S1</Id><MapPosition x="10" y="10" unit="mm"/></Control>
+    <Control type="Control"><Id>31</Id><MapPosition x="60" y="40" unit="mm"/></Control>
+    <Control type="Finish"><Id>F1</Id><MapPosition x="100" y="20" unit="mm"/></Control>
+    <Course>
+      <Name>Score</Name>
+      <CourseControl type="Start"><Control>S1</Control></CourseControl>
+      <CourseControl type="Control">
+        <Control>31</Control>
+        <Score>10</Score>
+        <MapTextPosition x="6.5" y="3" unit="mm"/>
+      </CourseControl>
+      <CourseControl type="Finish"><Control>F1</Control></CourseControl>
+    </Course>
+  </RaceCourseData>
+</CourseData>

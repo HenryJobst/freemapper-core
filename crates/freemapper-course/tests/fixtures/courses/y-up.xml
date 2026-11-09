@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CourseData xmlns="http://www.orienteering.org/datastandard/3.0" iofVersion="3.0" createTime="2026-11-09T10:00:00+01:00" creator="hand-written">
+  <Event>
+    <Name>Test Event</Name>
+  </Event>
+  <RaceCourseData>
+    <Map>
+      <Scale>10000</Scale>
+      <MapPositionTopLeft x="0" y="200" unit="mm"/>
+      <MapPositionBottomRight x="300" y="0" unit="mm"/>
+    </Map>
+    <Control type="Start">
+      <Id>S1</Id>
+      <Position lng="10.6866" lat="53.8655"/>
+      <MapPosition x="50.5" y="40.25" unit="mm"/>
+    </Control>
+    <Control type="Control">
+      <Id>31</Id>
+      <Position lng="10.6900" lat="53.8700"/>
+      <MapPosition x="120" y="90" unit="mm"/>
+    </Control>
+    <Control type="Control">
+      <Id>32</Id>
+      <MapPosition x="200" y="150.5" unit="mm"/>
+    </Control>
+    <Control type="CrossingPoint">
+      <Id>X1</Id>
+      <MapPosition x="160" y="120" unit="mm"/>
+    </Control>
+    <Control type="Finish">
+      <Id>F1</Id>
+      <MapPosition x="250" y="60" unit="mm"/>
+    </Control>
+    <Course>
+      <Name>A</Name>
+      <Length>4500</Length>
+      <Climb>120</Climb>
+      <CourseControl type="Start"><Control>S1</Control></CourseControl>
+      <CourseControl type="Control"><Control>31</Control><LegLength>1200</LegLength></CourseControl>
+      <CourseControl type="Control"><Control>32</Control><LegLength>1500</LegLength></CourseControl>
+      <CourseControl type="Finish"><Control>F1</Control><LegLength>900</LegLength></CourseControl>
+    </Course>
+    <Course>
+      <Name>B</Name>
+      <CourseControl type="Start"><Control>S1</Control></CourseControl>
+      <CourseControl type="Control"><Control>32</Control></CourseControl>
+      <CourseControl type="Finish"><Control>F1</Control></CourseControl>
+    </Course>
+  </RaceCourseData>
+</CourseData>

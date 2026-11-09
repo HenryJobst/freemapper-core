@@ -1,6 +1,7 @@
-//! Copied from freemapper 743ce4b (freemapper-print ADR 0014); moved here from freemapper-print
-//! 918cec2 (ADR 0012).
 //! Symbol sets: colours and symbols copied verbatim from OOM symbol set files.
+
+// Copied from freemapper 743ce4b (freemapper-print ADR 0014); moved here from freemapper-print 918cec2
+// (ADR 0012).
 
 use std::collections::BTreeSet;
 

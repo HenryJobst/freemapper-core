@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CourseData xmlns="http://www.orienteering.org/datastandard/3.0" iofVersion="3.0">
+  <RaceCourseData>
+    <Control type="Start"><Id>S1</Id><MapPosition x="10" y="10" unit="mm"/></Control>
+    <Control type="Control"><Id>31</Id><MapPosition x="60" y="40" unit="mm"/></Control>
+    <Control type="Control"><Id>32</Id><MapPosition x="70" y="80" unit="mm"/></Control>
+    <Control type="Finish"><Id>F1</Id><MapPosition x="100" y="20" unit="mm"/></Control>
+    <Course>
+      <Name>Relay 1</Name>
+      <CourseFamily>Relay</CourseFamily>
+      <CourseControl type="Start"><Control>S1</Control></CourseControl>
+      <CourseControl type="Control"><Control>31</Control></CourseControl>
+      <CourseControl type="Finish"><Control>F1</Control></CourseControl>
+    </Course>
+    <Course>
+      <Name>Relay 2</Name>
+      <CourseFamily>Relay</CourseFamily>
+      <CourseControl type="Start"><Control>S1</Control></CourseControl>
+      <CourseControl type="Control"><Control>32</Control></CourseControl>
+      <CourseControl type="Finish"><Control>F1</Control></CourseControl>
+    </Course>
+    <Course>
+      <Name>Plain</Name>
+      <CourseControl type="Start"><Control>S1</Control></CourseControl>
+      <CourseControl type="Finish"><Control>F1</Control></CourseControl>
+    </Course>
+    <Course>
+      <Name>Alternatives</Name>
+      <CourseControl type="Start"><Control>S1</Control></CourseControl>
+      <CourseControl type="Control"><Control>31</Control><Control>32</Control></CourseControl>
+      <CourseControl type="Finish"><Control>F1</Control></CourseControl>
+    </Course>
+  </RaceCourseData>
+</CourseData>

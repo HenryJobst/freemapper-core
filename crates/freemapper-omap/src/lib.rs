@@ -1,6 +1,8 @@
-//! Copied from freemapper 743ce4b (freemapper-print ADR 0014); moved here from freemapper-print
-//! 918cec2 (ADR 0012).
-//! OpenOrienteering Mapper file format (XML, version 9).
+//! OpenOrienteering Mapper maps: the map model, a reader for `.omap` and `.xmap` (XML, version 9) and
+//! the embedded symbol sets ISSprOM 2019 and school map 2019.
+
+// Copied from freemapper 743ce4b (freemapper-print ADR 0014); moved here from freemapper-print 918cec2
+// (ADR 0012).
 
 pub mod coord;
 pub mod enlarge;

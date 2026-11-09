@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CourseData xmlns="http://www.orienteering.org/datastandard/3.0" iofVersion="3.0" createTime="2026-11-09T12:00:00+01:00" creator="hand-written">
+  <Event>
+    <Name>Lübeck georeference test</Name>
+  </Event>
+  <RaceCourseData>
+    <Map>
+      <Scale>4000</Scale>
+    </Map>
+    <Control type="Start">
+      <Id>S1</Id>
+      <Position lat="53.868292081" lng="10.684258865"/>
+      <MapPosition x="-50" y="60" unit="mm"/>
+    </Control>
+    <Control type="Control">
+      <Id>31</Id>
+      <Position lat="53.864868203" lng="10.688067408"/>
+      <MapPosition x="20" y="-30" unit="mm"/>
+    </Control>
+    <Control type="Control">
+      <Id>32</Id>
+      <Position lat="53.861415655" lng="10.692481375"/>
+      <MapPosition x="100" y="-120" unit="mm"/>
+    </Control>
+    <Control type="Control">
+      <Id>33</Id>
+      <Position lat="53.863003863" lng="10.681717122"/>
+    </Control>
+    <Control type="Finish">
+      <Id>F1</Id>
+      <Position lat="53.866545281" lng="10.690733243"/>
+      <MapPosition x="60" y="20" unit="mm"/>
+    </Control>
+    <Course>
+      <Name>A</Name>
+      <CourseControl type="Start"><Control>S1</Control></CourseControl>
+      <CourseControl type="Control"><Control>31</Control><MapTextPosition x="4" y="3" unit="mm"/></CourseControl>
+      <CourseControl type="Control"><Control>32</Control></CourseControl>
+      <CourseControl type="Control"><Control>33</Control></CourseControl>
+      <CourseControl type="Finish"><Control>F1</Control></CourseControl>
+    </Course>
+  </RaceCourseData>
+</CourseData>
