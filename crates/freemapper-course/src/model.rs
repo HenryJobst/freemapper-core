@@ -1,6 +1,8 @@
 //! The course model, independent of the input format. Readers return a [`RawEvent`] (points in file
-//! coordinates); fitting to the map turns it into a [`FittedEvent`] with [`CourseEvent::map_points`].
+//! coordinates); fitting to the map (feature `fit`) turns it into a `FittedEvent` with
+//! [`CourseEvent::map_points`].
 
+#[cfg(feature = "fit")]
 use freemapper_omap::coord::MapCoord;
 
 /// Largest course file a reader accepts (ADR 0019).
@@ -51,6 +53,7 @@ pub struct Offset {
 /// An event as a reader returns it.
 pub type RawEvent = CourseEvent<RawPoint>;
 /// An event with its points in map coordinates.
+#[cfg(feature = "fit")]
 pub type FittedEvent = CourseEvent<MapCoord>;
 
 /// Everything read from a course file, generic over the point type `P`.
@@ -148,6 +151,7 @@ pub enum SourceFormat {
 impl SourceFormat {
     /// The y axis the format always writes: up for Purple Pen; `None` for IOF XML, whose writers differ
     /// (ADR 0032).
+    #[cfg(feature = "fit")]
     pub fn y_axis(self) -> Option<super::fit::YAxis> {
         match self {
             SourceFormat::PurplePen => Some(super::fit::YAxis::Up),

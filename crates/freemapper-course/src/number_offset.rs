@@ -4,9 +4,9 @@
 //!
 //! Units and frames, the same in both functions:
 //! - The reference point is the centre of the control circle.
-//! - An [`Offset`] is in map mm in the map frame of a [`crate::FittedEvent`]: x east, y south (down on the
-//!   paper). A `.ppen` stores `number-location` with y up, so its `dy_mm` changes sign on the way in and out;
-//!   [`crate::fit()`] does that for a whole event.
+//! - An [`Offset`] is in map mm in the map frame of a fitted event (`FittedEvent`): x east, y south (down on
+//!   the paper). A `.ppen` stores `number-location` with y up, so its `dy_mm` changes sign on the way in and
+//!   out; the fit (feature `fit`) does that for a whole event, a `.ppen` writer must do it itself.
 //! - A [`NumberPlacement`] has its direction in degrees, 0 east and counter-clockwise as seen on paper, and
 //!   its gap in mm at the nominal size of the course symbols: the shortest distance from the outer edge of the
 //!   circle line to the number box, which is centred on the ray in that direction.

@@ -8,8 +8,13 @@ repository.workspace = true
 rust-version.workspace = true
 include = ["Cargo.toml", "README.md", "src/**/*.rs", "tests/**/*"]
 
+[features]
+default = ["fit"]
+# The fit of a course file to an OOM map, FittedEvent and SourceFormat::y_axis; brings in freemapper-omap.
+fit = ["dep:freemapper-omap"]
+
 [dependencies]
-freemapper-omap.workspace = true
+freemapper-omap = { workspace = true, optional = true }
 quick-xml.workspace = true
 serde.workspace = true
 thiserror.workspace = true
