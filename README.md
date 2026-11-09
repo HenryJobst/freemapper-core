@@ -3,6 +3,7 @@
 [English version](README.en.md)
 
 <!-- claude-cost:start -->
+[![KI-Aufwand (Claude API): 0 $](https://img.shields.io/badge/KI--Aufwand%20%28Claude%20API%29-0%20%24-8A2BE2)](docs/ai-cost/history.csv)
 <!-- claude-cost:end -->
 
 Die Entstehung der Bibliotheken ist im KI-Aufwand der Anwendungen erfasst, vor allem in freemapper und freemapper-courseplan; das Badge zählt nur Sessions, die direkt in freemapper-core gestartet wurden.

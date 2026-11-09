@@ -3,6 +3,7 @@
 [Deutsche Version](README.md)
 
 <!-- claude-cost:start -->
+[![AI effort (Claude API): $0](https://img.shields.io/badge/AI%20effort%20%28Claude%20API%29-%240-8A2BE2)](docs/ai-cost/history.csv)
 <!-- claude-cost:end -->
 
 The libraries were built mostly in the sessions of the apps, above all freemapper and freemapper-courseplan, and that effort is counted there; this badge counts only sessions started directly in freemapper-core.

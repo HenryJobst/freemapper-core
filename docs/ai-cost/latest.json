@@ -1,0 +1,14 @@
+{
+  "total_usd": 0,
+  "by_model_usd": {},
+  "requests": 0,
+  "sessions": 0,
+  "first_activity": null,
+  "last_activity": null,
+  "unpriced_requests": {},
+  "prices": {
+    "source": "https://platform.claude.com/docs/en/about-claude/pricing.md",
+    "fetched_at": "2026-11-09T09:38:52Z",
+    "stale": false
+  }
+}
