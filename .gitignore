@@ -1,0 +1,5 @@
+/target
+.DS_Store
+.worktrees/
+.superpowers/
+.claude/settings.local.json

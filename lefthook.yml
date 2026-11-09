@@ -1,0 +1,7 @@
+pre-commit:
+  commands:
+    fmt:
+      # Nothing to check before the first crate exists.
+      run: ls crates/*/Cargo.toml >/dev/null 2>&1 || exit 0; cargo fmt --all --check
+    clippy:
+      run: ls crates/*/Cargo.toml >/dev/null 2>&1 || exit 0; cargo clippy --workspace --all-targets -- -D warnings
