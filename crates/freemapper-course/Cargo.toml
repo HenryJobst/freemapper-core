@@ -19,5 +19,9 @@ quick-xml.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 
+[[test]]
+name = "fit_courses"
+required-features = ["fit"]
+
 [lints]
 workspace = true
