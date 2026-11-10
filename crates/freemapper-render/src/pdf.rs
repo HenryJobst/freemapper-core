@@ -19,9 +19,9 @@ use crate::symbols::{Cap, Join, RenderColour};
 /// Points per millimetre.
 const PT_PER_MM: f64 = 72.0 / 25.4;
 /// OOM's miter limit for PDF (reference §2.1).
-const MITER_LIMIT: f32 = 2.236_068;
+pub(crate) const MITER_LIMIT: f32 = 2.236_068;
 /// OOM's miter limit for text framing in PDF: Qt 0.5 → √(1 + 4 · 0.5²) = √2 (reference §2.1).
-const TEXT_FRAMING_MITER_LIMIT: f32 = std::f32::consts::SQRT_2;
+pub(crate) const TEXT_FRAMING_MITER_LIMIT: f32 = std::f32::consts::SQRT_2;
 
 /// Page mm (y down) → page points (y up). Every number written to the page goes through
 /// [`Transform::num`], which notes one that is not finite as an `f32`.
@@ -88,7 +88,7 @@ fn begin_clip(content: &mut Content, t: &Transform, rings: &[Vec<Pt>]) {
 }
 
 /// The CMYK of the map colour with `priority` (black if the page has none).
-fn map_cmyk(colours: &[RenderColour], priority: i32) -> [f64; 4] {
+pub(crate) fn map_cmyk(colours: &[RenderColour], priority: i32) -> [f64; 4] {
     colours
         .iter()
         .find(|c| c.priority == priority)
