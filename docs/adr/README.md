@@ -25,3 +25,4 @@ status to `Superseded by NNNN`.
 | [0014](0014-the-ppen-writer.md) | The .ppen writer |
 | [0015](0015-the-georef-crate.md) | The georef crate |
 | [0016](0016-course-number-placement-shared-with-courseplan.md) | Course number placement shared with courseplan |
+| [0017](0017-description-symbols-in-core.md) | Description symbols in core |

@@ -18,6 +18,7 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
   mehrere `number_gap`-Regeln zusammen, mit dem größten Minimum und dem kleinsten Maximum. Die bisherigen
   Einträge von `placement` ändern sich nicht.
 - freemapper-course: Das Modul `description_symbols` bringt die Symbole der IOF-Postenbeschreibung mit Zeichnung und deutschen und englischen Texten aus Purple Pens `symbols.xml`, übernommen aus freemapper-print (dort `describe::symbols`). Die Datei liegt unverändert in `data/`. Neu gegenüber dort sind `TextLang` statt `SheetLang`, `symbol_kind` (die Spalte, in die ein Symbol gehört) und `exists`.
+- freemapper-course: `description_symbols` bildet zwischen Purple-Pen-Kennungen und IOF-2024-Nummern ab. `iof_2024` ist die Vorwärtsabbildung von courseplan, übernommen. `ppen_symbol` und `ppen_columns` gehen zurück und schreiben nur Kennungen, die der Standard hat und die Purple Pen in dieser Spalte anbietet. Sie tauschen die Himmelsrichtungs- und Diagonalformen von 0.1 und 0.2, schreiben schlichtes 9.1 und 9.3 als `high` mit Hinweis, weisen Symbole ab, die eine 2004-Datei nicht kennt (2.10, 15.6, 5.23 und 5.24 von 2024), und setzen `single` in Spalte F (`10.1single`). "Zwischen" (12.14) behält D und E und bekommt das schlichte `11.15`. ADR 0017.
 
 ## [0.5.2] - 2026-11-10
 

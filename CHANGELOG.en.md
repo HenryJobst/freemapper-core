@@ -17,6 +17,7 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `Rect::UNBOUNDED` and `GapRange::strictest`, which combines several `number_gap` rules into the largest
   minimum and the smallest maximum. The existing items of `placement` do not change.
 - freemapper-course: The module `description_symbols` brings the IOF control description symbols with their drawings and German and English texts from Purple Pen's `symbols.xml`, taken over from freemapper-print (`describe::symbols` there). The file sits unchanged in `data/`. New compared with there: `TextLang` instead of `SheetLang`, `symbol_kind` (the column a symbol belongs in) and `exists`.
+- freemapper-course: `description_symbols` maps between Purple Pen ids and IOF 2024 numbers. `iof_2024` is courseplan's forward mapping, moved. `ppen_symbol` and `ppen_columns` go back and write only ids that the standard has and that Purple Pen offers in that column. They swap the cardinal and diagonal forms of 0.1 and 0.2, write plain 9.1 and 9.3 as `high` with a note, refuse symbols a 2004 file lacks (2.10, 15.6, 5.23 and 5.24 of 2024), and put `single` into column F (`10.1single`). "Between" (12.14) keeps D and E and gets the plain `11.15`. ADR 0017.
 
 ## [0.5.2] - 2026-11-10
 

@@ -1,4 +1,6 @@
 use super::db::{MAX_DEPTH, MAX_POINTS_PER_SYMBOL, Pt, SYMBOLS_XML, db, parse, seg_dist};
+use super::iof_2024::{BEND_2024, DIRECTIONS, Mapped, iof_2024};
+use super::ppen::{ColumnNote, Inverse, Refusal, ppen_columns, ppen_symbol};
 use super::{FLATNESS, Standard, TextLang, exists, symbol, symbol_kind, symbol_text};
 
 fn close(a: Pt, b: Pt) -> bool {
@@ -191,4 +193,415 @@ fn kinds_from_the_file() {
     assert!(!exists("2.10", Standard::Iof2004));
     assert!(exists("2.10", Standard::Iof2018));
     assert!(!exists("0.1NE", Standard::Iof2018));
+}
+
+// ---- the mapping between Purple Pen ids and IOF 2024 ----
+
+/// Every Purple Pen description symbol id of the database (not the instruction texts such as `basic_combo`).
+fn purple_pen_ids() -> Vec<&'static str> {
+    let mut ids: Vec<&str> = db()
+        .expect("embedded symbol file parses")
+        .entries
+        .iter()
+        .map(|e| e.id.as_str())
+        .filter(|id| id.starts_with(|c: char| c.is_ascii_digit()))
+        .collect();
+    ids.sort_unstable();
+    ids.dedup();
+    ids
+}
+
+fn some(s: &str) -> Option<String> {
+    Some(s.to_owned())
+}
+
+fn columns(c: [Option<&str>; 6]) -> [Option<String>; 6] {
+    c.map(|x| x.map(str::to_owned))
+}
+
+/// The symbol kinds Purple Pen's description popup offers per column (`purple_pen_strict.rs`
+/// `COLUMN_KINDS`). Column C also takes the instruction rows (V to Z), which a finish, a crossing point or a
+/// map issue point keeps in its one box.
+fn accepts(index: usize, kind: char) -> bool {
+    match index {
+        0 => kind == 'C' || ('V'..='Z').contains(&kind),
+        1 => kind == 'D',
+        2 => kind == 'E' || kind == 'D',
+        3 => kind == 'F',
+        4 => kind == 'G',
+        _ => kind == 'H',
+    }
+}
+
+const STANDARDS: [Standard; 3] = [Standard::Iof2004, Standard::Iof2018, Standard::Iof2024];
+
+#[test]
+fn forward_covers_every_purple_pen_id_but_12_3_and_13_6() {
+    let ids = purple_pen_ids();
+    assert!(ids.len() > 150, "{} ids", ids.len());
+    let unmapped: Vec<&str> = ids
+        .iter()
+        .copied()
+        .filter(|id| iof_2024(id).is_none())
+        .collect();
+    assert_eq!(unmapped, ["12.3", "13.6"]);
+    let to = |id: &str| iof_2024(id).map(|m| m.id);
+    for (from, want) in [
+        ("1.10", "1.10"),
+        ("2.10", "2.10"),
+        ("5.20", "5.20"),
+        ("5.23", "5.21"),
+        ("5.26", "5.24"),
+        ("9.3deep", "9.3"),
+        ("10.2single", "10.2"),
+        ("11.7", BEND_2024),
+        ("11.1N", "12.1N"),
+        ("11.6SW", "12.6SW"),
+        ("11.8W", "12.7W"),
+        ("11.9", "12.8"),
+        ("11.10", "12.9"),
+        ("11.11", "12.10"),
+        ("11.13", "12.11"),
+        ("11.14NE", "12.12NE"),
+        ("11.12", "12.13"),
+        ("11.15single", "12.14"),
+        ("12.2", "13.2"),
+        ("12.4", "13.3"),
+        ("13.3", "15.3"),
+        ("13.5control", "15.5"),
+        ("15.6", "15.6"),
+        ("14.3", "16.3"),
+    ] {
+        assert_eq!(to(from).as_deref(), Some(want), "{from}");
+    }
+    for nonsense in ["", "1", "1.17", "11.1", "1.1N", "x.1", "11.7NE", "9.1wide"] {
+        assert_eq!(to(nonsense), None, "{nonsense}");
+    }
+    assert_eq!(
+        iof_2024("10.1single"),
+        Some(Mapped {
+            id: "10.1".to_owned(),
+            single: true
+        })
+    );
+    assert_eq!(DIRECTIONS.len(), 8);
+}
+
+#[test]
+fn every_purple_pen_id_round_trips() {
+    // Ids that come back as another Purple Pen id: the two readings of "height or depth" (9.1 and 9.3 of 2024
+    // draw one symbol; the writer says "high", which is `chosen`), and the variants the writer builds from the
+    // columns (`single`, `control`).
+    fn back(id: &str) -> (&str, bool) {
+        match id {
+            "9.1deep" => ("9.1high", true),
+            "9.3deep" => ("9.3high", true),
+            "9.1high" => ("9.1high", true),
+            "9.3high" => ("9.3high", true),
+            "10.1single" => ("10.1", false),
+            "10.2single" => ("10.2", false),
+            "11.15single" => ("11.15", false),
+            "13.5control" => ("13.5", false),
+            other => (other, false),
+        }
+    }
+    for id in purple_pen_ids() {
+        let Some(mapped) = iof_2024(id) else { continue };
+        for standard in STANDARDS {
+            if !exists(id, standard) {
+                continue;
+            }
+            // The written id may be missing in the standard (a 2004 file has no 5.25): that is a refusal.
+            let want = back(id);
+            let got = ppen_symbol(&mapped.id, standard);
+            if exists(want.0, standard) {
+                assert_eq!(
+                    got,
+                    Ok(Inverse {
+                        id: want.0.to_owned(),
+                        chosen: want.1
+                    }),
+                    "{id} in {standard:?}"
+                );
+            } else {
+                assert_eq!(got, Err(Refusal::NotInStandard(standard)), "{id}");
+            }
+        }
+    }
+}
+
+/// The 2024 ids the forward mapping produces, and the ids the rulings talk about.
+fn reachable_ids() -> Vec<String> {
+    let mut ids: Vec<String> = purple_pen_ids()
+        .into_iter()
+        .filter_map(iof_2024)
+        .map(|m| m.id)
+        .collect();
+    for extra in [
+        "0.1NE", "0.1NW", "0.1SE", "0.1SW", "0.2N", "0.2E", "0.2S", "0.2W", "9.1", "9.3", "2.10",
+        "15.6", "5.21", "5.22", "5.23", "5.24", "5.25", "5.26", "11.1", "12.14", "10.1", "10.2",
+        "99.9",
+    ] {
+        ids.push(extra.to_owned());
+    }
+    ids.sort();
+    ids.dedup();
+    ids
+}
+
+#[test]
+fn every_written_id_exists_in_its_standard_and_box() {
+    let ids = reachable_ids();
+    for standard in STANDARDS {
+        for id in &ids {
+            for index in 0..6 {
+                let mut given: [Option<String>; 6] = Default::default();
+                given[index] = Some(id.clone());
+                // Second case: next to a bend, a combination and a feature in D and E.
+                let mut crowded = given.clone();
+                for (i, x) in [(1, "5.2"), (2, "5.2"), (3, "10.1")] {
+                    crowded[i].get_or_insert_with(|| x.to_owned());
+                }
+                for given in [given, crowded] {
+                    let out = ppen_columns(&given, standard);
+                    for (i, written) in out.columns.iter().enumerate() {
+                        let Some(w) = written else { continue };
+                        assert!(exists(w, standard), "{w} in {standard:?} ({given:?})");
+                        let kind = symbol_kind(w, standard).unwrap();
+                        assert!(
+                            accepts(i, kind),
+                            "{w} (kind {kind}) in box {i}, {standard:?}, {given:?}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn cardinal_and_diagonal_directions_are_normalised() {
+    let ok = |id: &str| {
+        Ok(Inverse {
+            id: id.to_owned(),
+            chosen: false,
+        })
+    };
+    assert_eq!(ppen_symbol("0.1NE", Standard::Iof2018), ok("0.2NE"));
+    assert_eq!(ppen_symbol("0.1SW", Standard::Iof2004), ok("0.2SW"));
+    assert_eq!(ppen_symbol("0.2W", Standard::Iof2018), ok("0.1W"));
+    assert_eq!(ppen_symbol("0.2N", Standard::Iof2024), ok("0.1N"));
+    assert_eq!(ppen_symbol("0.1N", Standard::Iof2018), ok("0.1N"));
+    assert_eq!(ppen_symbol("0.2SE", Standard::Iof2018), ok("0.2SE"));
+}
+
+#[test]
+fn plain_height_is_written_as_high() {
+    let high = |id: &str| {
+        Ok(Inverse {
+            id: id.to_owned(),
+            chosen: true,
+        })
+    };
+    assert_eq!(ppen_symbol("9.1", Standard::Iof2018), high("9.1high"));
+    assert_eq!(ppen_symbol("9.3", Standard::Iof2004), high("9.3high"));
+    let out = ppen_columns(
+        &columns([None, None, None, Some("9.1"), None, None]),
+        Standard::Iof2018,
+    );
+    assert_eq!(out.columns[3], some("9.1high"));
+    assert_eq!(
+        out.notes,
+        vec![ColumnNote::VariantChosen {
+            column: 'F',
+            id: "9.1".to_owned(),
+            written: "9.1high".to_owned()
+        }]
+    );
+}
+
+#[test]
+fn symbols_of_2018_are_refused_in_2004() {
+    for id in ["2.10", "15.6", "5.23", "5.24"] {
+        assert_eq!(
+            ppen_symbol(id, Standard::Iof2004),
+            Err(Refusal::NotInStandard(Standard::Iof2004)),
+            "{id}"
+        );
+        assert!(ppen_symbol(id, Standard::Iof2018).is_ok(), "{id}");
+    }
+    // 2024 5.21 and 5.22 are Purple Pen's 5.23 and 5.24, which both standards have.
+    assert!(ppen_symbol("5.21", Standard::Iof2004).is_ok());
+    // The bend cannot stand in box F of a 2004 file when G is taken: 11.7 is a G symbol there.
+    let out = ppen_columns(
+        &columns([None, None, None, Some("11.1"), Some("12.1N"), None]),
+        Standard::Iof2004,
+    );
+    assert_eq!((&out.columns[3], &out.columns[4]), (&None, &some("11.1N")));
+    assert_eq!(
+        out.notes,
+        vec![ColumnNote::Refused {
+            column: 'F',
+            id: "11.1".to_owned(),
+            reason: Refusal::WrongColumn
+        }]
+    );
+}
+
+#[test]
+fn ids_without_a_purple_pen_symbol_are_refused() {
+    for id in ["5.25", "5.26", "99.9", "14.1", ""] {
+        assert_eq!(
+            ppen_symbol(id, Standard::Iof2018),
+            Err(Refusal::NoPurplePenId),
+            "{id:?}"
+        );
+    }
+    let out = ppen_columns(
+        &columns([None, Some("5.2"), Some("99.9"), None, None, Some("13.9")]),
+        Standard::Iof2018,
+    );
+    assert_eq!(out.columns[1], some("5.2"));
+    assert_eq!((&out.columns[2], &out.columns[5]), (&None, &None));
+    assert_eq!(
+        out.notes,
+        vec![
+            ColumnNote::Refused {
+                column: 'E',
+                id: "99.9".to_owned(),
+                reason: Refusal::NoPurplePenId
+            },
+            ColumnNote::Refused {
+                column: 'H',
+                id: "13.9".to_owned(),
+                reason: Refusal::NoPurplePenId
+            },
+        ]
+    );
+}
+
+#[test]
+fn a_symbol_in_a_box_purple_pen_does_not_offer_is_refused() {
+    // 8.1 is an E symbol: not in D, fine in E.
+    let d = ppen_columns(
+        &columns([None, Some("8.1"), None, None, None, None]),
+        Standard::Iof2018,
+    );
+    assert_eq!(d.columns[1], None);
+    assert!(matches!(
+        d.notes[..],
+        [ColumnNote::Refused {
+            column: 'D',
+            reason: Refusal::WrongColumn,
+            ..
+        }]
+    ));
+    let e = ppen_columns(
+        &columns([None, None, Some("8.1"), None, None, None]),
+        Standard::Iof2018,
+    );
+    assert_eq!(e.columns[2], some("8.1"));
+    // A D symbol is fine in E.
+    let e = ppen_columns(
+        &columns([None, None, Some("5.2"), None, None, None]),
+        Standard::Iof2018,
+    );
+    assert_eq!(e.columns[2], some("5.2"));
+}
+
+#[test]
+fn single_variant_goes_to_the_combination_column() {
+    for (combination, written) in [("10.1", "10.1single"), ("10.2", "10.2single")] {
+        let out = ppen_columns(
+            &columns([
+                None,
+                Some("5.2"),
+                Some("5.2"),
+                Some(combination),
+                None,
+                None,
+            ]),
+            Standard::Iof2018,
+        );
+        assert_eq!(out.columns[1], some("5.2"));
+        assert_eq!(out.columns[2], None);
+        assert_eq!(out.columns[3], some(written));
+        assert!(out.notes.is_empty());
+        // Back: the reader copies D into E when the id carries `single`.
+        let mapped = iof_2024(written).unwrap();
+        assert!(mapped.single);
+        assert_eq!(mapped.id, combination);
+    }
+    // Different features stay in both columns, with the plain combination.
+    let out = ppen_columns(
+        &columns([None, Some("5.2"), Some("3.4"), Some("10.1"), None, None]),
+        Standard::Iof2018,
+    );
+    assert_eq!(
+        (&out.columns[1], &out.columns[2], &out.columns[3]),
+        (&some("5.2"), &some("3.4"), &some("10.1"))
+    );
+    // Equal features without a combination stay in both columns.
+    let out = ppen_columns(
+        &columns([None, Some("5.2"), Some("5.2"), None, None, None]),
+        Standard::Iof2018,
+    );
+    assert_eq!(
+        (&out.columns[1], &out.columns[2]),
+        (&some("5.2"), &some("5.2"))
+    );
+    // "Between" (2024 12.14, Purple Pen 11.15) keeps both columns: 11.15single in column G is a symbol Purple
+    // Pen throws on, and 11.15 with the feature twice reads the same.
+    let out = ppen_columns(
+        &columns([None, Some("4.5"), Some("4.5"), None, Some("12.14"), None]),
+        Standard::Iof2018,
+    );
+    assert_eq!(
+        (&out.columns[1], &out.columns[2], &out.columns[4]),
+        (&some("4.5"), &some("4.5"), &some("11.15"))
+    );
+}
+
+#[test]
+fn bend_moves_to_g_in_2004() {
+    let col = |f: Option<&str>, g: Option<&str>, standard| {
+        ppen_columns(&columns([None, None, None, f, g, None]), standard).columns
+    };
+    let bend = col(Some("11.1"), None, Standard::Iof2004);
+    assert_eq!((&bend[3], &bend[4]), (&None, &some("11.7")));
+    // From 2018 on the bend is in box F.
+    for standard in [Standard::Iof2018, Standard::Iof2024] {
+        let bend = col(Some("11.1"), None, standard);
+        assert_eq!((&bend[3], &bend[4]), (&some("11.7"), &None));
+    }
+    // A bend in G is a 2004 symbol.
+    let g = col(None, Some("11.1"), Standard::Iof2004);
+    assert_eq!(g[4], some("11.7"));
+    let g = col(None, Some("11.1"), Standard::Iof2018);
+    assert_eq!(g[4], None);
+}
+
+#[test]
+fn explicit_rows() {
+    let one = |index: usize, id: &str, standard| {
+        let mut given: [Option<String>; 6] = Default::default();
+        given[index] = some(id);
+        ppen_columns(&given, standard).columns[index].clone()
+    };
+    let s = Standard::Iof2004;
+    assert_eq!(one(1, "5.21", s), some("5.23"));
+    assert_eq!(one(4, "12.1NE", s), some("11.1NE"));
+    assert_eq!(one(5, "13.1", s), some("12.1"));
+    assert_eq!(one(0, "15.3", s), some("13.3"));
+    assert_eq!(one(0, "16.3", s), some("14.3"));
+}
+
+#[test]
+fn plain_id_wins_over_variants() {
+    let s = Standard::Iof2018;
+    let id = |x: &str| ppen_symbol(x, s).unwrap().id;
+    assert_eq!(id("10.1"), "10.1");
+    assert_eq!(id("15.5"), "13.5");
+    assert_eq!(id("12.14"), "11.15");
+    assert_eq!(id("9.1"), "9.1high");
 }
