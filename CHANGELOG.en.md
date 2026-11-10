@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-10
+
 ### Changed
 
 - freemapper-course: the fit uses the UTM conversion from freemapper-georef; the private `tm` module is gone. Results stay the same.

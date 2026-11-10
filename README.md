@@ -35,8 +35,8 @@ Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-course`, `freemapp
 Die Anwendungen binden die Bibliotheken, die sie brauchen, über Git mit fester Version ein:
 
 ```toml
-freemapper-text = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.2.0" }
-freemapper-rules = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.2.0" }
+freemapper-text = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.5.1" }
+freemapper-rules = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.5.1" }
 ```
 
 Wer eine Anwendung und eine Bibliothek zugleich ändert, legt freemapper-core neben die Anwendung

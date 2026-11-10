@@ -35,8 +35,8 @@ The project is just starting. So far it contains `freemapper-course`, `freemappe
 The apps include the libraries they need through git with a fixed version:
 
 ```toml
-freemapper-text = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.2.0" }
-freemapper-rules = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.2.0" }
+freemapper-text = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.5.1" }
+freemapper-rules = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.5.1" }
 ```
 
 To change an app and a library together, check freemapper-core out next to the app (`../freemapper-core`) and
