@@ -15,7 +15,7 @@ use freemapper_omap::coord::MapCoord;
 use freemapper_omap::{MapDocument, MapGeoref};
 
 use super::model::{CourseEvent, FittedEvent, Offset, RawEvent, RawPoint};
-use super::tm::{TransverseMercator, utm_from_crs};
+use freemapper_georef::tm::{TransverseMercator, utm_from_crs};
 
 /// How far beyond the box of the map's objects a control may lie, in map mm.
 pub const MARGIN_MM: f64 = 10.0;
@@ -449,7 +449,7 @@ mod tests {
         // (x, y) to (x·cos a − y·sin a, x·sin a + y·cos a). With grivation 90°, magnetic north (map up)
         // points grid east, so 1 mm up on the map at 1:1000 is 1 m east.
         let g = Georef {
-            tm: TransverseMercator::utm(32, false, super::super::tm::GRS80),
+            tm: TransverseMercator::utm(32, false, freemapper_georef::tm::GRS80),
             ref_grid: (500_000.0, 6_000_000.0),
             map_ref_um: (0.0, 0.0),
             metres_per_um: 1000.0 / 1e6,

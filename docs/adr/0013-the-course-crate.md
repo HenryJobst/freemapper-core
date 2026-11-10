@@ -10,8 +10,8 @@ ADR 0039 kept these modules apart). freemapper-courseplan places numbers by the 
 ## Decision
 - `freemapper-course` takes print's `course/` and `placement/` from `918cec2` with their behaviour unchanged,
   same paths, all their tests (`fit_courses.rs` with the Lübeck map and `luebeck-georef.xml` too). Print owns
-  it. Of the suite it uses `freemapper-omap` alone; a test fails if a source names another suite crate.
-- The cargo feature `fit`, on by default, holds `fit`, `tm`, `FittedEvent` and `SourceFormat::y_axis`, the
+  it. Of the suite it uses `freemapper-omap` and, for the fit, `freemapper-georef`; a test fails if a source names another suite crate.
+- The cargo feature `fit`, on by default, holds `fit`, `FittedEvent` and `SourceFormat::y_axis`, the
   only users of omap. Without it the model, the readers and the placement build without omap, for courseplan.
 - `Control::id` and `Course::id` (`Option<u32>`) hold Purple Pen's ids for courseplan's writer; IOF XML and
   ids outside `u32` give `None`. Error `Display` stays English, with no Fluent (ADR 0010).
@@ -20,7 +20,7 @@ ADR 0039 kept these modules apart). freemapper-courseplan places numbers by the 
   with y up, so a writer negates `dy_mm` of the result (and a reader of a raw file before the call).
 - The `From` conversions between `NumberPlacement` and `placement::Placement` come along, since print may not
   implement them any more. `xml::{Handler, drive, local, attr, number}` are public for print's description
-  symbol reader; `tm` stays private, as UTM belongs to the planned `freemapper-georef`.
+  symbol reader; `tm` moved to `freemapper-georef` (ADR 0015) and `fit` uses it from there.
 
 ## Consequences
 - Code that builds `Control` or `Course` literals adds `id: None`. `xml::Handler` and `attr` take quick-xml
