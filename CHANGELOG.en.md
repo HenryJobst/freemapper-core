@@ -7,6 +7,12 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-11
+
+### Added
+
+- freemapper-web: new crate with the shell for local web pages (decision 0020), generalised from the area selection of freemapper. `serve` binds 127.0.0.1 (port 0 picks a free one), puts a random 128-bit token in front of the app's routes and guards them: only the hosts `127.0.0.1:PORT` and `localhost:PORT` are served, an `Origin` that is sent must be the page itself, and every response carries `Cache-Control: no-store` (unless the handler sets its own), the app's Content-Security-Policy, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` and `X-Content-Type-Options: nosniff`. With `ServeOptions::strict_post`, a request that changes state also needs an `Origin` and the content type `application/json` or `application/octet-stream`. `embedded` serves rust-embed files, `open_browser` starts the browser, `LocalServer::shutdown` and `finished` stop and await the server.
+
 ## [0.10.0] - 2026-11-10
 
 ### Changed

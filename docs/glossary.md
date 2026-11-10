@@ -94,5 +94,7 @@ hier unverändert, mit denselben Code-Bezeichnern. Eine Bibliothek, die einen Be
 | Bestandsaufnahme | census | Anzahl der Objekte je Objektklasse und die Rahmen von Karteninhalt und Randobjekten in Kartenkoordinaten | `Census`, `census` |
 | Vokabular | vocabulary | die Wörter einer Karte und ihrer Begleitdatei ohne den Inhalt: Namen der Kartenteile, Tags in den beiden reservierten Kartenteilen, Rollen der Randobjekte, Form des KRS-Texts, Symbolsatz, Vertragsschlüssel mit ihrem Typ; zwei Karten derselben freemapper-Version und Kartenart haben dasselbe Vokabular | `Vocabulary` |
 | Vertragsregel | contract rule | Bedingung, die jede Ausgabe von freemapper einhält, etwa „der Maßstab ist für die Kartenart erlaubt“; ein Verstoß nennt die Regel und die Fundstelle | `Rule`, `Violation`, `check` |
+| Lokale Seite | local page | Weboberfläche einer Anwendung, die nur auf 127.0.0.1 läuft; erreichbar unter `http://127.0.0.1:{Port}/{Token}/`, geschützt durch Token, Host- und Origin-Prüfung | `serve`, `LocalServer` |
+| Zugangstoken | access token | 128 zufällige Bits als 32 Hexziffern, erstes Pfadsegment jeder Adresse einer lokalen Seite; kein Header | `LocalServer::token` |
 | Fixture | fixture | Karte und Begleitdatei genau so, wie freemapper sie geschrieben hat, mit `expected.toml` und `vocabulary.toml`; mit dem Feature `fixtures` eingebettet | `Fixture`, `fixtures` |
 | Erwartungswerte | expected values | was ein Leser mit eigenem Code aus einem Fixture ableiten muss: Kartenart, Titel, Maßstab, KRS und Bestandsaufnahme (`expected.toml`) | `Expected` |
