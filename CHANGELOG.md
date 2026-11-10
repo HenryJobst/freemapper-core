@@ -7,6 +7,16 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.5.2] - 2026-11-10
+
+### Hinzugefügt
+
+- freemapper-georef: `TransverseMercator::inverse` rechnet Rechts- und Hochwert in Breite und Länge zurück, für jede UTM-Zone, beide Halbkugeln und jedes Ellipsoid (Krüger-Reihe bis n^6). Hin und zurück weicht es um weniger als 1e-9 Grad (etwa 0,1 mm) ab.
+
+### Geändert
+
+- freemapper-georef: `Crs::inverse` nutzt die neue Rückrechnung statt der Newton-Schleife über `forward`. Die Ergebnisse ändern sich um weniger als 1e-9 Grad; Punkte weit außerhalb der Zone liefern weiter `None`.
+
 ## [0.5.1] - 2026-11-10
 
 ### Geändert

@@ -75,26 +75,75 @@ impl TransverseMercator {
         (p.easting, p.northing)
     }
 
+    /// Latitude and longitude (degrees) of `easting`, `northing` (m): the inverse of [`Self::forward`],
+    /// by the Krüger series to n^6 (Karney 2011, eq. 36) and Newton iteration for the latitude from the
+    /// conformal latitude. Valid for any zone and hemisphere and exact to nanometres inside the zone. Not finite for non-finite
+    /// input. Points far outside the projection's range (about 90 degrees from the central meridian or
+    /// more) are folded back onto the globe instead of rejected; check them with [`Self::forward`] if that
+    /// matters.
+    pub fn inverse(&self, easting: f64, northing: f64) -> (f64, f64) {
+        let Ellipsoid { a, f } = self.ellipsoid;
+        let e2 = f * (2.0 - f);
+        let n = f / (2.0 - f);
+        let (n2, n3, n4, n5, n6) = (n * n, n.powi(3), n.powi(4), n.powi(5), n.powi(6));
+        let big_a = a / (1.0 + n) * (1.0 + n2 / 4.0 + n4 / 64.0 + n6 / 256.0);
+        let beta = [
+            n / 2.0 - 2.0 * n2 / 3.0 + 37.0 * n3 / 96.0 - n4 / 360.0 - 81.0 * n5 / 512.0
+                + 96199.0 * n6 / 604_800.0,
+            n2 / 48.0 + n3 / 15.0 - 437.0 * n4 / 1440.0 + 46.0 * n5 / 105.0
+                - 1_118_711.0 * n6 / 3_870_720.0,
+            17.0 * n3 / 480.0 - 37.0 * n4 / 840.0 - 209.0 * n5 / 4480.0 + 5569.0 * n6 / 90720.0,
+            4397.0 * n4 / 161_280.0 - 11.0 * n5 / 504.0 - 830_251.0 * n6 / 7_257_600.0,
+            4583.0 * n5 / 161_280.0 - 108_847.0 * n6 / 3_991_680.0,
+            20_648_693.0 * n6 / 638_668_800.0,
+        ];
+        // xi at the latitude of origin (forward series with lambda = 0), so that northing = k0 A (xi - xi0).
+        let phi0 = self.lat0.to_radians();
+        let sigma0 = (e2.sqrt() * (e2.sqrt() * phi0.sin()).atanh()).sinh();
+        let tau0 = phi0.tan();
+        let chi0 =
+            (tau0 * (1.0 + sigma0 * sigma0).sqrt() - sigma0 * (1.0 + tau0 * tau0).sqrt()).atan();
+        let xi0 = chi0
+            + krueger_alpha(n)
+                .iter()
+                .enumerate()
+                .map(|(j, al)| al * (2.0 * (j as f64 + 1.0) * chi0).sin())
+                .sum::<f64>();
+        let xi = (northing - self.false_northing) / (self.k0 * big_a) + xi0;
+        let eta = (easting - self.false_easting) / (self.k0 * big_a);
+        let (mut xi1, mut eta1) = (xi, eta);
+        for (j, b) in beta.iter().enumerate() {
+            let k = 2.0 * (j as f64 + 1.0);
+            xi1 -= b * (k * xi).sin() * (k * eta).cosh();
+            eta1 -= b * (k * xi).cos() * (k * eta).sinh();
+        }
+        // Conformal latitude as tan(chi), then the geodetic latitude by Newton iteration (Karney eq. 19).
+        let tau_c = xi1.sin() / (eta1.sinh().powi(2) + xi1.cos().powi(2)).sqrt();
+        let lambda = eta1.sinh().atan2(xi1.cos());
+        let mut tau = tau_c;
+        for _ in 0..6 {
+            let sigma = (e2.sqrt() * (e2.sqrt() * tau / (1.0 + tau * tau).sqrt()).atanh()).sinh();
+            let tau_c_i = tau * (1.0 + sigma * sigma).sqrt() - sigma * (1.0 + tau * tau).sqrt();
+            let d_tau = (tau_c - tau_c_i) / (1.0 + tau_c_i * tau_c_i).sqrt()
+                * (1.0 + (1.0 - e2) * tau * tau)
+                / ((1.0 - e2) * (1.0 + tau * tau).sqrt());
+            tau += d_tau;
+            if d_tau.abs() < 1e-15 * (1.0 + tau.abs()) {
+                break;
+            }
+        }
+        (tau.atan().to_degrees(), self.lon0 + lambda.to_degrees())
+    }
+
     /// Easting, northing, grid convergence and point scale factor of `lat`, `lon` (degrees).
     pub fn project(&self, lat: f64, lon: f64) -> Projected {
         let Ellipsoid { a, f } = self.ellipsoid;
         let e = (f * (2.0 - f)).sqrt();
         let n = f / (2.0 - f);
-        let (n2, n3, n4, n5, n6) = (n * n, n.powi(3), n.powi(4), n.powi(5), n.powi(6));
+        let (n2, n4, n6) = (n * n, n.powi(4), n.powi(6));
         // Rectifying radius: meridian arc length per radian.
         let big_a = a / (1.0 + n) * (1.0 + n2 / 4.0 + n4 / 64.0 + n6 / 256.0);
-        let alpha = [
-            n / 2.0 - 2.0 * n2 / 3.0 + 5.0 * n3 / 16.0 + 41.0 * n4 / 180.0 - 127.0 * n5 / 288.0
-                + 7891.0 * n6 / 37800.0,
-            13.0 * n2 / 48.0 - 3.0 * n3 / 5.0 + 557.0 * n4 / 1440.0 + 281.0 * n5 / 630.0
-                - 1_983_433.0 * n6 / 1_935_360.0,
-            61.0 * n3 / 240.0 - 103.0 * n4 / 140.0
-                + 15061.0 * n5 / 26880.0
-                + 167_603.0 * n6 / 181_440.0,
-            49561.0 * n4 / 161_280.0 - 179.0 * n5 / 168.0 + 6_601_661.0 * n6 / 7_257_600.0,
-            34729.0 * n5 / 80640.0 - 3_418_889.0 * n6 / 1_995_840.0,
-            212_378_941.0 * n6 / 319_334_400.0,
-        ];
+        let alpha = krueger_alpha(n);
         // Gauss-Schreiber coordinates and the sums that give convergence and scale, for latitude `phi`
         // and longitude difference `lambda` (radians).
         let series = |phi: f64, lambda: f64| {
@@ -130,6 +179,23 @@ impl TransverseMercator {
             scale_factor,
         }
     }
+}
+
+/// Coefficients of the forward Krüger series in the third flattening `n`, to n^6.
+fn krueger_alpha(n: f64) -> [f64; 6] {
+    let (n2, n3, n4, n5, n6) = (n * n, n.powi(3), n.powi(4), n.powi(5), n.powi(6));
+    [
+        n / 2.0 - 2.0 * n2 / 3.0 + 5.0 * n3 / 16.0 + 41.0 * n4 / 180.0 - 127.0 * n5 / 288.0
+            + 7891.0 * n6 / 37800.0,
+        13.0 * n2 / 48.0 - 3.0 * n3 / 5.0 + 557.0 * n4 / 1440.0 + 281.0 * n5 / 630.0
+            - 1_983_433.0 * n6 / 1_935_360.0,
+        61.0 * n3 / 240.0 - 103.0 * n4 / 140.0
+            + 15061.0 * n5 / 26880.0
+            + 167_603.0 * n6 / 181_440.0,
+        49561.0 * n4 / 161_280.0 - 179.0 * n5 / 168.0 + 6_601_661.0 * n6 / 7_257_600.0,
+        34729.0 * n5 / 80640.0 - 3_418_889.0 * n6 / 1_995_840.0,
+        212_378_941.0 * n6 / 319_334_400.0,
+    ]
 }
 
 /// The projection a map's CRS text names, when it is a UTM projection this module knows.
@@ -260,5 +326,63 @@ mod tests {
         ] {
             assert_eq!(utm_from_crs(spec), None, "{spec}");
         }
+    }
+
+    #[test]
+    fn inverse_round_trips_in_every_zone_and_hemisphere() {
+        // Round trip forward -> inverse: 1e-9 degrees is about 0.1 mm.
+        let mut worst: f64 = 0.0;
+        let projections = [
+            TransverseMercator::utm(31, false, WGS84),
+            TransverseMercator::utm(32, false, GRS80),
+            TransverseMercator::utm(33, false, WGS84),
+            TransverseMercator::utm(35, false, GRS80),
+            TransverseMercator::utm(33, true, WGS84),
+            TransverseMercator::utm(19, true, WGS84),
+            TransverseMercator::utm(60, false, WGS84),
+        ];
+        for tm in projections {
+            for dlat in [-80.0, -45.0, -30.5, -1.0, 0.0, 1e-3, 13.7, 47.5, 60.0, 84.0] {
+                for dlon in [-3.0, -2.9, -1.0, 0.0, 0.3, 2.5, 3.0] {
+                    let (lat, lon) = (dlat, tm.lon0 + dlon);
+                    let (e, n) = tm.forward(lat, lon);
+                    let (la, lo) = tm.inverse(e, n);
+                    worst = worst.max((la - lat).abs()).max((lo - lon).abs());
+                    assert!(
+                        (la - lat).abs() < 1e-9 && (lo - lon).abs() < 1e-9,
+                        "{tm:?} ({lat}, {lon}) -> ({la}, {lo})"
+                    );
+                }
+            }
+        }
+        eprintln!("worst round-trip error: {worst:e} degrees");
+    }
+
+    #[test]
+    fn inverse_matches_reference_points() {
+        // The PROJ 9.8.1 values of utm_forward_matches_reference_points, backwards.
+        let z32 = utm_from_crs("EPSG:25832").unwrap();
+        close(
+            z32.inverse(610932.0397, 5969932.0642),
+            (53.866, 10.687),
+            1e-8,
+        );
+        close(z32.inverse(394562.0988, 5261679.5601), (47.5, 7.6), 1e-8);
+        close(z32.inverse(691875.6321, 6098907.8250), (55.0, 12.0), 1e-8);
+        let z33 = utm_from_crs("EPSG:32633").unwrap();
+        close(z33.inverse(328386.7762, 5763989.3667), (52.0, 12.5), 1e-8);
+        close(z33.inverse(500_000.0, 0.0), (0.0, 15.0), 1e-12);
+        // Southern hemisphere: the false northing of 10 000 000 m puts the equator at its top.
+        let s33 = utm_from_crs("EPSG:32733").unwrap();
+        close(s33.inverse(500_000.0, 10_000_000.0), (0.0, 15.0), 1e-12);
+        let (e, n) = s33.forward(-33.9, 18.4);
+        close(s33.inverse(e, n), (-33.9, 18.4), 1e-9);
+    }
+
+    #[test]
+    fn inverse_of_unreachable_points_is_not_finite() {
+        let z33 = TransverseMercator::utm(33, false, WGS84);
+        let (lat, lon) = z33.inverse(f64::NAN, 0.0);
+        assert!(lat.is_nan() || lon.is_nan());
     }
 }

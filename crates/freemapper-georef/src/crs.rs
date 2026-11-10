@@ -72,9 +72,6 @@ impl BoundingBox {
 pub const EPSG_UTM33: u32 = 25833;
 
 /// Central meridian of UTM zone 33 in degrees (zone 32: 9°).
-const UTM33_LON0: f64 = 15.0;
-const UTM_FALSE_EASTING: f64 = 500_000.0;
-
 use crate::tm::{GRS80, Projected, TransverseMercator};
 
 /// A projected CRS freemapper works in: ETRS89 / UTM zone 32N or 33N.
@@ -99,14 +96,6 @@ impl Crs {
             25832 => Some(Self::Utm32),
             EPSG_UTM33 => Some(Self::Utm33),
             _ => None,
-        }
-    }
-
-    /// Central meridian in degrees.
-    fn lon0(self) -> f64 {
-        match self {
-            Self::Utm32 => 9.0,
-            Self::Utm33 => UTM33_LON0,
         }
     }
 
@@ -138,51 +127,19 @@ impl Crs {
         }
     }
 
-    /// Geographic position of a projected point: Newton iteration on [`Crs::forward`], so both
-    /// directions agree to well below a millimetre. `None` for points no position projects to
-    /// (far outside the zone) or when the iteration does not converge.
+    /// Geographic position of a projected point, by the inverse series of
+    /// [`TransverseMercator::inverse`], so both directions agree to well below a millimetre. `None` for
+    /// points no position projects to (far outside the zone), found by projecting the result forward again.
     pub fn inverse(self, p: ProjectedPoint) -> Option<LatLon> {
-        /// Finite-difference step in degrees (about 0.1 m).
-        const STEP: f64 = 1e-6;
-        if !p.easting.is_finite() || !p.northing.is_finite() {
+        let (lat, lon) = self.transverse_mercator().inverse(p.easting, p.northing);
+        if !(lat.is_finite() && lon.is_finite() && lat.abs() <= 90.0) {
             return None;
         }
-        let lat = p.northing / 111_132.0;
-        let mut q = LatLon {
-            lat,
-            lon: self.lon0()
-                + (p.easting - UTM_FALSE_EASTING) / (111_320.0 * lat.to_radians().cos()),
-        };
-        for _ in 0..10 {
-            let f = self.forward(q);
-            let (de, dn) = (p.easting - f.easting, p.northing - f.northing);
-            if de.abs() < 1e-6 && dn.abs() < 1e-6 {
-                return (q.lat.abs() <= 90.0 && q.lon.is_finite()).then_some(q);
-            }
-            let at_lat = self.forward(LatLon {
-                lat: q.lat + STEP,
-                ..q
-            });
-            let at_lon = self.forward(LatLon {
-                lon: q.lon + STEP,
-                ..q
-            });
-            let (e_lat, e_lon) = (
-                (at_lat.easting - f.easting) / STEP,
-                (at_lon.easting - f.easting) / STEP,
-            );
-            let (n_lat, n_lon) = (
-                (at_lat.northing - f.northing) / STEP,
-                (at_lon.northing - f.northing) / STEP,
-            );
-            let det = e_lat * n_lon - e_lon * n_lat;
-            q.lat += (n_lon * de - e_lon * dn) / det;
-            q.lon += (e_lat * dn - n_lat * de) / det;
-            if !q.lat.is_finite() || !q.lon.is_finite() {
-                return None;
-            }
-        }
-        None
+        // Far outside the zone the series folds back onto the globe; a point that does not project to
+        // where it came from is impossible.
+        let back = self.forward(LatLon { lat, lon });
+        ((back.easting - p.easting).abs() < 0.001 && (back.northing - p.northing).abs() < 0.001)
+            .then_some(LatLon { lat, lon })
     }
 
     /// Grid convergence in degrees: angle from true north to grid north, negative west of the
