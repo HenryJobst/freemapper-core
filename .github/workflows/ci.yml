@@ -27,6 +27,6 @@ jobs:
       - if: steps.crates.outputs.any == 'true'
         run: cargo fmt --all --check
       - if: steps.crates.outputs.any == 'true'
-        run: cargo clippy --locked --workspace --all-targets -- -D warnings
+        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
       - if: steps.crates.outputs.any == 'true'
-        run: cargo test --locked --workspace
+        run: cargo test --locked --workspace --all-features

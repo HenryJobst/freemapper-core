@@ -7,6 +7,11 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- freemapper-contract: neue Bibliothek mit dem Vertrag zwischen freemapper und seinen Lesern freemapper-print und freemapper-courseplan (Entscheidung 0018). `census` zählt die Objekte einer Karte je Objektklasse (Randobjekte, Grundfläche, Nordlinien, Karteninhalt) und liefert die Rahmen von Karteninhalt und Randobjekten. `Vocabulary::of` sammelt die Wörter von Karte und Begleitdatei, `check` prüft zwölf Regeln für die Ausgabe von freemapper. Karte und Begleitdatei gehen als Text hinein, kein Typ von freemapper-omap steht in der Schnittstelle.
+- freemapper-contract: Das Feature `fixtures` bettet zwei Karten ein, die freemapper 0.9.2 geschrieben hat, `schoolyard-1000` und `sprint-4000`. Jede bringt `expected.toml` und `vocabulary.toml` mit. Eine Anwendung trägt die Bibliothek unter `[dev-dependencies]` mit diesem Feature ein. `Fixture::write_into` legt Karte und Begleitdatei in einen Ordner, `Fixture::expected` nennt, was ein Leser daraus ableiten muss.
+
 ## [0.7.0] - 2026-11-10
 
 ### Hinzugefügt

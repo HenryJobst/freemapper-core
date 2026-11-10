@@ -17,7 +17,7 @@ as a copy in each:
 
 ## Status
 
-The project is just starting. So far it contains `freemapper-course`, `freemapper-fs`, `freemapper-georef`,
+The project is just starting. So far it contains `freemapper-contract`, `freemapper-course`, `freemapper-fs`, `freemapper-georef`,
 `freemapper-omap`, `freemapper-rules` and `freemapper-text`; the other libraries are planned:
 
 | Library | Content | comes from | Status |
@@ -28,6 +28,7 @@ The project is just starting. So far it contains `freemapper-course`, `freemappe
 | `freemapper-fs` | writing, copying and removing inside the project folder without following a link | freemapper | included |
 | `freemapper-omap` | map model, reading .omap, embedded symbol sets ISSprOM 2019 and school map 2019; no writer yet | freemapper, freemapper-print | included |
 | `freemapper-render` | map rendering, fonts, PDF | freemapper-print | planned |
+| `freemapper-contract` | contract between freemapper and its readers: object classes, census, vocabulary and rules for map and sidecar file; with the feature `fixtures`, two maps written by freemapper with their expected values for the apps' tests | freemapper | included |
 | `freemapper-course` | courses, reading .ppen and IOF XML, fitting to the map, number placement for a whole course, control description symbols; also writes .ppen, new or as a patch of an existing file | freemapper-print, freemapper-courseplan | included |
 
 ## Use
