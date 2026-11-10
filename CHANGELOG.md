@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.12.0] - 2026-11-11
+
 ### Hinzugefügt
 
 - freemapper-render: SVG-Ausgabe für die Editoren im Browser (Entscheidung 0022). `svg::write_svg` schreibt eine `RenderedPage` als SVG, in derselben Reihenfolge wie das PDF, mit Abdeckungen als Clip-Pfade und dem Bahnaufdruck mit `mix-blend-mode:multiply`. Die viewBox ist in Seitenmillimetern; `SvgView` wählt den Ausschnitt und die Pixel je Millimeter, Formen außerhalb fallen weg. Texte sind Glyphenumrisse aus Arimo, Bilder PNG-Daten-URIs, Farben werden mit r = 255 · (1 − c) · (1 − k) von CMYK nach sRGB umgerechnet. Eine Seite über `svg::MAX_UNITS` ergibt `SvgError::TooLarge`.
