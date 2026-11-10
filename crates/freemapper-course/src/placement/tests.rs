@@ -192,6 +192,15 @@ fn candidates_are_rounded_to_a_tenth_and_never_360() {
     }
     assert_eq!(candidate(359.97, 0), 0.0);
     assert_eq!(candidate(10.0, 23), 355.0);
+    // Past 360 the value is wrapped before it is rounded, so it carries no float noise (462.4 - 360).
+    assert_eq!(candidate(102.4, 0), 102.4);
+    assert_eq!(candidate(342.4, 8), 102.4);
+    for preferred in [102.4, 7.3, 251.7, 359.9] {
+        for k in 0..CANDIDATES {
+            let d = candidate(preferred, k);
+            assert_eq!(d, (d * 10.0).round() / 10.0, "{preferred} {k}");
+        }
+    }
 }
 
 #[test]
