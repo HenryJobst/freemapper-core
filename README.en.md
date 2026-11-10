@@ -27,7 +27,7 @@ The project is just starting. So far it contains `freemapper-contract`, `freemap
 | `freemapper-georef` | coordinates and coordinate systems: UTM projection (Transverse Mercator) for ETRS89 and WGS84, EPSG:25832 and 25833, forward and inverse, bounding boxes, tile names; no dependencies | freemapper, freemapper-print | included |
 | `freemapper-fs` | writing, copying and removing inside the project folder without following a link | freemapper | included |
 | `freemapper-omap` | map model, reading .omap, embedded symbol sets ISSprOM 2019 and school map 2019; no writer yet | freemapper, freemapper-print | included |
-| `freemapper-render` | map rendering: drawing OOM symbols, the page model, PDF output, the embedded Arimo font | freemapper-print | included |
+| `freemapper-render` | map rendering: drawing OOM symbols, the page model, PDF and SVG output, hit test, the embedded Arimo font | freemapper-print | included |
 | `freemapper-contract` | contract between freemapper and its readers: object classes, census, vocabulary and rules for map and sidecar file; with the feature `fixtures`, four maps written by freemapper with their expected values for the apps' tests | freemapper | included |
 | `freemapper-course` | courses, reading .ppen and IOF XML, fitting to the map, number placement for a whole course, control description symbols; also writes .ppen, new or as a patch of an existing file | freemapper-print, freemapper-courseplan | included |
 

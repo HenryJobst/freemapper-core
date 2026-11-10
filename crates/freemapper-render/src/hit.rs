@@ -27,8 +27,8 @@ impl RenderedPage {
     ///
     /// Only map primitives are tested, never the course overprint or the sheet layer. A point outside
     /// [`RenderedPage::clip`] or hidden by a mask ([`RenderedPage::map_clips`]) has no hits. Primitives of the base
-    /// area ([`crate::draw::Primitive::base`]) and of north lines are left out: both cover the whole map, so
-    /// they would lie under every point, and neither is detail a user picks on the map.
+    /// area ([`crate::draw::Primitive::base`]) and of north lines are left out. Both run across the whole map,
+    /// so they would lie under almost every point, and a user never picks them to edit the map.
     pub fn hits_at(&self, p: Pt, tolerance_mm: f64) -> Vec<Hit> {
         let tolerance = if tolerance_mm.is_finite() {
             tolerance_mm.max(0.0)

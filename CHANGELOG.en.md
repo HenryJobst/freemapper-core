@@ -7,6 +7,11 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- freemapper-render: SVG backend for the browser editors (decision 0021). `svg::write_svg` writes a `RenderedPage` as SVG in the same order as the PDF, with masks as clip paths and the course overprint with `mix-blend-mode:multiply`. The viewBox is in page mm; `SvgView` picks the part of the page and the pixels per mm, and shapes outside it are left out. Texts are Arimo glyph outlines, images PNG data URIs, and colours go from CMYK to sRGB by r = 255 · (1 − c) · (1 − k). A page beyond `svg::MAX_UNITS` gives `SvgError::TooLarge`.
+- freemapper-render: `RenderedPage::mapping` returns the page mapping `PageMapping` between the map (mm at the print scale) and the page (mm). `RenderedPage::hits_at` lists the map objects under a page point, topmost first, and respects the clip rectangle, the masks and the fill rules (decision 0021).
+
 ## [0.10.0] - 2026-11-10
 
 ### Changed
