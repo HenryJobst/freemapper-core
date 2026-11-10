@@ -24,3 +24,4 @@ status to `Superseded by NNNN`.
 | [0013](0013-the-course-crate.md) | The course crate |
 | [0014](0014-the-ppen-writer.md) | The .ppen writer |
 | [0015](0015-the-georef-crate.md) | The georef crate |
+| [0016](0016-course-number-placement-shared-with-courseplan.md) | Course number placement shared with courseplan |

@@ -297,3 +297,80 @@ fn crossing_points_have_no_placement_and_the_rest_do() {
         }
     }
 }
+
+/// courseplan's `auto_place` took this long on the map below in release mode (measured 2026-11-10 with
+/// `large_map_timing` in freemapper-courseplan), in seconds.
+const OLD_RELEASE_SECS: f64 = 1.1475;
+
+/// A large synthetic map: 1000 polylines of 100 segments each in a 400 x 400 mm square (a deterministic
+/// pseudo-random walk), 40 controls on a grid of 8 by 5, 45 by 70 mm apart, gaps 0.5 to 5.0 mm. The same map and
+/// course as courseplan's `large_map_timing`.
+fn large_map_case() -> Case {
+    let mut seed: u64 = 12345;
+    let mut next = move || {
+        seed = seed
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        ((seed >> 33) as f64) / f64::from(1u32 << 31)
+    };
+    let mut map_lines = Vec::new();
+    for _ in 0..1000 {
+        let mut p = (next() * 400.0, next() * 400.0);
+        let mut line = vec![p];
+        for _ in 0..100 {
+            p = (
+                (p.0 + (next() - 0.5) * 8.0).clamp(0.0, 400.0),
+                (p.1 + (next() - 0.5) * 8.0).clamp(0.0, 400.0),
+            );
+            line.push(p);
+        }
+        map_lines.push(line);
+    }
+    let stops = (0..40)
+        .map(|i| StopSpec {
+            at: (
+                30.0 + 45.0 * f64::from(i % 8),
+                30.0 + 70.0 * f64::from(i / 8),
+            ),
+            crossing: false,
+            kept: None,
+            bends: Vec::new(),
+            repeat: None,
+            step: None,
+        })
+        .collect();
+    Case {
+        name: "large_map".to_string(),
+        map_kind: "sprint".to_string(),
+        map_scale: 4000,
+        start: (5.0, 5.0),
+        finish: (395.0, 395.0),
+        start_bends: Vec::new(),
+        gap_min: Some(0.5),
+        gap_max: Some(5.0),
+        stops,
+        map_points: Vec::new(),
+        map_lines,
+        expected: None,
+    }
+}
+
+/// 100 000 map segments and 40 numbers place in a fraction of the time the old code took. The bound is the
+/// larger of 2 s and 30 times the old release time: 3 times the old time as the target, times 10 for a debug
+/// build. Run it in release mode to see the real time: `cargo test --release -p freemapper-course --test
+/// placement_cases -- --nocapture large_map_places_a_course_quickly`.
+#[test]
+fn large_map_places_a_course_quickly() {
+    let case = large_map_case();
+    let started = std::time::Instant::now();
+    let placed = run(&case);
+    let took = started.elapsed().as_secs_f64();
+    println!(
+        "large_map_places_a_course_quickly: {} placements in {took:.3} s",
+        placed.len()
+    );
+    assert_eq!(placed.len(), 40);
+    assert!(placed.iter().all(Option::is_some));
+    let limit = (30.0 * OLD_RELEASE_SECS).max(2.0);
+    assert!(took < limit, "took {took:.3} s, limit {limit:.3} s");
+}
