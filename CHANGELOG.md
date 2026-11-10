@@ -31,6 +31,13 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
   behalten ihre IDs; eine fehlende oder doppelte ID wird zur größten ID ihrer Art plus eins. Der Schreiber
   prüft die Veranstaltung zuerst gegen die Grenzen des Lesers und lehnt ab, was Purple Pen nicht speichern
   kann, etwa zwei Bahnen, die dieselbe Strecke verschieden zeichnen.
+- freemapper-course: `write_ppen_patch` schreibt eine Veranstaltung in eine vorhandene `.ppen`, die
+  Basisdatei. Der Patch ordnet Posten und Bahnen über Code oder Namen zu, erst danach über die ID; widerspricht
+  die Basisdatei den IDs der Veranstaltung, nutzt er sie gar nicht. Ein Objekt ohne geänderte Felder behält
+  seine Bytes, ein Patch mit der Veranstaltung, die der Leser aus einer Datei gelesen hat, ergibt also genau
+  diese Datei. Geänderte Felder schreibt er neu, Attribute und Elemente, die der Schreiber nicht kennt, bleiben
+  stehen. Gelöscht wird nur, was `Deletions` in `PatchOptions` per ID nennt; `Written::kept` listet die
+  Objekte der Basisdatei, die die Veranstaltung nicht erwähnt.
 
 ## [0.3.0] - 2026-11-10
 

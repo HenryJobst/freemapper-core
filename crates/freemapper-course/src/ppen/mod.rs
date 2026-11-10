@@ -78,6 +78,19 @@ const MAX_GAP_SCALES: usize = 256;
 /// Purple Pen's default print scale of a course without `options`.
 const DEFAULT_PRINT_SCALE: f64 = 15000.0;
 
+/// The special object kinds the reader reads; `text` also needs a box (two locations).
+const KNOWN_SPECIALS: &[&str] = &[
+    "first-aid",
+    "water",
+    "forbidden-route",
+    "boundary",
+    "line",
+    "out-of-bounds",
+    "dangerous-area",
+    "white-out",
+    "text",
+];
+
 /// Takes `n` points from the output budget of one read (bends, gap ranges and special points over all
 /// courses), so that shared legs and controls cannot multiply into an unbounded result.
 fn spend(left: &mut usize, n: usize) -> Result<(), CourseError> {
@@ -1229,24 +1242,13 @@ impl State {
         names: &HashMap<i64, String>,
         text: &mut TextBudget,
     ) -> Result<Option<Special<RawPoint>>, CourseError> {
-        const KNOWN: &[&str] = &[
-            "first-aid",
-            "water",
-            "forbidden-route",
-            "boundary",
-            "line",
-            "out-of-bounds",
-            "dangerous-area",
-            "white-out",
-            "text",
-        ];
         let Some(first) = s.locations.first().copied() else {
             return Ok(None);
         };
         let unknown = match s.kind.as_str() {
             "descriptions" => Some("special:descriptions ignored (layout decides)".to_string()),
             "text" if s.locations.len() < 2 => Some("special:text without a box".to_string()),
-            k if !KNOWN.contains(&k) => Some(format!("special:{k}")),
+            k if !KNOWN_SPECIALS.contains(&k) => Some(format!("special:{k}")),
             _ => None,
         };
         if let Some(what) = unknown {

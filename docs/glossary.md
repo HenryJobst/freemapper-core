@@ -46,6 +46,7 @@ hier unverändert, mit denselben Code-Bezeichnern. Eine Bibliothek, die einen Be
 | Purple-Pen-Projekt | Purple Pen project | native XML-Datei von Purple Pen (`.ppen`) mit Posten, Bahnen, Strecken, Kreislücken je Maßstab, Postenbeschreibungen und Sonderobjekten; Posten ohne eigenen Code bekommen die Codes aus Purple Pens IOF-XML-Export (`STA1`, `FIN1`, `XCHG1`, `CROSS1`, `ISSUE1`) | `read_ppen` |
 | Posten | control | Punkt, den der Läufer anlaufen muss; hat einen Code | `Control` |
 | stabile ID | stable id | die ID, unter der eine `.ppen` einen Posten oder eine Bahn führt (`control/@id`, `course/@id`); ein Schreiber findet damit dieselben Objekte wieder; IOF-XML hat keine (ADR 0013) | `Control::id`, `Course::id` |
+| Basisdatei | base file | die vorhandene `.ppen`, in die ein Patch eine Veranstaltung schreibt; was die Veranstaltung nicht erwähnt, bleibt darin stehen, unveränderte Objekte Byte für Byte | `write_ppen_patch`, `PatchOptions`, `Deletions` |
 | Stopp | stop | ein Besuch eines Postens in einer Bahn; derselbe Posten kann mehrfach vorkommen; trägt Nummernlage oder Nummernversatz, Kreislücken und, falls die Bahn sie ändert, die Postenart | `Stop` |
 | Strecke | leg | Verbindung zwischen zwei aufeinanderfolgenden Posten | `Leg` |
 | Knickpunkt | bend | Punkt, an dem eine Strecke abknickt, etwa um ein Sperrgebiet herum | `Leg::bends` |

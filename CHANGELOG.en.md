@@ -31,6 +31,12 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   missing or repeated id becomes the largest id of its store plus one. The writer checks the event against
   the reader's limits first and refuses what Purple Pen cannot store, for example two courses that draw the
   same leg differently.
+- freemapper-course: `write_ppen_patch` writes an event into an existing `.ppen`, the base file. The patch
+  matches controls and courses by code or name, and only then by id; if the base file contradicts the event's
+  ids, it ignores them altogether. An object with no changed field keeps its bytes, so patching a file with the
+  event the reader read from it gives back that file. Changed fields are written anew, and attributes and
+  elements the writer does not know stay where they are. Only what `Deletions` in `PatchOptions` names by id
+  is deleted; `Written::kept` lists the objects of the base file the event does not mention.
 
 ## [0.3.0] - 2026-11-10
 

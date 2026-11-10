@@ -21,14 +21,17 @@
 //! `event`, top-level children only `event`, `control`, `course`, `course-control`, `leg` and
 //! `special-object`, UTF-8. Unknown content below the top level passes, because Purple Pen skips it on load
 //! and the patch carries it.
+//!
+//! [`write_ppen_patch`] (`patch.rs`) writes an event into such a base file. It reads the base with the reader
+//! too and compares every field it owns with the reader's value as `f32`. A field that did not change keeps
+//! its bytes; a changed one comes from the same element builders as a file from scratch. The `<event>`
+//! element stays as it is, and so does every object the event does not mention.
 
-// The patch (the next step of the writer) is the caller of the base parse.
-#[cfg_attr(
-    not(test),
-    expect(dead_code, reason = "used by the patch still to come")
-)]
 mod base;
 mod out;
+mod patch;
+
+pub use patch::{Deletions, PatchOptions, write_ppen_patch};
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -193,14 +196,29 @@ const MAX_ID: u32 = i32::MAX as u32;
 /// Writes `event` as a new `.ppen` file.
 pub fn write_ppen(event: &RawEvent, options: &ScratchOptions) -> Result<Written, PpenWriteError> {
     check_limits(event)?;
-    let plan = Plan::new(event)?;
+    let map_scale = event
+        .source
+        .map_scale
+        .filter(|s| *s > 0)
+        .ok_or_else(|| PpenWriteError::Invalid("the event has no map scale".into()))?;
+    let ids = AssignedIds {
+        controls: assign_ids(event.controls.iter().map(|c| c.id), "control")?,
+        courses: assign_ids(event.courses.iter().map(|c| c.id), "course")?,
+        specials: assign_ids(event.specials.iter().map(Special::id), "special object")?,
+    };
+    let plan = Plan::new(
+        event,
+        Frame {
+            ids,
+            map_scale: Some(f64::from(map_scale)),
+            item_scaling: ItemScaling::None,
+            map_issue: vec![false; event.controls.len()],
+            other_courses: Vec::new(),
+        },
+    )?;
     let style = Style::purple_pen(options.line_ending);
 
-    let mut children = vec![Child::Element(event_element(
-        event,
-        options,
-        plan.map_scale,
-    )?)];
+    let mut children = vec![Child::Element(event_element(event, options, map_scale)?)];
     for (i, c) in event.controls.iter().enumerate() {
         children.push(Child::Element(control_element(
             c,
@@ -401,6 +419,8 @@ struct LegUse<'a> {
     from: usize,
     to: usize,
     leg: &'a Leg<RawPoint>,
+    /// Purple Pen flags the leg on its own (`QueryEvent.GetLegFlagging`).
+    implied: bool,
     /// `flagging kind="all"` is written: a marked route that Purple Pen does not flag on its own.
     flagging: bool,
     course: &'a str,
@@ -443,10 +463,22 @@ fn same_ranges(a: &[(f64, f64)], b: &[(f64, f64)]) -> bool {
 /// The circle gaps of one control by circle-gap scale, with the name of the course that set them first.
 type ControlGaps<'a> = BTreeMap<i64, (&'a [(f64, f64)], &'a str)>;
 
+/// What the plan of an event needs beyond the event: the ids of its objects and what the file around it
+/// says. From scratch that is the event alone; a patch takes it from the base file.
+struct Frame<'a> {
+    ids: AssignedIds,
+    /// The map scale and item scaling the circle gaps are keyed by.
+    map_scale: Option<f64>,
+    item_scaling: ItemScaling,
+    /// Per control of the event: it is a map issue point in the file (the model reads those as starts).
+    map_issue: Vec<bool>,
+    /// Courses of the file that are not in the event, by name and id, for the course lists of specials.
+    other_courses: Vec<(&'a str, u32)>,
+}
+
 /// Everything about the event that the elements need and that takes more than one object to decide: ids,
 /// the circle gaps per control and scale, the legs, and the course ids of the special objects.
 struct Plan<'a> {
-    map_scale: u32,
     ids: AssignedIds,
     /// Per course, the ids of its course-controls in stop order.
     cc_ids: Vec<Vec<u32>>,
@@ -461,17 +493,14 @@ struct Plan<'a> {
 }
 
 impl<'a> Plan<'a> {
-    fn new(ev: &'a RawEvent) -> Result<Plan<'a>, PpenWriteError> {
-        let map_scale = ev
-            .source
-            .map_scale
-            .filter(|s| *s > 0)
-            .ok_or_else(|| PpenWriteError::Invalid("the event has no map scale".into()))?;
-        let ids = AssignedIds {
-            controls: assign_ids(ev.controls.iter().map(|c| c.id), "control")?,
-            courses: assign_ids(ev.courses.iter().map(|c| c.id), "course")?,
-            specials: assign_ids(ev.specials.iter().map(Special::id), "special object")?,
-        };
+    fn new(ev: &'a RawEvent, frame: Frame<'a>) -> Result<Plan<'a>, PpenWriteError> {
+        let Frame {
+            ids,
+            map_scale,
+            item_scaling,
+            map_issue,
+            other_courses,
+        } = frame;
         let mut by_code: HashMap<&str, usize> = HashMap::with_capacity(ev.controls.len());
         for (i, c) in ev.controls.iter().enumerate() {
             if by_code.insert(c.code.as_str(), i).is_some() {
@@ -483,7 +512,6 @@ impl<'a> Plan<'a> {
         }
 
         let mut plan = Plan {
-            map_scale,
             ids,
             cc_ids: Vec::with_capacity(ev.courses.len()),
             stop_controls: Vec::with_capacity(ev.courses.len()),
@@ -508,8 +536,8 @@ impl<'a> Plan<'a> {
                 )));
             }
             let key = gap_key(
-                ItemScaling::None,
-                Some(f64::from(map_scale)),
+                item_scaling,
+                map_scale,
                 course.print_scale_hint.map(f64::from),
             );
             let mut controls = Vec::with_capacity(course.stops.len());
@@ -541,9 +569,9 @@ impl<'a> Plan<'a> {
                 let (from, to) = (w[0], w[1]);
                 let leg = course.legs.get(i).unwrap_or(&NO_LEG);
                 let target = &ev.controls[to];
-                // Purple Pen flags these legs on its own (`QueryEvent.GetLegFlagging`); the model has no
-                // map issue points, the third case.
-                let implied = target.kind == ControlKind::MapExchange
+                // Purple Pen flags these legs on its own (`QueryEvent.GetLegFlagging`).
+                let implied = map_issue[from]
+                    || target.kind == ControlKind::MapExchange
                     || (target.kind == ControlKind::Finish
                         && target
                             .description
@@ -561,6 +589,7 @@ impl<'a> Plan<'a> {
                     from,
                     to,
                     leg,
+                    implied,
                     flagging: leg.marked_route && !implied,
                     course: &course.name,
                 };
@@ -593,11 +622,17 @@ impl<'a> Plan<'a> {
 
         // Course names to ids; a name of two courses is ambiguous.
         let mut by_name: HashMap<&str, Option<u32>> = HashMap::with_capacity(ev.courses.len());
-        for (c, id) in ev.courses.iter().zip(&plan.ids.courses) {
+        let named = ev
+            .courses
+            .iter()
+            .map(|c| c.name.as_str())
+            .zip(plan.ids.courses.iter().copied())
+            .chain(other_courses);
+        for (name, id) in named {
             by_name
-                .entry(c.name.as_str())
+                .entry(name)
                 .and_modify(|v| *v = None)
-                .or_insert(Some(*id));
+                .or_insert(Some(id));
         }
         for s in &ev.specials {
             let list = match s.courses() {
@@ -813,29 +848,37 @@ fn control_element(
         kids.extend(description_elements(c, d, standard, &what)?);
     }
     for (scale, (g, _)) in gaps {
-        if g.is_empty() {
-            continue;
+        if !g.is_empty() {
+            kids.push(circle_gaps_element(*scale, g, &what)?);
         }
-        let pairs = g
-            .iter()
-            .map(|(a, b)| {
-                Ok(format!(
-                    "{}:{}",
-                    num(*a, &format!("{what} circle gap"))?,
-                    num(*b, &format!("{what} circle gap"))?
-                ))
-            })
-            .collect::<Result<Vec<_>, PpenWriteError>>()?;
-        kids.push(el(
-            "circle-gaps",
-            vec![("scale", scale.to_string())],
-            Body::Text(pairs.join(",")),
-        ));
     }
     Ok(el(
         "control",
         vec![("id", id.to_string()), ("kind", kind.into())],
         children(kids),
+    ))
+}
+
+/// `<circle-gaps scale=K>start:stop,…</circle-gaps>` (`CircleGap.EncodeGaps`).
+fn circle_gaps_element(
+    scale: i64,
+    gaps: &[(f64, f64)],
+    what: &str,
+) -> Result<Element, PpenWriteError> {
+    let pairs = gaps
+        .iter()
+        .map(|(a, b)| {
+            Ok(format!(
+                "{}:{}",
+                num(*a, &format!("{what} circle gap"))?,
+                num(*b, &format!("{what} circle gap"))?
+            ))
+        })
+        .collect::<Result<Vec<_>, PpenWriteError>>()?;
+    Ok(el(
+        "circle-gaps",
+        vec![("scale", scale.to_string())],
+        Body::Text(pairs.join(",")),
     ))
 }
 
@@ -1099,7 +1142,17 @@ fn special_element(
         .iter()
         .map(|p| point_el("location", p, &what))
         .collect::<Result<Vec<_>, _>>()?;
-    kids.push(match courses {
+    kids.push(courses_element(courses));
+    Ok(el(
+        "special-object",
+        vec![("id", id.to_string()), ("kind", kind.into())],
+        children(kids),
+    ))
+}
+
+/// `<courses>` of a special object: `all`, or one `course` per id.
+fn courses_element(courses: &Option<Vec<u32>>) -> Element {
+    match courses {
         None => el("courses", vec![("all", "true".into())], Body::Empty),
         Some(ids) => el(
             "courses",
@@ -1110,10 +1163,5 @@ fn special_element(
                     .collect(),
             ),
         ),
-    });
-    Ok(el(
-        "special-object",
-        vec![("id", id.to_string()), ("kind", kind.into())],
-        children(kids),
-    ))
+    }
 }

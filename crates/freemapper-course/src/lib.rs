@@ -33,8 +33,8 @@ pub use model::{
 };
 pub use number_offset::{offset_from_placement, placement_from_offset};
 pub use ppen::write::{
-    AssignedIds, DescriptionStandard, KeptObject, LineEnding, MapStandard, PpenMap, PpenWriteError,
-    ScratchOptions, WriteNote, Written, write_ppen,
+    AssignedIds, Deletions, DescriptionStandard, KeptObject, LineEnding, MapStandard, PatchOptions,
+    PpenMap, PpenWriteError, ScratchOptions, WriteNote, Written, write_ppen, write_ppen_patch,
 };
 pub use ppen::{course_obj_ratio, read_ppen};
 

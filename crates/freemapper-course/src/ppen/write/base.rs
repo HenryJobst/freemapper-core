@@ -60,6 +60,8 @@ pub(super) struct Object<'a> {
     pub id: i64,
     /// The element, from the whitespace that leads up to its start tag to the end of its end tag.
     pub span: Span,
+    /// The start tag (or the whole element, if it is empty), from its `<` to its `>`.
+    pub head: Span,
     /// The attributes as written: names, and values without quotes and not unescaped.
     pub attrs: Vec<(&'a str, &'a str)>,
     /// The direct child elements, each from its `<` to the end of its last tag, without the whitespace
@@ -162,6 +164,7 @@ struct Open<'a> {
     kind: Store,
     id: i64,
     start: usize,
+    head: Span,
     attrs: Vec<(&'a str, &'a str)>,
     children: Vec<Span>,
     child_start: usize,
@@ -262,6 +265,7 @@ impl<'a> Parser<'a> {
                         kind,
                         id,
                         start,
+                        head: lt..after,
                         attrs,
                         children: Vec::new(),
                         child_start: 0,
@@ -332,6 +336,7 @@ impl<'a> Parser<'a> {
             kind: o.kind,
             id: o.id,
             span: o.start..after,
+            head: o.head,
             attrs: o.attrs,
             children: o.children,
         });
@@ -519,6 +524,10 @@ mod tests {
         assert_eq!((c.kind, c.id), (Store::Control, 2));
         assert_eq!(c.attrs, [("id", "2"), ("kind", "normal")]);
         assert!(LINCOLN[c.span.clone()].starts_with("\r\n  <control id=\"2\""));
+        assert_eq!(
+            LINCOLN[c.head.clone()],
+            *"<control id=\"2\" kind=\"normal\">"
+        );
         let children: Vec<&str> = c.children.iter().map(|s| &LINCOLN[s.clone()]).collect();
         assert_eq!(children.len(), 5);
         assert_eq!(children[0], "<code>31</code>");
