@@ -11,7 +11,7 @@ pub type Bbox = [i32; 4];
 /// Number of objects per class, counted over all parts.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub struct ClassCounts {
-    pub furniture: usize,
+    pub sheet: usize,
     pub base: usize,
     pub north_lines: usize,
     pub content: usize,
@@ -24,9 +24,9 @@ pub struct ClassBoxes {
     /// Map content: the classes [`ObjectClass::Content`] and [`ObjectClass::NorthLines`].
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<Bbox>,
-    /// The sheet furniture.
+    /// The sheet objects.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub furniture: Option<Bbox>,
+    pub sheet: Option<Bbox>,
 }
 
 /// Counts and boxes of a map, as `expected.toml` of a fixture records them.
@@ -44,9 +44,9 @@ pub fn census(omap_xml: &str) -> Result<Census, ContractError> {
     for object in doc.parts.iter().flat_map(|p| &p.objects) {
         let points = object.coords.iter().map(|c| (c.x, c.y));
         match classify(&object.tags) {
-            ObjectClass::Furniture => {
-                census.objects.furniture += 1;
-                grow(&mut census.bbox.furniture, points);
+            ObjectClass::Sheet => {
+                census.objects.sheet += 1;
+                grow(&mut census.bbox.sheet, points);
             }
             ObjectClass::Base => census.objects.base += 1,
             ObjectClass::NorthLines => {
@@ -99,7 +99,7 @@ mod tests {
         assert_eq!(
             census(&map).unwrap().objects,
             ClassCounts {
-                furniture: 2,
+                sheet: 2,
                 base: 1,
                 north_lines: 1,
                 content: 2
@@ -108,7 +108,7 @@ mod tests {
     }
 
     #[test]
-    fn boxes_cover_content_and_furniture_apart() {
+    fn boxes_cover_content_and_sheet_objects_apart() {
         let map = test_map(
             4000,
             "",
@@ -128,7 +128,7 @@ mod tests {
         );
         let bbox = census(&map).unwrap().bbox;
         assert_eq!(bbox.content, Some([0, -2_000, 10_000, 7_000]));
-        assert_eq!(bbox.furniture, Some([0, 20_000, 4_000, 21_000]));
+        assert_eq!(bbox.sheet, Some([0, 20_000, 4_000, 21_000]));
     }
 
     #[test]
@@ -147,11 +147,11 @@ mod tests {
     }
 
     #[test]
-    fn a_map_without_the_sheet_part_has_no_furniture() {
+    fn a_map_without_the_sheet_part_has_no_sheet_objects() {
         let map = test_map(4000, "", &[("default", vec![tagged("osm", &[(0, 0)])])]);
         let census = census(&map).unwrap();
-        assert_eq!(census.objects.furniture, 0);
-        assert_eq!(census.bbox.furniture, None);
+        assert_eq!(census.objects.sheet, 0);
+        assert_eq!(census.bbox.sheet, None);
     }
 
     #[test]
@@ -169,14 +169,14 @@ mod tests {
     fn a_census_round_trips_through_toml() {
         let census = Census {
             objects: ClassCounts {
-                furniture: 9,
+                sheet: 9,
                 base: 1,
                 north_lines: 14,
                 content: 212,
             },
             bbox: ClassBoxes {
                 content: Some([-61_200, -48_000, 61_200, 47_500]),
-                furniture: None,
+                sheet: None,
             },
         };
         let text = toml::to_string(&census).unwrap();

@@ -66,7 +66,7 @@ fn object_xml(object: &TestObject) -> String {
     )
 }
 
-/// The parts of a small map as freemapper writes it: content with a north line, the sheet furniture
+/// The parts of a small map as freemapper writes it: content with a north line, the sheet objects
 /// with a scale bar, and the base area.
 pub(crate) fn good_parts() -> Vec<(&'static str, Vec<TestObject>)> {
     vec![

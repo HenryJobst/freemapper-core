@@ -40,22 +40,21 @@ mod tests {
     #[test]
     fn reads_values_counts_and_boxes() {
         let text = format!(
-            "{HEAD}[objects]\nfurniture = 13\nbase = 1\nnorth_lines = 3\ncontent = 2\n\
+            "{HEAD}[objects]\nsheet = 13\nbase = 1\nnorth_lines = 3\ncontent = 2\n\
              [bbox]\ncontent = [-30000, -43091, 30000, 42276]\n"
         );
         let expected = Expected::from_toml(&text).unwrap();
         assert_eq!(expected.contract, 1);
         assert_eq!(expected.map_kind, "sprint");
         assert_eq!(expected.scale_denominator, 4000);
-        assert_eq!(expected.objects.furniture, 13);
+        assert_eq!(expected.objects.sheet, 13);
         assert_eq!(expected.bbox.content, Some([-30000, -43091, 30000, 42276]));
-        assert_eq!(expected.bbox.furniture, None);
+        assert_eq!(expected.bbox.sheet, None);
     }
 
     #[test]
     fn the_boxes_may_be_left_out() {
-        let text =
-            format!("{HEAD}[objects]\nfurniture = 0\nbase = 0\nnorth_lines = 0\ncontent = 0\n");
+        let text = format!("{HEAD}[objects]\nsheet = 0\nbase = 0\nnorth_lines = 0\ncontent = 0\n");
         assert_eq!(
             Expected::from_toml(&text).unwrap().bbox,
             ClassBoxes::default()

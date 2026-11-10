@@ -55,7 +55,7 @@ fn every_expected_file_matches_its_map() {
 fn every_class_a_kind_writes_is_in_its_fixture() {
     for fixture in fixtures() {
         let objects = fixture.expected().objects;
-        assert!(objects.furniture > 0, "{}", fixture.name);
+        assert!(objects.sheet > 0, "{}", fixture.name);
         assert!(objects.north_lines > 0, "{}", fixture.name);
         assert!(objects.content > 0, "{}", fixture.name);
         // Only the sprint map has a base area.
@@ -69,12 +69,12 @@ fn every_class_a_kind_writes_is_in_its_fixture() {
 }
 
 #[test]
-fn the_boxes_keep_the_furniture_outside_the_content() {
+fn the_boxes_keep_the_sheet_objects_outside_the_content() {
     for fixture in fixtures() {
         let bbox = fixture.expected().bbox;
-        let (content, furniture) = (bbox.content.unwrap(), bbox.furniture.unwrap());
+        let (content, sheet) = (bbox.content.unwrap(), bbox.sheet.unwrap());
         // y points south: the scale bar lies below the map.
-        assert!(furniture[3] > content[3], "{}", fixture.name);
+        assert!(sheet[3] > content[3], "{}", fixture.name);
     }
 }
 

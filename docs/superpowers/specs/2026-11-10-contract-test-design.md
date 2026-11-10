@@ -70,19 +70,19 @@ expected value.
 
 | Fact | Meaning for readers |
 |---|---|
-| `freemapper:source=sheet` | Sheet furniture (frame, title block, scale bar, credit line). Not map content, not part of the map extent. |
-| `freemapper:sheet=<role>` | Role of a furniture object, today only `scale-bar`. Readers never need it to recognise furniture. |
+| `freemapper:source=sheet` | Sheet objects (frame, title block, scale bar, credit line). Not map content, not part of the map extent. |
+| `freemapper:sheet=<role>` | Role of a sheet object, today only `scale-bar`. Readers never need it to recognise sheet. |
 | `freemapper:source=base` | The base area. Its own class: printed, but no feature. |
 | `freemapper:source=north-lines` | North lines. Map content. |
 | any other `freemapper:source` | Identifier of a data source. Map content. The set is open. |
-| part `peripheral information` | Holds the sheet furniture and nothing else. |
+| part `peripheral information` | Holds the sheet objects and nothing else. |
 | part `base` | Holds the base area and nothing else. |
 | CRS text | `+init=epsg:<code>` |
 
 ### Legacy
 
 Files written by freemapper v0.9.0 carry `freemapper:source=scale-bar` on the scale bar. Readers treat it as
-sheet furniture. Such files exist (the examples of v0.9.0), so this stays in the contract as a legacy fixture.
+sheet objects. Such files exist (the examples of v0.9.0), so this stays in the contract as a legacy fixture.
 
 ## Design
 
@@ -118,14 +118,14 @@ scale_denominator = 1000
 crs = 25833
 
 [objects]                    # by class, counted over all parts
-furniture = 9
+sheet = 9
 base = 1
 north_lines = 14
 content = 212
 
 [bbox]                       # min_x, min_y, max_x, max_y; content includes the north lines
 content = [-61200, -48000, 61200, 47500]
-furniture = [-66000, -55000, 66000, 74900]
+sheet = [-66000, -55000, 66000, 74900]
 ```
 
 **3. Vocabulary.** `vocabulary.toml` lists the words of a file, without its content:
@@ -186,7 +186,7 @@ against `expected.toml`:
 - that every scale the contract allows for the kind is accepted by print's rule profile.
 
 **Reader, in courseplan** (a test module inside the crate, names starting with `contract_`). The same idea with its own functions: `map_kind_for_file`,
-the title, `is_sheet_furniture` counts (furniture plus base), and `MapIndex::extent()` inside
+the title, `is_sheet_furniture` counts (sheet objects plus base), and `MapIndex::extent()` inside
 `bbox.content`.
 
 Each reader asserts what it derives itself. The contract does not ask the two readers to compute the same
@@ -278,7 +278,7 @@ Decided here without asking; each can be overruled.
 - Whether a sprint project can come from the same offline helper as the school project, or needs its own
   mocked inputs.
 - The wording of the `Violation` messages (through `unslop` and `humanizer` once they are longer than a phrase).
-- The ADR (next free number in `docs/adr/`), the glossary rows (contract, fixture, vocabulary, sheet furniture,
+- The ADR (next free number in `docs/adr/`), the glossary rows (contract, fixture, vocabulary, sheet objects,
   reader, producer) and the changelog entries, written in the same branch as stage 1.
 - Whether the three copies of `luebeck.omap` are replaced by one in core. It is a course fixture, not a
   contract fixture, and belongs to `freemapper-course`'s owner.

@@ -22,18 +22,18 @@ pub enum Rule {
     CrsKnown,
     /// The CRS text of the map is `+init=epsg:<crs>`.
     CrsText,
-    /// Every object in the part `peripheral information` is sheet furniture.
-    SheetPartOnlyFurniture,
-    /// No sheet furniture lies in another part.
-    FurnitureOnlyInSheetPart,
+    /// Every object in the part `peripheral information` is sheet objects.
+    SheetPartOnlySheetObjects,
+    /// No sheet objects lies in another part.
+    SheetObjectsOnlyInSheetPart,
     /// Every object in the part `base` is base area.
     BasePartOnlyBase,
     /// No base area lies in another part.
     BaseOnlyInBasePart,
     /// No object carries the source `scale-bar` of freemapper v0.9.0.
     NoLegacySource,
-    /// `freemapper:sheet` occurs only on sheet furniture.
-    RoleOnlyOnFurniture,
+    /// `freemapper:sheet` occurs only on sheet objects.
+    RoleOnlyOnSheetObjects,
 }
 
 /// A rule that does not hold, with the part and object or the key and value it failed on.
@@ -121,11 +121,11 @@ pub fn check(omap_xml: &str, sidecar_toml: &str) -> Result<Vec<Violation>, Contr
         for (index, object) in part.objects.iter().enumerate() {
             let class = classify(&object.tags);
             let mut at = |rule: Rule| report(rule, format!("part {:?}, object {index}", part.name));
-            if part.name == SHEET_PART && class != ObjectClass::Furniture {
-                at(Rule::SheetPartOnlyFurniture);
+            if part.name == SHEET_PART && class != ObjectClass::Sheet {
+                at(Rule::SheetPartOnlySheetObjects);
             }
-            if part.name != SHEET_PART && class == ObjectClass::Furniture {
-                at(Rule::FurnitureOnlyInSheetPart);
+            if part.name != SHEET_PART && class == ObjectClass::Sheet {
+                at(Rule::SheetObjectsOnlyInSheetPart);
             }
             if part.name == BASE_PART && class != ObjectClass::Base {
                 at(Rule::BasePartOnlyBase);
@@ -136,8 +136,8 @@ pub fn check(omap_xml: &str, sidecar_toml: &str) -> Result<Vec<Violation>, Contr
             if tag(&object.tags, SOURCE_KEY) == Some(LEGACY_SOURCE_SCALE_BAR) {
                 at(Rule::NoLegacySource);
             }
-            if tag(&object.tags, ROLE_KEY).is_some() && class != ObjectClass::Furniture {
-                at(Rule::RoleOnlyOnFurniture);
+            if tag(&object.tags, ROLE_KEY).is_some() && class != ObjectClass::Sheet {
+                at(Rule::RoleOnlyOnSheetObjects);
             }
         }
     }
@@ -242,7 +242,7 @@ mod tests {
         let map = map_with(|parts| parts[1].1.push(TestObject::new(&[], &[(5, 5)])));
         let violations = check(&map, &good_sidecar()).unwrap();
         assert_eq!(violations.len(), 1, "{violations:?}");
-        assert_eq!(violations[0].rule, Rule::SheetPartOnlyFurniture);
+        assert_eq!(violations[0].rule, Rule::SheetPartOnlySheetObjects);
         assert_eq!(
             violations[0].detail,
             "part \"peripheral information\", object 2"
@@ -250,7 +250,7 @@ mod tests {
     }
 
     #[test]
-    fn sheet_furniture_in_another_part_is_reported() {
+    fn sheet_objects_in_another_part_is_reported() {
         let map = map_with(|parts| {
             parts[0].1.push(TestObject::new(
                 &[("freemapper:source", "sheet")],
@@ -259,7 +259,7 @@ mod tests {
         });
         assert_eq!(
             rules(&map, &good_sidecar()),
-            [Rule::FurnitureOnlyInSheetPart]
+            [Rule::SheetObjectsOnlyInSheetPart]
         );
     }
 
@@ -305,7 +305,7 @@ mod tests {
                 &[(5, 5)],
             ))
         });
-        assert_eq!(rules(&map, &good_sidecar()), [Rule::RoleOnlyOnFurniture]);
+        assert_eq!(rules(&map, &good_sidecar()), [Rule::RoleOnlyOnSheetObjects]);
     }
 
     #[test]

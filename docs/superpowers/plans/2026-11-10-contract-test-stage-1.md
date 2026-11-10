@@ -38,11 +38,11 @@ embedded behind a feature. Each app tests itself against the crate; no app sees 
 ## Review Focus
 
 1. A map without a part `peripheral information` (older project, or the mapper deleted it in OOM): `census` and
-   `Vocabulary::of` succeed with zero furniture. Test in Task 1 and Task 2.
+   `Vocabulary::of` succeed with no sheet objects. Test in Task 1 and Task 2.
 2. A map without any object: every box is `None`, and `expected.toml` without a `[bbox]` entry parses. Test in
    Task 1.
 3. An object the mapper drew by hand in a reserved part, without tags: no panic; `check` reports it under
-   `SheetPartOnlyFurniture`. Test in Task 3.
+   `SheetPartOnlySheetObjects`. Test in Task 3.
 4. A sidecar with CRLF line endings, a byte-order mark or a title of blanks only: the first two parse, the
    third violates `TitlePresent`. Test in Task 3.
 5. A sidecar with an unknown `map_kind` or without the contract keys: `check` returns violations, not an error;
@@ -88,13 +88,13 @@ helpers live. print and courseplan: one test module each, named by their session
   pub enum ContractError { #[error("the map cannot be read: {0}")] Map(String),
                            #[error("freemapper.toml cannot be read: {0}")] Sidecar(String) }
   #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-  pub enum ObjectClass { Furniture, Base, NorthLines, Content }
+  pub enum ObjectClass { Sheet, Base, NorthLines, Content }
   pub(crate) fn classify(tags: &[(String, String)]) -> ObjectClass;
   pub type Bbox = [i32; 4];
   #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-  pub struct ClassCounts { pub furniture: usize, pub base: usize, pub north_lines: usize, pub content: usize }
+  pub struct ClassCounts { pub sheet: usize, pub base: usize, pub north_lines: usize, pub content: usize }
   #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-  pub struct ClassBoxes { pub content: Option<Bbox>, pub furniture: Option<Bbox> }   // None is left out of TOML
+  pub struct ClassBoxes { pub content: Option<Bbox>, pub sheet: Option<Bbox> }   // None is left out of TOML
   #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]   // the writer's census.toml
   pub struct Census { pub objects: ClassCounts, #[serde(default)] pub bbox: ClassBoxes }
   pub fn census(omap_xml: &str) -> Result<Census, ContractError>;
@@ -102,21 +102,21 @@ helpers live. print and courseplan: one test module each, named by their session
   pub(crate) struct TestObject { pub tags: Vec<(&'static str, &'static str)>, pub coords: Vec<(i32, i32)> }
   pub(crate) fn test_map(scale: u32, crs_spec: &str, parts: &[(&str, Vec<TestObject>)]) -> String;
   ```
-- `classify`: `freemapper:source` equal to `sheet` or `scale-bar` gives `Furniture`, `base` gives `Base`,
+- `classify`: `freemapper:source` equal to `sheet` or `scale-bar` gives `Sheet`, `base` gives `Base`,
   `north-lines` gives `NorthLines`, everything else (also no tag) `Content`. The class comes from the tag alone;
   the part plays no role here.
-- `ClassBoxes::content` covers the classes `Content` and `NorthLines`; `furniture` covers `Furniture`. A box is
+- `ClassBoxes::content` covers the classes `Content` and `NorthLines`; `sheet` covers `Sheet`. A box is
   taken over every coordinate of an object, control points of curves included.
 - `test_map` writes OOM XML version 9 that `freemapper_omap::read_map` accepts; model it on `map_with` in the
   tests of `crates/freemapper-omap/src/read.rs`.
 
 - [x] **Step 1: Write the failing tests** in `src/census.rs`:
   - `classes_come_from_the_source_tag`: one object per source value `sheet`, `scale-bar`, `base`,
-    `north-lines`, `osm`, and one without tags; counts are furniture 2, base 1, north_lines 1, content 2.
-  - `boxes_cover_content_and_furniture_apart`: content at (0,0)-(10_000,5_000), north line from (0,-2_000) to
-    (0,7_000), furniture at (0,20_000)-(4_000,21_000); `bbox.content == Some([0, -2_000, 10_000, 7_000])`,
-    `bbox.furniture == Some([0, 20_000, 4_000, 21_000])`.
-  - `a_map_without_the_sheet_part_has_no_furniture`: only a default part; furniture 0, `bbox.furniture == None`.
+    `north-lines`, `osm`, and one without tags; counts are sheet 2, base 1, north_lines 1, content 2.
+  - `boxes_cover_content_and_sheet_objects_apart`: content at (0,0)-(10_000,5_000), north line from (0,-2_000) to
+    (0,7_000), a sheet object at (0,20_000)-(4_000,21_000); `bbox.content == Some([0, -2_000, 10_000, 7_000])`,
+    `bbox.sheet == Some([0, 20_000, 4_000, 21_000])`.
+  - `a_map_without_the_sheet_part_has_no_sheet_objects`: only a default part; sheet 0, `bbox.sheet == None`.
   - `a_map_without_objects_has_no_boxes`: both boxes `None`; `toml::to_string(&ClassBoxes::default())` is empty
     and `toml::from_str::<ClassBoxes>("")` gives the default.
   - `an_unreadable_map_is_an_error`: `census("not xml")` is `Err(ContractError::Map(_))`.
@@ -171,7 +171,7 @@ helpers live. print and courseplan: one test module each, named by their session
   equal.
 
 - [x] **Step 1: Write the failing tests** in `src/vocabulary.rs`:
-  - `lists_the_words_of_a_map`: parts `default`, `peripheral information`, `base`; furniture tagged `sheet`, one
+  - `lists_the_words_of_a_map`: parts `default`, `peripheral information`, `base`; sheet tagged `sheet`, one
     of them also `freemapper:sheet=scale-bar`; base tagged `base`; content tagged `freemapper:source=osm` and
     `freemapper:osm=x`; CRS `+init=epsg:25833`; sidecar with the four keys plus `buffer_m = 20.0`. Expect
     `sheet_part_sources == {sheet}`, `base_part_sources == {base}`,
@@ -202,8 +202,8 @@ helpers live. print and courseplan: one test module each, named by their session
   ```rust
   #[derive(Debug, Clone, Copy, PartialEq, Eq)]
   pub enum Rule { KindKnown, TitlePresent, ScaleAllowed, ScaleMatchesMap, CrsKnown, CrsText,
-                  SheetPartOnlyFurniture, FurnitureOnlyInSheetPart, BasePartOnlyBase, BaseOnlyInBasePart,
-                  NoLegacySource, RoleOnlyOnFurniture }
+                  SheetPartOnlySheetObjects, SheetObjectsOnlyInSheetPart, BasePartOnlyBase, BaseOnlyInBasePart,
+                  NoLegacySource, RoleOnlyOnSheetObjects }
   #[derive(Debug, Clone, PartialEq, Eq)]
   pub struct Violation { pub rule: Rule, pub detail: String }
   pub fn check(omap_xml: &str, sidecar_toml: &str) -> Result<Vec<Violation>, ContractError>;
@@ -218,12 +218,12 @@ helpers live. print and courseplan: one test module each, named by their session
   | `ScaleMatchesMap` | `scale_denominator` equals the map's scale |
   | `CrsKnown` | `crs` is 25832 or 25833 |
   | `CrsText` | the map's CRS text is `+init=epsg:<crs>` |
-  | `SheetPartOnlyFurniture` | every object in `peripheral information` is `Furniture` |
-  | `FurnitureOnlyInSheetPart` | no `Furniture` object lies in another part |
+  | `SheetPartOnlySheetObjects` | every object in `peripheral information` is `Sheet` |
+  | `SheetObjectsOnlyInSheetPart` | no `Sheet` object lies in another part |
   | `BasePartOnlyBase` | every object in `base` is `Base` |
   | `BaseOnlyInBasePart` | no `Base` object lies in another part |
   | `NoLegacySource` | no object carries `freemapper:source=scale-bar` |
-  | `RoleOnlyOnFurniture` | `freemapper:sheet` occurs only on `Furniture` objects |
+  | `RoleOnlyOnSheetObjects` | `freemapper:sheet` occurs only on `Sheet` objects |
 
 - `detail` names the part and the object's index in it, or the key and its value.
 - A missing part is no violation. An unreadable map or sidecar is `Err`, everything else a `Violation`.
@@ -318,7 +318,7 @@ helpers live. print and courseplan: one test module each, named by their session
   - `every_vocabulary_file_matches_its_map`: `Vocabulary::of(...) == fixture.vocabulary()`.
   - `every_expected_file_matches_its_map`: `census(...)` equals `expected.objects` and `expected.bbox`;
     `expected.contract == CONTRACT_VERSION`; kind, title, scale and crs equal the sidecar's values.
-  - `the_boxes_keep_the_furniture_outside_the_content`: `bbox.furniture` reaches further south than
+  - `the_boxes_keep_the_sheet_objects_outside_the_content`: `bbox.sheet` reaches further south than
     `bbox.content` (the scale bar lies below the map).
   - `write_into_puts_map_and_sidecar_side_by_side`: in a `tempfile::tempdir()` the returned path is
     `<dir>/<name>.omap`, and `<dir>/freemapper.toml` holds the sidecar text.
@@ -344,7 +344,7 @@ helpers live. print and courseplan: one test module each, named by their session
   review of freemapper `0f25841`. Copy the two contract tables from the spec.
 - [ ] **Step 2: Glossary rows** (German and English): Vertrag/contract, Erzeuger/producer, Leser/reader,
   Fixture/fixture, Vokabular/vocabulary (`Vocabulary`), Bestandsaufnahme/census (`Census`),
-  Randangaben/sheet furniture (`ObjectClass::Furniture`), Objektklasse/object class (`ObjectClass`). Where an
+  Randangaben/sheet objects (`ObjectClass::Sheet`), Objektklasse/object class (`ObjectClass`). Where an
   app's glossary already has the term, take its row unchanged.
 - [ ] **Step 3: Changelog** under "Unveröffentlicht"/"Unreleased", crate `freemapper-contract`: what it is and
   how an app uses it (dev-dependency with the feature `fixtures`). READMEs: one row in the crate table.
@@ -388,11 +388,11 @@ helpers live. print and courseplan: one test module each, named by their session
   the map with print's own reader:
   - `contract_kind`: `infer_kind(&map, &path)` names `expected.map_kind`.
   - `contract_title`: `read_sidecar_title(&path)` is `expected.title`.
-  - `contract_classes`: the number of objects `is_sheet_object` accepts is `expected.objects.furniture`, the
+  - `contract_classes`: the number of objects `is_sheet_object` accepts is `expected.objects.sheet`, the
     number `is_base_object` accepts is `expected.objects.base`.
   - `contract_scale`: `symbol_factor(kind, expected.scale_denominator, expected.scale_denominator)` is `Ok`.
   - `contract_bounds`: the painted bounds of a layout without sheet objects end north of
-    `expected.bbox.furniture`'s southern edge by more than the bar's height, and lie inside
+    `expected.bbox.sheet`'s southern edge by more than the bar's height, and lie inside
     `expected.bbox.content` grown by a margin the session sets for symbol sizes.
 - [ ] Changelog entry, commit, CI green.
 
@@ -407,7 +407,7 @@ helpers live. print and courseplan: one test module each, named by their session
   - `contract_kind`: `map_kind_for_file(&doc, &path)` names `expected.map_kind`.
   - `contract_title`: `title_from_config(dir)` is `Some(expected.title)`.
   - `contract_classes`: the number of objects `is_sheet_furniture` accepts is
-    `expected.objects.furniture + expected.objects.base`.
+    `expected.objects.sheet + expected.objects.base`.
   - `contract_extent`: `MapIndex::from_document(&doc).extent()` lies inside `expected.bbox.content`.
 - [ ] Changelog entry, commit, CI green.
 

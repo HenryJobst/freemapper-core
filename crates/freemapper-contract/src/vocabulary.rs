@@ -9,7 +9,7 @@ use crate::sidecar::read_sidecar;
 use crate::{ContractError, read_map};
 
 /// What a reader may meet in a file freemapper wrote: part names, the tags of the two reserved parts,
-/// the roles of sheet furniture, the form of the CRS text, the symbol set and the contract keys of the
+/// the roles of sheet objects, the form of the CRS text, the symbol set and the contract keys of the
 /// sidecar. Two maps of the same freemapper version have the same vocabulary, whatever they show. The
 /// tags of map content are left out: that set is open and belongs to freemapper alone.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]

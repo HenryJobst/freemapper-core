@@ -6,11 +6,11 @@ scale_denominator = 1000
 crs = 25833
 
 [objects]
-furniture = 13
+sheet = 13
 base = 0
 north_lines = 7
 content = 1
 
 [bbox]
 content = [-112500, -172365, 112500, 169103]
-furniture = [-139250, 181103, -87750, 205103]
+sheet = [-139250, 181103, -87750, 205103]
