@@ -67,7 +67,9 @@ pub struct Deletions {
 ///
 /// A matched object keeps the bytes of every field the event leaves as it is; changed fields are written
 /// anew, and attributes and elements the writer does not know are carried. An object with no change keeps
-/// its original bytes, so a patch with the event the reader read from `base` gives `base` back. New objects
+/// its original bytes, so a patch with the event the reader read from `base` gives `base` back. The one
+/// exception is a course `<options>` without `description-kind` (as the 0.4.0 writer wrote it), which Purple
+/// Pen refuses: it gets `description-kind="symbols"`. New objects
 /// get the event's id if it is free, else the largest id plus one, and go after the last object of their
 /// kind in the base file's style. The `<event>` element is never changed.
 pub fn write_ppen_patch(
@@ -922,6 +924,20 @@ impl<'t> Merge<'t> {
     }
 }
 
+/// The course `o` has an `<options>` child without a `description-kind` (or with an empty one), which
+/// `EventDBUtil.ReadDescriptionKindAttribute` refuses.
+fn options_lack_description_kind(text: &str, o: &Object<'_>) -> Result<bool, PpenWriteError> {
+    let m = Merge::object(text, o);
+    let Some(i) = m.find_kid("options") else {
+        return Ok(false);
+    };
+    let s = Merge::sub(text, &m.base_kids[i].0)?;
+    Ok(!s
+        .base_attrs
+        .iter()
+        .any(|(k, v)| *k == "description-kind" && !v.is_empty()))
+}
+
 /// The text element at `span` of `text` with its start tag (and so its attributes) kept and `content` as its
 /// text.
 fn with_text(text: &str, span: &Span, name: &str, content: &str) -> Result<String, PpenWriteError> {
@@ -1508,10 +1524,13 @@ impl<'a> Patch<'a> {
                 == Some(ec.print_scale_hint.unwrap_or(default_scale));
             let same_climb = f32o(pc.climb) == f32o(ec.climb_m);
             let same_length = f32o(pc.length) == f32o(ec.length_m);
-            let same_options = same_scale && same_climb && same_length;
+            let obj = v.course_objs[bi];
+            // A base `<options>` without `description-kind` (as the 0.4.0 writer wrote it) does not load in
+            // Purple Pen, so it is repaired even when nothing else changed.
+            let repair = options_lack_description_kind(v.text, v.object(obj))?;
+            let same_options = same_scale && same_climb && same_length && !repair;
             if !(same_kind && same_name && same_title && same_first && same_order && same_options) {
                 let full = course_element(ec, id, order, first)?;
-                let obj = v.course_objs[bi];
                 let mut m = Merge::object(v.text, v.object(obj));
                 m.attr("id", true, None);
                 m.attr("kind", same_kind, attr_of(&full, "kind"));
@@ -1559,6 +1578,13 @@ impl<'a> Patch<'a> {
                         s.attr("print-scale", same_scale && has_scale, Some(print_scale));
                         s.attr("climb", same_climb, get("climb"));
                         s.attr("course-length", same_length, get("course-length"));
+                        // `description-kind` is required as well: the base's value stays, and one is
+                        // added where the base lacks it (Purple Pen reads an empty value as missing).
+                        let has_kind = s
+                            .base_attrs
+                            .iter()
+                            .any(|(k, v)| *k == "description-kind" && !v.is_empty());
+                        s.attr("description-kind", has_kind, get("description-kind"));
                         if let Some(t) = s.finish("options", 2, self.style) {
                             m.replace_kid(i, t);
                         }
