@@ -7,6 +7,22 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- freemapper-course: Purple Pen 4.0 loaded a `.ppen` from the writer and crashed right after, because the
+  finish had no description symbol. After loading, Purple Pen opens the All Controls view and looks up the
+  symbol of every finish, crossing point and map issue point there. Without one, `SymbolDB` throws an
+  `ArgumentNullException`. `write_ppen` now writes `14.3` for a finish without a symbol, `13.3` for a
+  crossing point and `13.6` for a map issue point, the symbols Purple Pen gives a new control. A symbol the
+  event holds always stays. `write_ppen_patch` keeps the base file's symbol when the event gives none, and
+  adds the missing symbol also to controls the event does not mention, so Purple Pen opens a file written by
+  0.4.1 again after the next patch. The writer also refuses what Purple Pen fails on after the load: a finish
+  symbol other than `14.1` to `14.3`, a crossing point symbol other than `13.3` and `13.4`, any symbol but
+  `13.6` at a map issue point, and a combination symbol such as `10.1` in column C or G. The test against
+  Purple Pen's loader now also checks the symbols against Purple Pen's symbol table, per column and
+  description standard, and that every reference between controls, course-controls, legs, courses and
+  special objects resolves.
+
 ## [0.4.1] - 2026-11-10
 
 ### Fixed

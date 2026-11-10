@@ -258,8 +258,13 @@ fn unknown_content_survives() {
 
 #[test]
 fn partial_flagging_and_map_issue_kept() {
+    // A map issue point as Purple Pen writes one, with its symbol.
     let base = fixture("lincoln-park.ppen")
-        .replace("kind=\"start\"", "kind=\"map-issue\"")
+        .replace(
+            "kind=\"start\">\r\n    <location x=\"140.207184\" y=\"57.44655\" />",
+            "kind=\"map-issue\">\r\n    <location x=\"140.207184\" y=\"57.44655\" />\r\n    \
+             <description box=\"all\" iof-2004-ref=\"13.6\" />",
+        )
         .replace(
             "end-control=\"5\">\r\n    <bends>",
             "end-control=\"5\">\r\n    <flagging kind=\"beginning-part\" x=\"80\" y=\"70\" />\r\n    <bends>",
@@ -845,15 +850,30 @@ fn map_issue_point_keeps_one_description_box() {
     let mut ev = read(&base);
     let start = &mut ev.controls[0];
     assert_eq!(start.kind, ControlKind::Start);
+    // Without a symbol in the event or the base, it gets Purple Pen's symbol for a map issue point.
+    let w = patch(&base, &ev);
+    assert!(
+        w.text
+            .contains("<description box=\"all\" iof-2004-ref=\"13.6\" />"),
+        "{}",
+        w.text
+    );
+    let start = &mut ev.controls[0];
     start.description = Some(freemapper_course::model::Description {
         columns: [Some("13.5".into()), None, None, None, None, None],
         standard: "2004".into(),
         column_f_text: None,
     });
+    // 13.5 is no map issue symbol: Purple Pen fails on it once the file is open.
+    assert!(matches!(
+        write_ppen_patch(base.as_bytes(), &ev, &PatchOptions::default()),
+        Err(PpenWriteError::Invalid(_))
+    ));
+    ev.controls[0].description.as_mut().unwrap().columns[0] = Some("13.6".into());
     let w = patch(&base, &ev);
     assert!(
         w.text
-            .contains("<description box=\"all\" iof-2004-ref=\"13.5\" />"),
+            .contains("<description box=\"all\" iof-2004-ref=\"13.6\" />"),
         "{}",
         w.text
     );

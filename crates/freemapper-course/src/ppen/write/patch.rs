@@ -14,12 +14,13 @@ use super::out::{Body, Child, Element, Style, escape_attr, escape_text, write_el
 use super::{
     AssignedIds, Frame, KeptObject, MAX_ID, Plan, PpenWriteError, WriteNote, Written, check_limits,
     circle_gaps_element, control_element, course_control_element, course_element, courses_element,
-    exchange, leg_element, same_points, same_ranges, special_element,
+    directive_element, directive_symbols, exchange, leg_element, same_points, same_ranges,
+    special_element,
 };
 use crate::CourseError;
 use crate::model::*;
 use crate::ppen::{
-    DEFAULT_PRINT_SCALE, GapRules, KNOWN_SPECIALS, MAX_GAP_SCALES, PKind, State, gap_key,
+    DEFAULT_PRINT_SCALE, GapRules, KNOWN_SPECIALS, MAX_GAP_SCALES, PControl, PKind, State, gap_key,
     read_ppen, scale,
 };
 use crate::xml::{drive, xml_err};
@@ -222,6 +223,35 @@ impl<'a> View<'a> {
     fn course_label(&self, bi: usize) -> &str {
         &self.st.courses[bi].name
     }
+}
+
+/// The event control `ec` is a map issue point in the file: a start (as the reader reads one) matched to one.
+fn is_map_issue(ec: &Control<RawPoint>, pc: &PControl) -> bool {
+    ec.kind == ControlKind::Start && pc.kind == PKind::MapIssue
+}
+
+/// The column C symbol of a description.
+fn symbol_of(d: &Option<Description>) -> Option<&str> {
+    d.as_ref().and_then(|d| d.columns[0].as_deref())
+}
+
+/// The symbol a finish, crossing point or map issue point of the base file keeps: its own, when the event
+/// control matched to it has the same kind and gives no symbol.
+fn kept_symbol<'v>(
+    ec: &Control<RawPoint>,
+    pc: &PControl,
+    rc: &'v Control<RawPoint>,
+) -> Option<&'v str> {
+    let same = match ec.kind {
+        ControlKind::Finish => pc.kind == PKind::Finish,
+        ControlKind::CrossingPoint => pc.kind == PKind::CrossingPoint,
+        ControlKind::Start => pc.kind == PKind::MapIssue,
+        _ => false,
+    };
+    if !same || symbol_of(&ec.description).is_some() {
+        return None;
+    }
+    symbol_of(&rc.description)
 }
 
 /// A kind of control as one number, a map issue point counting as a start (as the reader reads it).
@@ -1102,10 +1132,13 @@ impl<'a> Patch<'a> {
             .controls
             .iter()
             .zip(&m.controls)
-            .map(|(c, b)| {
-                c.kind == ControlKind::Start
-                    && b.is_some_and(|b| st.controls[b].kind == PKind::MapIssue)
-            })
+            .map(|(c, b)| b.is_some_and(|b| is_map_issue(c, &st.controls[b])))
+            .collect();
+        let kept_symbols = ev
+            .controls
+            .iter()
+            .zip(&m.controls)
+            .map(|(c, b)| b.and_then(|b| kept_symbol(c, &st.controls[b], &v.reader.controls[b])))
             .collect();
         let other_courses = kept_courses
             .iter()
@@ -1121,6 +1154,7 @@ impl<'a> Patch<'a> {
                 map_scale: st.map_scale,
                 item_scaling: st.item_scaling,
                 map_issue,
+                kept_symbols,
                 other_courses,
             },
         )?;
@@ -1412,7 +1446,22 @@ impl<'a> Patch<'a> {
                 (None, None) => true,
                 _ => false,
             };
-            let same_description = ec.description == rc.description;
+            // A map issue point keeps its kind (the model reads it as a start) and so its one description box.
+            let map_issue = is_map_issue(ec, pc);
+            // A finish, crossing point or map issue point keeps the base's symbol when the event gives none,
+            // and gets Purple Pen's symbol for a new control when the base has none either (as the 0.4.1
+            // writer wrote it): Purple Pen fails on such a control once the file is open.
+            let one_symbol = directive_symbols(ec.kind, map_issue).is_some();
+            let same_description = if kept_symbol(ec, pc, rc).is_some() {
+                true
+            } else if one_symbol
+                && symbol_of(&ec.description).is_none()
+                && symbol_of(&rc.description).is_none()
+            {
+                false
+            } else {
+                ec.description == rc.description
+            };
             let rules = &v.rules;
             let changed_gaps: BTreeMap<i64, &[(f64, f64)]> = gaps
                 .iter()
@@ -1442,8 +1491,6 @@ impl<'a> Patch<'a> {
                     });
                 }
             }
-            // A map issue point keeps its kind (the model reads it as a start) and so its one description box.
-            let map_issue = pc.kind == PKind::MapIssue;
             let full = control_element(ec, id, &BTreeMap::new(), &v.standard, map_issue)?;
             let obj = v.control_objs[bi];
             let mut m = Merge::object(v.text, v.object(obj));
@@ -1491,6 +1538,31 @@ impl<'a> Patch<'a> {
                     }
                 }
             }
+            let merged = m.finish(Store::Control.element(), 1, self.style);
+            self.replace(obj, merged)?;
+        }
+        // Kept finishes, crossing points and map issue points without a symbol get Purple Pen's symbol for a
+        // new control, as matched ones do. (Claude's call: such a file never opened in Purple Pen, so no user
+        // edit is lost.)
+        let v = self.v;
+        for bi in 0..v.st.controls.len() {
+            if self.matched_controls.contains(&bi) || self.deleted_controls.contains(&bi) {
+                continue;
+            }
+            let pc = &v.st.controls[bi];
+            let symbols = match pc.kind {
+                PKind::Finish => directive_symbols(ControlKind::Finish, false),
+                PKind::CrossingPoint => directive_symbols(ControlKind::CrossingPoint, false),
+                PKind::MapIssue => directive_symbols(ControlKind::Start, true),
+                _ => None,
+            };
+            let Some(symbols) = symbols else { continue };
+            if symbol_of(&v.reader.controls[bi].description).is_some() {
+                continue;
+            }
+            let obj = v.control_objs[bi];
+            let mut m = Merge::object(v.text, v.object(obj));
+            m.kids(&["description"], false, vec![directive_element(symbols[0])]);
             let merged = m.finish(Store::Control.element(), 1, self.style);
             self.replace(obj, merged)?;
         }

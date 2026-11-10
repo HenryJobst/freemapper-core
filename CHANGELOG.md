@@ -7,6 +7,23 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Behoben
+
+- freemapper-course: Purple Pen 4.0 lud eine `.ppen` des Schreibers und stürzte gleich danach ab, weil das
+  Ziel kein Beschreibungssymbol hatte. Purple Pen öffnet nach dem Laden die Ansicht aller Posten und schlägt
+  dort für jedes Ziel, jede Querungsstelle und jeden Kartenausgabepunkt das Symbol nach. Fehlt es, wirft
+  `SymbolDB` eine `ArgumentNullException`. `write_ppen` schreibt jetzt für ein Ziel ohne Symbol `14.3`, für
+  eine Querungsstelle `13.3` und für einen Kartenausgabepunkt `13.6`, also die Symbole, die Purple Pen
+  einem neuen Posten gibt. Ein Symbol aus dem Ereignis bleibt immer stehen. `write_ppen_patch` behält das
+  Symbol der Basisdatei, wenn das Ereignis keines nennt, und ergänzt das fehlende Symbol auch bei Posten, die
+  das Ereignis nicht erwähnt. Eine mit 0.4.1 geschriebene Datei öffnet Purple Pen also nach dem nächsten
+  Patch wieder. Der Schreiber lehnt außerdem ab, woran Purple Pen nach dem Laden scheitert: ein Zielsymbol
+  außer `14.1` bis `14.3`, an einer Querungsstelle ein anderes Symbol als `13.3` und `13.4`, am
+  Kartenausgabepunkt ein anderes als `13.6` und ein Kombinationssymbol wie `10.1` in Spalte C oder G. Der
+  Test gegen Purple Pens
+  Lader prüft jetzt auch die Symbole gegen Purple Pens Symboltabelle, je Spalte und Beschreibungsstandard,
+  und ob alle Verweise zwischen Posten, Bahnposten, Teilstrecken, Bahnen und Sonderobjekten auflösen.
+
 ## [0.4.1] - 2026-11-10
 
 ### Behoben
