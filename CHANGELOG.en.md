@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-10
+
 ### Added
 
 - freemapper-georef: new library (decision 0015). `Crs`, `LatLon`, `ProjectedPoint`, `BoundingBox` and

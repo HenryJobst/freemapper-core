@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.5.0] - 2026-11-10
+
 ### Hinzugefügt
 
 - freemapper-georef: neue Bibliothek (Entscheidung 0015). `Crs`, `LatLon`, `ProjectedPoint`, `BoundingBox` und
