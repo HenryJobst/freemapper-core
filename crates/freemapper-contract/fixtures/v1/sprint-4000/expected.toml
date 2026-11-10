@@ -1,0 +1,16 @@
+contract = 1
+producer = "freemapper 0.9.2 (728fef5)"
+map_kind = "sprint"
+title = "Clara-Zetkin-Schule"
+scale_denominator = 4000
+crs = 25833
+
+[objects]
+furniture = 13
+base = 1
+north_lines = 3
+content = 2
+
+[bbox]
+content = [-30000, -43091, 30000, 42276]
+furniture = [-34813, 54276, 16687, 78276]

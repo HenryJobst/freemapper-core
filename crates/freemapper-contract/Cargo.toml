@@ -6,7 +6,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-include = ["Cargo.toml", "README.md", "src/**/*.rs"]
+include = ["Cargo.toml", "README.md", "src/**/*.rs", "fixtures/**", "tests/**/*.rs"]
 
 [dependencies]
 # Private: no type of it appears in this crate's public API, so an app may pin another core tag for its own reader.
@@ -14,6 +14,17 @@ freemapper-omap.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 toml.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[features]
+# The fixtures, embedded: about 540 kB of map text. For the tests of the apps.
+fixtures = []
+
+[[test]]
+name = "fixtures"
+required-features = ["fixtures"]
 
 [lints]
 workspace = true

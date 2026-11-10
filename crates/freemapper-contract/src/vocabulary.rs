@@ -86,7 +86,7 @@ impl Vocabulary {
 
     /// Reads a `vocabulary.toml`.
     pub fn from_toml(text: &str) -> Result<Vocabulary, ContractError> {
-        toml::from_str(text).map_err(|e| ContractError::Sidecar(e.message().to_string()))
+        toml::from_str(text).map_err(|e| ContractError::Vocabulary(e.message().to_string()))
     }
 
     /// The text of a `vocabulary.toml`.
