@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-10
+
 ### Changed
 
 - freemapper-contract: `Expected::title` is now `Option<String>`, because maps from freemapper 0.9.0 have no title in the sidecar file. Reader tests compare with `expected.title.as_deref()`. `Expected::map_kind` can be `unknown`; a reader test that looks the kind up must handle that case. New: `Expected::breaks` with the rules a fixture breaks on purpose.

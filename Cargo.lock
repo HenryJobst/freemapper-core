@@ -137,7 +137,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-contract"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "freemapper-omap",
  "serde",
@@ -148,7 +148,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-course"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "freemapper-georef",
  "freemapper-omap",
@@ -160,7 +160,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-fs"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "same-file",
  "tempfile",
@@ -168,11 +168,11 @@ dependencies = [
 
 [[package]]
 name = "freemapper-georef"
-version = "0.9.0"
+version = "0.10.0"
 
 [[package]]
 name = "freemapper-omap"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "quick-xml",
  "tempfile",
@@ -181,7 +181,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-render"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "freemapper-omap",
  "image",
@@ -195,7 +195,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-rules"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "thiserror",
  "toml",
@@ -203,7 +203,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-text"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "fluent-bundle",
  "fluent-syntax",

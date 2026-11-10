@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.10.0] - 2026-11-10
+
 ### Geändert
 
 - freemapper-contract: `Expected::title` ist jetzt `Option<String>`, weil Karten von freemapper 0.9.0 keinen Titel in der Begleitdatei haben. Lesertests vergleichen mit `expected.title.as_deref()`. `Expected::map_kind` kann `unknown` sein; ein Lesertest, der die Kartenart nachschlägt, muss diesen Fall behandeln. Neu ist `Expected::breaks` mit den Regeln, gegen die ein Fixture absichtlich verstößt.
