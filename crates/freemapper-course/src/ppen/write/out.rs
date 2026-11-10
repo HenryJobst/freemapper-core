@@ -133,12 +133,15 @@ fn push_indent(out: &mut String, depth: usize, style: &Style) {
     }
 }
 
-fn escape_text(out: &mut String, s: &str) {
+/// Escapes text content. A carriage return is written as a reference, since XML end-of-line handling would
+/// read it back as a line feed.
+pub(super) fn escape_text(out: &mut String, s: &str) {
     for c in s.chars() {
         match c {
             '&' => out.push_str("&amp;"),
             '<' => out.push_str("&lt;"),
             '>' => out.push_str("&gt;"),
+            '\r' => out.push_str("&#xD;"),
             c => out.push(c),
         }
     }
@@ -201,6 +204,15 @@ mod tests {
             &style,
         );
         assert_eq!(out, "<name>A&lt;&amp;\"B&gt;</name>\n");
+        // A carriage return in text would read back as a line feed (XML end-of-line handling).
+        let mut out = String::new();
+        write_element(
+            &mut out,
+            &el("name", &[], Body::Text("a\r\nb".into())),
+            0,
+            &style,
+        );
+        assert_eq!(out, "<name>a&#xD;\nb</name>\n");
         let mut out = String::new();
         write_element(
             &mut out,

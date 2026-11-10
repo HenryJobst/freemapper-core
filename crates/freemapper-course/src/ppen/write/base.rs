@@ -92,8 +92,16 @@ pub(super) fn base_text(bytes: &[u8]) -> Result<&str, PpenWriteError> {
             "the file is UTF-16; Purple Pen writes UTF-8".into(),
         ));
     }
-    std::str::from_utf8(bytes)
-        .map_err(|e| PpenWriteError::UnknownVersion(format!("the file is not UTF-8 ({e})")))
+    let text = std::str::from_utf8(bytes)
+        .map_err(|e| PpenWriteError::UnknownVersion(format!("the file is not UTF-8 ({e})")))?;
+    // XML allows no NUL anywhere; ASCII as UTF-16 without a byte order mark is valid UTF-8 full of them.
+    if text.contains('\0') {
+        return Err(PpenWriteError::UnknownVersion(
+            "the file holds NUL characters, as UTF-16 without a byte order mark does; Purple Pen writes UTF-8"
+                .into(),
+        ));
+    }
+    Ok(text)
 }
 
 /// Splits `text` into its top-level objects and the bytes around them, and checks that Purple Pen as the
@@ -110,6 +118,7 @@ pub(super) fn parse_base(text: &str) -> Result<Base<'_>, PpenWriteError> {
         open: None,
         objects: Vec::new(),
         ids: HashSet::new(),
+        last: None,
         indent: None,
         tail: 0,
     };
@@ -182,6 +191,8 @@ struct Parser<'a> {
     open: Option<Open<'a>>,
     objects: Vec<Object<'a>>,
     ids: HashSet<(Store, i64)>,
+    /// The store of the last top-level element (`None` for `<event>`), and its name.
+    last: Option<(Option<Store>, String)>,
     indent: Option<String>,
     tail: usize,
 }
@@ -234,10 +245,28 @@ impl<'a> Parser<'a> {
                 if self.indent.is_none() {
                     self.indent = Some(self.line_indent(lt));
                 }
+                // `EventDB.Load` reads each store as one run of elements, in this order, and stops a store at
+                // the first element of another; an object out of order would be lost in Purple Pen.
+                let store = Store::of(&name);
+                if let Some((last, last_name)) = &self.last
+                    && store.is_some()
+                    && store < *last
+                {
+                    return Err(PpenWriteError::UnknownVersion(format!(
+                        "<{name}> after <{last_name}>; Purple Pen writes the objects of each kind together, \
+                         in the order event, control, course, course-control, leg, special-object"
+                    )));
+                }
+
                 if name == "event" {
                     if self.event.is_some() || self.event_start.is_some() {
                         return Err(PpenWriteError::UnknownVersion(format!(
                             "a second <event> in <{ROOT}>"
+                        )));
+                    }
+                    if let Some((Some(_), last_name)) = &self.last {
+                        return Err(PpenWriteError::UnknownVersion(format!(
+                            "<event> after <{last_name}>; Purple Pen writes the event first"
                         )));
                     }
                     if empty {
@@ -255,6 +284,13 @@ impl<'a> Parser<'a> {
                         .find(|(k, _)| *k == "id")
                         .and_then(|(_, v)| v.trim().parse::<i64>().ok())
                         .ok_or_else(|| CourseError::Xml(format!("<{name}> lacks a valid id")))?;
+                    if !(1..=i64::from(i32::MAX)).contains(&id) {
+                        return Err(CourseError::Xml(format!(
+                            "<{name}> has the id {id}; Purple Pen ids run from 1 to {}",
+                            i32::MAX
+                        ))
+                        .into());
+                    }
                     if !self.ids.insert((kind, id)) {
                         return Err(
                             CourseError::Xml(format!("{name} id {id} is defined twice")).into()
@@ -276,6 +312,7 @@ impl<'a> Parser<'a> {
                         self.open = Some(open);
                     }
                 }
+                self.last = Some((store, name.clone()));
             }
             2 => {
                 if let Some(o) = self.open.as_mut() {
@@ -609,13 +646,27 @@ mod tests {
             .flat_map(u16::to_le_bytes)
             .collect();
         match base_text(&no_bom) {
-            Err(PpenWriteError::UnknownVersion(_)) => {}
-            Ok(t) => assert!(matches!(
-                parse_base(t),
-                Err(PpenWriteError::UnknownVersion(_) | PpenWriteError::Base(_))
-            )),
-            Err(other) => panic!("{other:?}"),
+            Err(PpenWriteError::UnknownVersion(m)) => {
+                assert!(!m.contains('\0'), "{m:?}");
+                assert!(m.contains("UTF-16"), "{m}");
+            }
+            other => panic!("{other:?}"),
         }
+        // Purple Pen reads each store in one run, in `EventDB.Load`'s order.
+        unknown(
+            parse_base(&LINCOLN.replace(
+                "  <course-control id=\"6\" control=\"5\" />",
+                "  <course-control id=\"6\" control=\"5\" />\r\n  <control id=\"9\" kind=\"normal\" />",
+            )),
+            "<control> after <course-control>",
+        );
+        unknown(
+            parse_base(&LINCOLN.replace(
+                "  <control id=\"1\"",
+                "  <control id=\"9\" kind=\"normal\" />\r\n  <event id=\"2\" />\r\n  <control id=\"1\"",
+            )),
+            "second <event>",
+        );
         assert!(matches!(
             base_text(b"<a>\xff</a>"),
             Err(PpenWriteError::UnknownVersion(_))
@@ -679,6 +730,13 @@ mod tests {
             base_text(big.as_bytes()),
             Err(PpenWriteError::Base(CourseError::Limit(_)))
         ));
+        // Purple Pen ids are positive `int`s.
+        for id in ["0", "-1", "2147483648"] {
+            let e = base_err(parse_base(
+                &LINCOLN.replace("<control id=\"2\"", &format!("<control id=\"{id}\"")),
+            ));
+            assert!(e.to_string().contains(id), "{e}");
+        }
         // Malformed or truncated files are errors, never a panic.
         base_err(parse_base(
             &LINCOLN.replace("<control id=\"2\"", "<control id=\"1\""),

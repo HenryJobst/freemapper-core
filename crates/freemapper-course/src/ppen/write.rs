@@ -188,6 +188,14 @@ pub enum WriteNote {
         from: String,
         to: String,
     },
+    /// A patch moved the bends of a leg that the base file flags only in part, and the point where the flagging
+    /// starts or stops is no longer a bend. Purple Pen refuses such a leg, so the partial flagging was dropped;
+    /// the leg is not a marked route in the model either way. `course` is the first event course on the leg.
+    PartialFlaggingDropped {
+        course: String,
+        from: String,
+        to: String,
+    },
 }
 
 /// Purple Pen keeps ids as `int`, and 0 means "none".

@@ -52,6 +52,7 @@ hier unverändert, mit denselben Code-Bezeichnern. Eine Bibliothek, die einen Be
 | Knickpunkt | bend | Punkt, an dem eine Strecke abknickt, etwa um ein Sperrgebiet herum | `Leg::bends` |
 | Streckenlücke | leg gap | Abschnitt einer Strecke, der nicht gezeichnet wird; Abstand vom Mittelpunkt des ersten Postens entlang der Strecke in mm der Bahndatei | `Leg::gaps` |
 | Kreislücke | circle gap | Winkelbereich, in dem ein Postenkreis nicht gezeichnet wird; Grad gegen den Uhrzeigersinn ab Osten in der Achsrichtung der Bahndatei; Purple Pen speichert sie je Posten und Maßstab | `Stop::circle_gaps` |
+| Teilabflaggung | partial flagging | Purple Pen flaggt eine Strecke nur ab einem ihrer Knickpunkte oder bis zu einem (`flagging kind="beginning-part"`, `"end-part"`, `"map-issue-middle"` mit dem Punkt); der Leser liest das nicht als Pflichtstrecke | `WriteNote::PartialFlaggingDropped` |
 | Pflichtstrecke | marked route | abgeflaggter Weg, dem der Läufer folgen muss, etwa vom letzten Posten zum Ziel | `Leg::marked_route`, `Special::MarkedRoute` |
 | Sonderobjekt | special object | Element der Bahnlegung außer Posten und Strecken: Sperrgebiet, Gefahrenstelle, verbotene Strecke, Grenze, Erste Hilfe, Wasser, Text, Linie, Abdeckung | `Special` |
 | Postenbeschreibung | control descriptions | IOF-Symbole der Spalten C bis H eines Postens, wie die `.ppen` sie speichert, mit dem Beschreibungsstandard (2004, 2018, 2024); IOF-XML trägt keine | `Description` |

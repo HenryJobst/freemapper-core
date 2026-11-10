@@ -32,11 +32,16 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   the reader's limits first and refuses what Purple Pen cannot store, for example two courses that draw the
   same leg differently.
 - freemapper-course: `write_ppen_patch` writes an event into an existing `.ppen`, the base file. The patch
-  matches controls and courses by code or name, and only then by id; if the base file contradicts the event's
-  ids, it ignores them altogether. An object with no changed field keeps its bytes, so patching a file with the
-  event the reader read from it gives back that file. Changed fields are written anew, and attributes and
-  elements the writer does not know stay where they are. Only what `Deletions` in `PatchOptions` names by id
-  is deleted; `Written::kept` lists the objects of the base file the event does not mention.
+  matches controls and courses by code or name. It uses the event's ids only if `PatchOptions::ids_from_base`
+  says they come from this base file, as with the file a course plan is linked to; then a renamed course or a
+  control with a new code stays the same object. By default it ignores every id, so an event read from another
+  file cannot take over objects through ids that happen to coincide. An object with no changed field keeps its
+  bytes, so patching a file with the event the reader read from it gives back that file. Changed fields are
+  written anew, and attributes and elements the writer does not know stay where they are. Only what
+  `Deletions` in `PatchOptions` names by id is deleted; `Written::kept` lists the objects of the base file the
+  event does not mention. The patch refuses to change a leg or circle gaps that a course outside the event
+  also draws. Partial flagging whose point is no longer a bend of the leg is dropped and reported as
+  `WriteNote::PartialFlaggingDropped`.
 
 ## [0.3.0] - 2026-11-10
 

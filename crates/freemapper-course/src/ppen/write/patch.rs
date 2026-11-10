@@ -10,15 +10,18 @@ use quick_xml::Reader;
 use quick_xml::events::Event;
 
 use super::base::{Base, Object, Span, Store, base_text, parse_base};
-use super::out::{Body, Child, Element, Style, escape_attr, write_element};
+use super::out::{Body, Child, Element, Style, escape_attr, escape_text, write_element};
 use super::{
-    AssignedIds, Frame, KeptObject, MAX_ID, Plan, PpenWriteError, Written, check_limits,
+    AssignedIds, Frame, KeptObject, MAX_ID, Plan, PpenWriteError, WriteNote, Written, check_limits,
     circle_gaps_element, control_element, course_control_element, course_element, courses_element,
     exchange, leg_element, same_points, same_ranges, special_element,
 };
 use crate::CourseError;
 use crate::model::*;
-use crate::ppen::{DEFAULT_PRINT_SCALE, GapRules, KNOWN_SPECIALS, PKind, State, read_ppen, scale};
+use crate::ppen::{
+    DEFAULT_PRINT_SCALE, GapRules, KNOWN_SPECIALS, MAX_GAP_SCALES, PKind, State, gap_key,
+    read_ppen, scale,
+};
 use crate::xml::{drive, xml_err};
 
 /// What a patch does beyond writing the event into the base file.
@@ -26,6 +29,12 @@ use crate::xml::{drive, xml_err};
 pub struct PatchOptions {
     /// Objects of the base file to delete.
     pub delete: Deletions,
+    /// The event's ids are Purple Pen ids of this base file: the event was read from it, or from an earlier
+    /// save of it, as with the file a course plan is linked to. Only then does the patch use them, to match a
+    /// renamed course, a control with a new code or a special object that moved, and as the ids of new
+    /// objects. With `false`, the default, every id of the event is ignored, so an event from another file
+    /// cannot take over objects of this one through ids that happen to coincide.
+    pub ids_from_base: bool,
 }
 
 /// Objects of the base file to delete, by Purple Pen id. A patch deletes nothing else: an object the event does
@@ -45,11 +54,16 @@ pub struct Deletions {
 /// Writes `event` into the `.ppen` file `base` and returns the patched file.
 ///
 /// Event objects are matched to the objects of the base file, each base object at most once. Normal
-/// controls match by code, courses by name; if the code or name is not in the base file, the event's id
-/// matches (a code change, a rename). Other controls match by id, then by the code the reader gives them
-/// (`STA1`, `FIN1` …), then by kind and position; special objects by id, then by kind and points. Ids are
-/// not used at all if they contradict the base file somewhere (an event control or course whose code or
-/// name names a base object with another id): then the event comes from another file.
+/// controls match by code, courses by name, other controls by the code the reader gives them (`STA1`,
+/// `FIN1` …) and then by kind and position, special objects by kind and points.
+///
+/// The event's ids count only with [`PatchOptions::ids_from_base`]. Then a normal control whose code is not in
+/// the base file matches the normal control with its id (a code change), a course whose name is not there the
+/// course with its id (a rename), another control a non-normal control with its id, and a special object the
+/// one of the same kind with its id, each before the matches above. As a second guard, the ids are dropped
+/// altogether if they contradict the base file: an event control or course whose code or name names a base
+/// object with another id. That guard catches an event from another file only where a code or name
+/// coincides, which is why the ids are off by default.
 ///
 /// A matched object keeps the bytes of every field the event leaves as it is; changed fields are written
 /// anew, and attributes and elements the writer does not know are carried. An object with no change keeps
@@ -68,7 +82,7 @@ pub fn write_ppen_patch(
     drive(base, &mut st)?;
     check_limits(event)?;
     let view = View::new(text, &parsed, &st, &reader)?;
-    Patch::new(event, &view, &options.delete)?.write()
+    Patch::new(event, &view, options)?.write()
 }
 
 fn mismatch() -> PpenWriteError {
@@ -274,11 +288,16 @@ struct Matches {
     controls: Vec<Option<usize>>,
     courses: Vec<Option<usize>>,
     specials: Vec<Option<usize>>,
-    /// The event's ids agree with the base file wherever a code or name also matches.
+    /// The event's ids are used: the caller says they come from the base file, and they agree with it
+    /// wherever a code or name also matches.
     trusted: bool,
 }
 
-fn match_objects(ev: &RawEvent, v: &View<'_>) -> Result<Matches, PpenWriteError> {
+fn match_objects(
+    ev: &RawEvent,
+    v: &View<'_>,
+    ids_from_base: bool,
+) -> Result<Matches, PpenWriteError> {
     let st = v.st;
     let mut by_code: HashMap<&str, usize> = HashMap::new();
     let mut by_derived: HashMap<&str, usize> = HashMap::new();
@@ -296,7 +315,7 @@ fn match_objects(ev: &RawEvent, v: &View<'_>) -> Result<Matches, PpenWriteError>
     }
 
     // Ids from another file: an id that disagrees with the base object the code or name names.
-    let mut trusted = true;
+    let mut trusted = ids_from_base;
     for c in &ev.controls {
         let map = if c.kind == ControlKind::Control {
             &by_code
@@ -341,7 +360,7 @@ fn match_objects(ev: &RawEvent, v: &View<'_>) -> Result<Matches, PpenWriteError>
             && !taken[bi]
         {
             let fits = if c.kind == ControlKind::Control {
-                !by_code.contains_key(c.code.as_str())
+                !by_code.contains_key(c.code.as_str()) && st.controls[bi].kind == PKind::Normal
             } else {
                 st.controls[bi].kind != PKind::Normal
             };
@@ -420,6 +439,7 @@ fn match_objects(ev: &RawEvent, v: &View<'_>) -> Result<Matches, PpenWriteError>
     for (ei, s) in ev.specials.iter().enumerate() {
         if let Some(&bi) = given(s.id()).and_then(|id| v.special_by_id.get(&id))
             && v.read_specials[bi].is_some()
+            && st.specials[bi].kind == geometry(s).0
             && !taken[bi]
         {
             take(ei, bi, &mut taken, &mut specials);
@@ -902,6 +922,22 @@ impl<'t> Merge<'t> {
     }
 }
 
+/// The text element at `span` of `text` with its start tag (and so its attributes) kept and `content` as its
+/// text.
+fn with_text(text: &str, span: &Span, name: &str, content: &str) -> Result<String, PpenWriteError> {
+    let s = sub(text, span.clone())?;
+    let head = &text[s.head];
+    let mut out = match head.strip_suffix("/>") {
+        Some(open) => format!("{}>", open.trim_end()),
+        None => head.to_string(),
+    };
+    escape_text(&mut out, content);
+    out.push_str("</");
+    out.push_str(name);
+    out.push('>');
+    Ok(out)
+}
+
 fn attr_of(e: &Element, name: &str) -> Option<String> {
     e.attrs
         .iter()
@@ -964,17 +1000,25 @@ struct Patch<'a> {
     deleted_ccs: Vec<i64>,
     edits: BTreeMap<usize, Edit>,
     inserts: BTreeMap<Store, Vec<String>>,
+    /// The length of the output with the edits and inserts so far.
+    size: usize,
     next_leg: NextId,
+    /// Kept base courses, by base control id: the courses that visit the control, with their circle-gap
+    /// scale (indices into `st.courses`).
+    kept_visits: HashMap<i64, Vec<(i64, usize)>>,
+    /// Kept base courses, by pair of base control ids: the first course that runs the leg.
+    kept_legs: HashMap<(i64, i64), usize>,
 }
 
 impl<'a> Patch<'a> {
     fn new(
         ev: &'a RawEvent,
         v: &'a View<'a>,
-        delete: &Deletions,
+        options: &PatchOptions,
     ) -> Result<Patch<'a>, PpenWriteError> {
         let st = v.st;
-        let m = match_objects(ev, v)?;
+        let delete = &options.delete;
+        let m = match_objects(ev, v, options.ids_from_base)?;
         let given = |ids: Vec<Option<u32>>| -> Vec<Option<u32>> {
             ids.into_iter().map(|i| i.filter(|_| m.trusted)).collect()
         };
@@ -1167,7 +1211,16 @@ impl<'a> Patch<'a> {
                 orders.push(match b {
                     Some(bi) => (usize::try_from(st.courses[*bi].order).unwrap_or(0), true),
                     None => {
-                        next += 1;
+                        // Purple Pen keeps the order as an `int`.
+                        next = next
+                            .checked_add(1)
+                            .filter(|n| *n <= i64::from(i32::MAX))
+                            .ok_or_else(|| {
+                                PpenWriteError::Limit(format!(
+                                    "no course order left below {}",
+                                    i32::MAX
+                                ))
+                            })?;
                         (usize::try_from(next).unwrap_or(0), false)
                     }
                 });
@@ -1192,6 +1245,30 @@ impl<'a> Patch<'a> {
             last: max_id(v.leg_pairs.iter().map(|(i, _)| v.object(*i).id)),
             what: "leg",
         };
+
+        // What the kept courses draw from the shared stores: legs per pair of controls, circle gaps per
+        // control and scale. Each course is walked along `next` from `first`; branches of a variation course
+        // are not followed.
+        let mut kept_visits: HashMap<i64, Vec<(i64, usize)>> = HashMap::new();
+        let mut kept_legs: HashMap<(i64, i64), usize> = HashMap::new();
+        for &bi in &kept_courses {
+            let pc = &st.courses[bi];
+            let key = gap_key(st.item_scaling, st.map_scale, pc.print_scale);
+            let mut seen = HashSet::new();
+            let mut prev: Option<i64> = None;
+            let mut next = pc.first;
+            while let Some(id) = next {
+                let Some(cc) = st.ccs.get(&id).filter(|_| seen.insert(id)) else {
+                    break;
+                };
+                kept_visits.entry(cc.control).or_default().push((key, bi));
+                if let Some(p) = prev {
+                    kept_legs.entry((p, cc.control)).or_insert(bi);
+                }
+                prev = Some(cc.control);
+                next = cc.next;
+            }
+        }
         Ok(Patch {
             ev,
             v,
@@ -1210,24 +1287,57 @@ impl<'a> Patch<'a> {
             deleted_ccs,
             edits: BTreeMap::new(),
             inserts: BTreeMap::new(),
+            size: v.text.len(),
             next_leg,
+            kept_visits,
+            kept_legs,
         })
     }
 
-    fn replace(&mut self, obj: usize, merged: Option<String>) {
+    /// Records what happens to base object `obj`, and fails as soon as the output grows past the limit.
+    fn edit(&mut self, obj: usize, e: Edit) -> Result<(), PpenWriteError> {
+        let old = match self.edits.get(&obj) {
+            Some(Edit::Replace(t)) => t.len(),
+            Some(Edit::Drop) => 0,
+            None => self.v.object(obj).span.len(),
+        };
+        let new = match &e {
+            Edit::Replace(t) => t.len(),
+            Edit::Drop => 0,
+        };
+        self.size = self.size.saturating_sub(old).saturating_add(new);
+        self.edits.insert(obj, e);
+        self.check_size()
+    }
+
+    fn check_size(&self) -> Result<(), PpenWriteError> {
+        if self.size > MAX_COURSE_FILE_BYTES {
+            return Err(PpenWriteError::Limit(format!(
+                "the file would be larger than {} MiB",
+                MAX_COURSE_FILE_BYTES / (1024 * 1024)
+            )));
+        }
+        Ok(())
+    }
+
+    fn replace(&mut self, obj: usize, merged: Option<String>) -> Result<(), PpenWriteError> {
         if let Some(t) = merged {
             let o = self.v.object(obj);
             let lead = &self.v.text[o.span.start..o.head.start];
-            self.edits.insert(obj, Edit::Replace(format!("{lead}{t}")));
+            let t = format!("{lead}{t}");
+            self.edit(obj, Edit::Replace(t))?;
         }
+        Ok(())
     }
 
-    fn insert(&mut self, store: Store, e: &Element) {
+    fn insert(&mut self, store: Store, e: &Element) -> Result<(), PpenWriteError> {
         let newline = self.style.newline.as_str();
         let mut s = newline.to_string();
         write_element(&mut s, e, 1, self.style);
         s.truncate(s.len() - newline.len());
+        self.size = self.size.saturating_add(s.len());
         self.inserts.entry(store).or_default().push(s);
+        self.check_size()
     }
 
     fn write(mut self) -> Result<Written, PpenWriteError> {
@@ -1270,7 +1380,7 @@ impl<'a> Patch<'a> {
             let gaps = &self.plan.circle_gaps[ei];
             let Some(bi) = self.m.controls[ei] else {
                 let e = control_element(ec, id, gaps, &self.v.standard, false)?;
-                self.insert(Store::Control, &e);
+                self.insert(Store::Control, &e)?;
                 continue;
             };
             let v = self.v;
@@ -1301,6 +1411,21 @@ impl<'a> Patch<'a> {
             {
                 continue;
             }
+            // Circle gaps are per control and scale: a kept course at the same scale would change too.
+            for k in changed_gaps.keys() {
+                if let Some(&(_, kept)) = self
+                    .kept_visits
+                    .get(&pc.id)
+                    .and_then(|l| l.iter().find(|(key, _)| key == k))
+                {
+                    return Err(PpenWriteError::SharedCircleGaps {
+                        control: ec.code.clone(),
+                        scale: *k,
+                        first: v.course_label(kept).to_string(),
+                        second: gaps[k].1.to_string(),
+                    });
+                }
+            }
             // A map issue point keeps its kind (the model reads it as a start) and so its one description box.
             let map_issue = pc.kind == PKind::MapIssue;
             let full = control_element(ec, id, &BTreeMap::new(), &v.standard, map_issue)?;
@@ -1308,6 +1433,11 @@ impl<'a> Patch<'a> {
             let mut m = Merge::object(v.text, v.object(obj));
             m.attr("id", true, None);
             m.attr("kind", same_kind, attr_of(&full, "kind"));
+            if ec.kind == ControlKind::CrossingPoint {
+                // Required on a crossing point; one of the base stays.
+                let has = m.base_attrs.iter().any(|(k, _)| *k == "orientation");
+                m.attr("orientation", has, attr_of(&full, "orientation"));
+            }
             let mut kids = Kids::of(full);
             m.kids(&["code"], same_code, kids.take("code"));
             m.kids(&["location"], same_location, kids.take("location"));
@@ -1321,6 +1451,12 @@ impl<'a> Patch<'a> {
                     m.drop_attr("gaps");
                     for k in &fix_keys {
                         write.entry(*k).or_insert(old.as_slice());
+                        if write.len() > MAX_GAP_SCALES {
+                            return Err(PpenWriteError::Limit(format!(
+                                "circle gaps for more than {MAX_GAP_SCALES} scales at control {}",
+                                ec.code
+                            )));
+                        }
                     }
                 }
                 for i in 0..m.base_kids.len() {
@@ -1340,10 +1476,10 @@ impl<'a> Patch<'a> {
                 }
             }
             let merged = m.finish(Store::Control.element(), 1, self.style);
-            self.replace(obj, merged);
+            self.replace(obj, merged)?;
         }
         for bi in self.deleted_controls.clone() {
-            self.edits.insert(self.v.control_objs[bi], Edit::Drop);
+            self.edit(self.v.control_objs[bi], Edit::Drop)?;
         }
         Ok(())
     }
@@ -1357,7 +1493,7 @@ impl<'a> Patch<'a> {
             let (order, same_order) = self.orders[ei];
             let Some(bi) = self.m.courses[ei] else {
                 let e = course_element(ec, id, order, first)?;
-                self.insert(Store::Course, &e);
+                self.insert(Store::Course, &e)?;
                 self.course_controls(ei, &[])?;
                 continue;
             };
@@ -1366,7 +1502,10 @@ impl<'a> Patch<'a> {
             let same_name = pc.name == ec.name;
             let same_title = pc.secondary_title == ec.secondary_title;
             let same_first = pc.first == first.map(i64::from);
-            let same_scale = pc.print_scale.and_then(scale) == ec.print_scale_hint;
+            // Without `options/@print-scale` (or a hint) the scale is Purple Pen's default.
+            let default_scale = DEFAULT_PRINT_SCALE as u32;
+            let same_scale = pc.print_scale.map_or(Some(default_scale), scale)
+                == Some(ec.print_scale_hint.unwrap_or(default_scale));
             let same_climb = f32o(pc.climb) == f32o(ec.climb_m);
             let same_length = f32o(pc.length) == f32o(ec.length_m);
             let same_options = same_scale && same_climb && same_length;
@@ -1378,7 +1517,17 @@ impl<'a> Patch<'a> {
                 m.attr("kind", same_kind, attr_of(&full, "kind"));
                 m.attr("order", same_order, attr_of(&full, "order"));
                 let mut kids = Kids::of(full);
-                m.kids(&["name"], same_name, kids.take("name"));
+                // The name is merged like `first` and `options`: its attributes (`hide-variations-on-map`)
+                // stay.
+                let new_name = kids.take("name");
+                match (same_name, m.find_kid("name")) {
+                    (true, _) => m.kids(&["name"], true, Vec::new()),
+                    (false, Some(i)) => {
+                        let t = with_text(v.text, &m.base_kids[i].0, "name", &ec.name)?;
+                        m.replace_kid(i, t);
+                    }
+                    (false, None) => m.kids(&["name"], false, new_name),
+                }
                 m.kids(
                     &["secondary-title"],
                     same_title,
@@ -1404,7 +1553,10 @@ impl<'a> Patch<'a> {
                         let built = new_options.first();
                         let get = |name: &str| built.and_then(|e| attr_of(e, name));
                         let mut s = Merge::sub(v.text, &m.base_kids[i].0)?;
-                        s.attr("print-scale", same_scale, get("print-scale"));
+                        // `print-scale` is required: never dropped, and added where the base lacks it.
+                        let has_scale = s.base_attrs.iter().any(|(k, _)| *k == "print-scale");
+                        let print_scale = ec.print_scale_hint.unwrap_or(default_scale).to_string();
+                        s.attr("print-scale", same_scale && has_scale, Some(print_scale));
                         s.attr("climb", same_climb, get("climb"));
                         s.attr("course-length", same_length, get("course-length"));
                         if let Some(t) = s.finish("options", 2, self.style) {
@@ -1414,7 +1566,7 @@ impl<'a> Patch<'a> {
                     (false, None) => m.kids(&["options"], false, new_options),
                 }
                 let merged = m.finish(Store::Course.element(), 1, self.style);
-                self.replace(obj, merged);
+                self.replace(obj, merged)?;
             }
             let chain = v.chains[bi].as_deref().unwrap_or(&[]);
             self.course_controls(ei, chain)?;
@@ -1424,14 +1576,14 @@ impl<'a> Patch<'a> {
             let mut m = Merge::object(v.text, v.object(obj));
             m.attr("order", false, Some(order.to_string()));
             let merged = m.finish(Store::Course.element(), 1, self.style);
-            self.replace(obj, merged);
+            self.replace(obj, merged)?;
         }
         for bi in self.deleted_courses.clone() {
-            self.edits.insert(v.course_objs[bi], Edit::Drop);
+            self.edit(v.course_objs[bi], Edit::Drop)?;
         }
         for id in self.deleted_ccs.clone() {
             if let Some(&obj) = v.cc_objs.get(&id) {
-                self.edits.insert(obj, Edit::Drop);
+                self.edit(obj, Edit::Drop)?;
             }
         }
         Ok(())
@@ -1449,7 +1601,7 @@ impl<'a> Patch<'a> {
             let next = self.cc_ids[ei].get(si + 1).copied();
             let Some(bid) = chain.get(si) else {
                 let e = course_control_element(id, control, stop, exchange, next)?;
-                self.insert(Store::CourseControl, &e);
+                self.insert(Store::CourseControl, &e)?;
                 continue;
             };
             let (Some(pcc), Some(&obj)) = (v.st.ccs.get(bid), v.cc_objs.get(bid)) else {
@@ -1482,7 +1634,7 @@ impl<'a> Patch<'a> {
                 kids.take("number-location"),
             );
             let merged = m.finish(Store::CourseControl.element(), 1, self.style);
-            self.replace(obj, merged);
+            self.replace(obj, merged)?;
         }
         Ok(())
     }
@@ -1493,11 +1645,24 @@ impl<'a> Patch<'a> {
             let u = &self.plan.legs[li];
             let (a, b) = (self.plan.ids.controls[u.from], self.plan.ids.controls[u.to]);
             let pair = (i64::from(a), i64::from(b));
+            // One leg per pair of controls: a kept course on the same pair would change too.
+            let shared = |patch: &Patch<'_>| -> Result<(), PpenWriteError> {
+                match patch.kept_legs.get(&pair) {
+                    Some(&kept) => Err(PpenWriteError::SharedLeg {
+                        from: patch.ev.controls[u.from].code.clone(),
+                        to: patch.ev.controls[u.to].code.clone(),
+                        first: v.course_label(kept).to_string(),
+                        second: u.course.to_string(),
+                    }),
+                    None => Ok(()),
+                }
+            };
             let (Some(&obj), Some(pleg)) = (v.leg_objs.get(&pair), v.st.legs.get(&pair)) else {
                 if u.written() {
+                    shared(self)?;
                     let id = self.next_leg.take()?;
                     let e = leg_element(id, a, b, u.leg, u.flagging)?;
-                    self.insert(Store::Leg, &e);
+                    self.insert(Store::Leg, &e)?;
                 }
                 continue;
             };
@@ -1508,28 +1673,67 @@ impl<'a> Patch<'a> {
             if same_flagging && same_bends && same_gaps {
                 continue;
             }
+            shared(self)?;
             let id = u32::try_from(v.object(obj).id).unwrap_or(0);
             let full = leg_element(id, a, b, u.leg, u.flagging)?;
             let mut m = Merge::object(v.text, v.object(obj));
             for name in ["id", "start-control", "end-control"] {
                 m.attr(name, true, None);
             }
+            // Partial flagging (which the model reads as no marked route) starts or stops at one of the
+            // bends (`Leg.Validate`). With other bends it stays only if its point is still one of them;
+            // otherwise Purple Pen would refuse the leg, so it is dropped with a note.
+            if same_flagging
+                && !same_bends
+                && matches!(
+                    pleg.flagging.as_deref(),
+                    Some("beginning-part" | "end-part" | "map-issue-middle")
+                )
+                && let Some(i) = m.find_kid("flagging")
+            {
+                let f = sub(v.text, m.base_kids[i].0.clone())?;
+                let coord = |name: &str| {
+                    f.attrs
+                        .iter()
+                        .find(|(k, _)| *k == name)
+                        .and_then(|(_, v)| v.trim().parse::<f32>().ok())
+                };
+                let at = coord("x").zip(coord("y"));
+                let still = at.is_some_and(|(x, y)| {
+                    u.leg
+                        .bends
+                        .iter()
+                        .any(|b| b.x_mm as f32 == x && b.y_mm as f32 == y)
+                });
+                if !still {
+                    m.drop_kid(i);
+                    self.plan.notes.push(WriteNote::PartialFlaggingDropped {
+                        course: u.course.to_string(),
+                        from: self.ev.controls[u.from].code.clone(),
+                        to: self.ev.controls[u.to].code.clone(),
+                    });
+                }
+            }
             let mut kids = Kids::of(full);
             m.kids(&["flagging"], same_flagging, kids.take("flagging"));
             m.kids(&["bends"], same_bends, kids.take("bends"));
             m.kids(&["gaps"], same_gaps, kids.take("gaps"));
             let merged = m.finish(Store::Leg.element(), 1, self.style);
-            self.replace(obj, merged);
+            self.replace(obj, merged)?;
         }
-        for &(obj, (a, b)) in &v.leg_pairs {
-            let gone = |id: i64| {
-                v.control_by_id
-                    .get(&id)
-                    .is_some_and(|bi| self.deleted_controls.contains(bi))
-            };
-            if gone(a) || gone(b) {
-                self.edits.insert(obj, Edit::Drop);
-            }
+        let gone = |id: i64| {
+            v.control_by_id
+                .get(&id)
+                .is_some_and(|bi| self.deleted_controls.contains(bi))
+        };
+        let dropped: Vec<usize> = v
+            .leg_pairs
+            .iter()
+            .filter(|(_, (a, b))| gone(*a) || gone(*b))
+            .map(|(obj, _)| *obj)
+            .collect();
+        for obj in dropped {
+            self.edit(obj, Edit::Drop)?;
         }
         Ok(())
     }
@@ -1547,7 +1751,7 @@ impl<'a> Patch<'a> {
             let courses = &self.plan.special_courses[si];
             let Some(bi) = self.m.specials[si] else {
                 let e = special_element(s, id, courses)?;
-                self.insert(Store::Special, &e);
+                self.insert(Store::Special, &e)?;
                 continue;
             };
             let ps = &v.st.specials[bi];
@@ -1580,17 +1784,22 @@ impl<'a> Patch<'a> {
             } else {
                 let full = special_element(s, id, courses)?;
                 m.attr("kind", same_kind, attr_of(&full, "kind"));
-                m.kids(&["location"], false, Kids::of(full).take("location"));
+                let mut kids = Kids::of(full);
+                if !same_kind {
+                    // A line needs its `appearance`; other kinds the writer builds have none.
+                    m.kids(&["appearance"], false, kids.take("appearance"));
+                }
+                m.kids(&["location"], false, kids.take("location"));
             }
             m.kids(&["courses"], same_courses, vec![courses_element(courses)]);
             let merged = m.finish(Store::Special.element(), 1, self.style);
-            self.replace(obj, merged);
+            self.replace(obj, merged)?;
         }
         // Kept special objects leave the course lists of deleted courses (`ChangeEvent.DeleteCourse`).
         for (bi, ps) in v.st.specials.iter().enumerate() {
             let obj = v.special_objs[bi];
             if self.deleted_specials.contains(&bi) {
-                self.edits.insert(obj, Edit::Drop);
+                self.edit(obj, Edit::Drop)?;
                 continue;
             }
             if self.matched_specials.contains(&bi)
@@ -1601,7 +1810,7 @@ impl<'a> Patch<'a> {
             }
             if ps.courses.iter().all(|c| deleted_course_ids.contains(c)) {
                 self.deleted_specials.insert(bi);
-                self.edits.insert(obj, Edit::Drop);
+                self.edit(obj, Edit::Drop)?;
                 continue;
             }
             let mut m = Merge::object(v.text, v.object(obj));
@@ -1621,7 +1830,7 @@ impl<'a> Patch<'a> {
                 }
             }
             let merged = m.finish(Store::Special.element(), 1, self.style);
-            self.replace(obj, merged);
+            self.replace(obj, merged)?;
         }
         Ok(())
     }
