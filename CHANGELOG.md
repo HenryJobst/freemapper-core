@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.4.1] - 2026-11-10
+
 ### Behoben
 
 - freemapper-course: Purple Pen 4.0 lehnte eine `.ppen` des Schreibers ab, sobald ein Kurs Steigung, Länge
