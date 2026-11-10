@@ -23,3 +23,4 @@ status to `Superseded by NNNN`.
 | [0012](0012-the-omap-crate.md) | The omap crate |
 | [0013](0013-the-course-crate.md) | The course crate |
 | [0014](0014-the-ppen-writer.md) | The .ppen writer |
+| [0015](0015-the-georef-crate.md) | The georef crate |

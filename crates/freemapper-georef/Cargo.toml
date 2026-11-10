@@ -1,0 +1,12 @@
+[package]
+name = "freemapper-georef"
+description = "Coordinate reference systems for the freemapper suite: UTM (Transverse Mercator), EPSG:25832/25833, bounding boxes and tile ids"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+include = ["Cargo.toml", "README.md", "src/**/*.rs"]
+
+[lints]
+workspace = true

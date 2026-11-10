@@ -17,14 +17,14 @@ als Kopie in jeder:
 
 ## Stand
 
-Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-course`, `freemapper-fs`, `freemapper-omap`,
-`freemapper-rules` und `freemapper-text`, die anderen Bibliotheken sind geplant:
+Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-course`, `freemapper-fs`, `freemapper-georef`,
+`freemapper-omap`, `freemapper-rules` und `freemapper-text`, die anderen Bibliotheken sind geplant:
 
 | Bibliothek | Inhalt | kommt aus | Stand |
 |---|---|---|---|
 | `freemapper-text` | Programmtexte mit Fluent, Spracherkennung | freemapper-courseplan | enthalten |
 | `freemapper-rules` | Regelprofile für Prüfungen, gelesen und geprüft nach einem Schema der Anwendung | freemapper-courseplan, freemapper-print | enthalten |
-| `freemapper-georef` | Georeferenzierung, Deklination, UTM | freemapper | geplant |
+| `freemapper-georef` | Koordinaten und Koordinatensysteme: UTM-Projektion (Transverse Mercator) für ETRS89 und WGS84, EPSG:25832 und 25833, Begrenzungsrechtecke, Kachelnamen; ohne Abhängigkeiten | freemapper, freemapper-print | enthalten |
 | `freemapper-fs` | Schreiben, Kopieren und Löschen im Projektordner, ohne einer Verknüpfung zu folgen | freemapper | enthalten |
 | `freemapper-omap` | Kartenmodell, .omap lesen, eingebettete Symbolsätze ISSprOM 2019 und Schulkarte 2019; noch ohne Schreiben | freemapper, freemapper-print | enthalten |
 | `freemapper-render` | Kartendarstellung, Schriften, PDF | freemapper-print | geplant |

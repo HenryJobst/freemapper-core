@@ -7,6 +7,14 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- freemapper-georef: new library (decision 0015). `Crs`, `LatLon`, `ProjectedPoint`, `BoundingBox` and
+  `TileId` from freemapper, unchanged in names, behaviour and tests. Also `tm`, the suite's only UTM
+  computation: Krüger series to n^6 on any ellipsoid with convergence and scale factor, and `utm_from_crs`
+  for EPSG codes and PROJ texts. `Crs::utm_zone` and `Crs::transverse_mercator` tie the two together.
+  freemapper-course is unchanged; freemapper-print switches `fit` to this library and then deletes its `tm`.
+
 ## [0.4.2] - 2026-11-10
 
 ### Fixed

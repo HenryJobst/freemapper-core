@@ -72,3 +72,7 @@ hier unverändert, mit denselben Code-Bezeichnern. Eine Bibliothek, die einen Be
 | äußere Winkelhalbierende | outer bisector | Halbierende des größeren Winkels zwischen hereinführender und hinausführender Strecke an einem Posten | `placement::outer_bisector` |
 | Platzierungsmodul | placement module | Modul für Kasten, Bewertung und Suche der Postennummern, das nichts sonst aus der Bibliothek nutzt; freemapper-print und freemapper-courseplan platzieren damit nach denselben Regeln | `placement` |
 | Hindernis | obstacle | was eine Postennummer nicht verdecken soll, mit seiner Stufe: Bahnaufdruck, Punkt- und Liniensymbole der Karte, weiche Hindernisse je mm² gewichtet | `placement::Obstacle`, `placement::Tier` |
+| Begrenzungsrechteck | bounding box | achsparalleles Rechteck in projizierten Koordinaten (m) | `BoundingBox` |
+| Kachel | tile | Quadrat eines Rasters von 1 km oder 2 km, benannt nach der Südwestecke in km, etwa `33421-5821` | `TileId`, `tiles_covering` |
+| Meridiankonvergenz | grid convergence | Winkel von geografisch Nord zu Gitter-Nord in Grad, westlich des Mittelmeridians negativ (Vorzeichen wie in OOM) | `Crs::convergence_deg`, `Projected::convergence_deg` |
+| Transversale Mercator-Projektion | Transverse Mercator | Abbildung, auf der UTM beruht; die Bibliothek rechnet mit der Krüger-Reihe bis n^6 (ADR 0015) | `tm::TransverseMercator` |

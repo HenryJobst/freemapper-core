@@ -7,6 +7,14 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- freemapper-georef: neue Bibliothek (Entscheidung 0015). `Crs`, `LatLon`, `ProjectedPoint`, `BoundingBox` und
+  `TileId` aus freemapper, unverändert in Namen, Verhalten und Tests. Dazu `tm` mit der einzigen UTM-Rechnung
+  der Suite: Krüger-Reihe bis n^6 auf jedem Ellipsoid mit Konvergenz und Maßstab, `utm_from_crs` für
+  EPSG-Codes und PROJ-Texte. `Crs::utm_zone` und `Crs::transverse_mercator` verbinden beide. freemapper-course
+  bleibt unverändert; freemapper-print stellt `fit` auf diese Bibliothek um und löscht dann sein `tm`.
+
 ## [0.4.2] - 2026-11-10
 
 ### Behoben
