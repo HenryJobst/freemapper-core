@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-10
+
 ### Fixed
 
 - freemapper-course: Purple Pen 4.0 loaded a `.ppen` from the writer and crashed right after, because the
