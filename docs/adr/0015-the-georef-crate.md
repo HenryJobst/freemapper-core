@@ -24,6 +24,13 @@ because UTM belongs to a georef crate. The region adapters (freemapper ADR 0082)
   error type, and no other app uses it.
 - No dependencies, so no age rule applies (ADR 0004), and no network access (ADR 0007).
 
+## Addendum 2026-11-10 (v0.5.2)
+
+`TransverseMercator::inverse(easting, northing) -> (lat, lon)` joins `forward` for every UTM zone, hemisphere
+and ellipsoid: Krüger series to n^6 as in `forward`, then Newton iteration from the conformal latitude. It
+replaces the finite-difference Newton loop in `Crs::inverse`, which now calls it and rejects points that do
+not project back to themselves within 1 mm. Results moved by less than 1e-9 degrees.
+
 ## Consequences
 - `Crs` knows zones 32 and 33 only, as in freemapper. Other zones go through `tm`; a new `Crs` variant would
   break exhaustive matches in the apps and waits for a use.

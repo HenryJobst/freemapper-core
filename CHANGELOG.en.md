@@ -7,6 +7,16 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-11-10
+
+### Added
+
+- freemapper-georef: `TransverseMercator::inverse` converts easting and northing back to latitude and longitude for any UTM zone, both hemispheres and any ellipsoid (Krüger series to n^6). A round trip through `forward` is off by less than 1e-9 degrees (about 0.1 mm).
+
+### Changed
+
+- freemapper-georef: `Crs::inverse` uses the new inverse instead of the Newton loop over `forward`. Results change by less than 1e-9 degrees; points far outside the zone still give `None`.
+
 ## [0.5.1] - 2026-11-10
 
 ### Changed

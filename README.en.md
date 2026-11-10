@@ -24,7 +24,7 @@ The project is just starting. So far it contains `freemapper-course`, `freemappe
 |---|---|---|---|
 | `freemapper-text` | program texts with Fluent, language detection | freemapper-courseplan | included |
 | `freemapper-rules` | rule profiles for checks, read and validated against an app schema | freemapper-courseplan, freemapper-print | included |
-| `freemapper-georef` | coordinates and coordinate systems: UTM projection (Transverse Mercator) for ETRS89 and WGS84, EPSG:25832 and 25833, bounding boxes, tile names; no dependencies | freemapper, freemapper-print | included |
+| `freemapper-georef` | coordinates and coordinate systems: UTM projection (Transverse Mercator) for ETRS89 and WGS84, EPSG:25832 and 25833, forward and inverse, bounding boxes, tile names; no dependencies | freemapper, freemapper-print | included |
 | `freemapper-fs` | writing, copying and removing inside the project folder without following a link | freemapper | included |
 | `freemapper-omap` | map model, reading .omap, embedded symbol sets ISSprOM 2019 and school map 2019; no writer yet | freemapper, freemapper-print | included |
 | `freemapper-render` | map rendering, fonts, PDF | freemapper-print | planned |
