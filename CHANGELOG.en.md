@@ -7,6 +7,10 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- freemapper-contract: when the crate or freemapper-omap changes, CI now runs the contract tests (`contract_*`) of freemapper-print and freemapper-courseplan against the new state (decision 0021). A red run means the change breaks a reader; the reader then learns the new form first, and core is released after that.
+
 ## [0.11.0] - 2026-11-11
 
 ### Added

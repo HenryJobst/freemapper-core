@@ -29,3 +29,4 @@ status to `Superseded by NNNN`.
 | [0018](0018-the-contract-crate.md) | The contract crate |
 | [0019](0019-the-render-crate.md) | The render crate |
 | [0020](0020-local-web-pages-shell.md) | The shell for local web pages |
+| [0021](0021-the-contract-gate.md) | The contract gate |

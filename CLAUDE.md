@@ -42,6 +42,9 @@ before changing code.
 - Remotes: `origin` is the private GitLab (https://gitlab.jobst-server.de/henry/freemapper-core, HTTPS),
   `github` the public GitHub repository (https://github.com/HenryJobst/freemapper-core, SSH). CI runs on
   GitHub. Push `main` to both after a merge.
+- A change to `freemapper-contract` or `freemapper-omap` also runs the workflow `contract-gate.yml`: the
+  `contract_*` tests of freemapper-print and freemapper-courseplan against the change (ADR 0021). Never release
+  over a red gate; the reader follows first.
 - Releases: set `[workspace.package] version`, `cargo update -w`, date the changelog sections, commit,
   annotated tag, push `main` and the tag to both remotes, and tell the other sessions which version to pin.
 - Disk space is shared by the suite: run `cargo clean` in a worktree before removing it.

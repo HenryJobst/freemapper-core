@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- freemapper-contract: Ändert sich die Bibliothek oder freemapper-omap, führt die CI jetzt die Vertragstests (`contract_*`) von freemapper-print und freemapper-courseplan gegen den neuen Stand aus (Entscheidung 0021). Ein roter Lauf heißt, dass die Änderung einen Leser bricht; dann lernt erst der Leser die neue Form, danach wird core veröffentlicht.
+
 ## [0.11.0] - 2026-11-11
 
 ### Hinzugefügt
