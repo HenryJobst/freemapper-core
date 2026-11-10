@@ -16,6 +16,7 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   `CourseNumbers`, `NumberStop`, `NO_LEGS_DIRECTION_DEG` (45 degrees at a control without legs),
   `Rect::UNBOUNDED` and `GapRange::strictest`, which combines several `number_gap` rules into the largest
   minimum and the smallest maximum. The existing items of `placement` do not change.
+- freemapper-course: The module `description_symbols` brings the IOF control description symbols with their drawings and German and English texts from Purple Pen's `symbols.xml`, taken over from freemapper-print (`describe::symbols` there). The file sits unchanged in `data/`. New compared with there: `TextLang` instead of `SheetLang`, `symbol_kind` (the column a symbol belongs in) and `exists`.
 
 ## [0.5.2] - 2026-11-10
 

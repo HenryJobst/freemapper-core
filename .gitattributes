@@ -7,3 +7,5 @@
 *.pdf binary
 # Purple Pen fixtures stay byte-identical to the originals (CRLF, BOM); see their README.
 *.ppen -text
+# The Purple Pen symbol file stays byte-identical to the original (CRLF, BOM); see its README.
+crates/freemapper-course/data/purple-pen-symbols.xml -text

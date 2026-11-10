@@ -17,6 +17,7 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
   (45 Grad an einem Posten ohne Strecken), `Rect::UNBOUNDED` und `GapRange::strictest`. Letzteres fasst
   mehrere `number_gap`-Regeln zusammen, mit dem größten Minimum und dem kleinsten Maximum. Die bisherigen
   Einträge von `placement` ändern sich nicht.
+- freemapper-course: Das Modul `description_symbols` bringt die Symbole der IOF-Postenbeschreibung mit Zeichnung und deutschen und englischen Texten aus Purple Pens `symbols.xml`, übernommen aus freemapper-print (dort `describe::symbols`). Die Datei liegt unverändert in `data/`. Neu gegenüber dort sind `TextLang` statt `SheetLang`, `symbol_kind` (die Spalte, in die ein Symbol gehört) und `exists`.
 
 ## [0.5.2] - 2026-11-10
 

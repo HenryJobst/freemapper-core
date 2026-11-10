@@ -23,6 +23,11 @@ Cargo-Feature `fit`, das standardmäßig an ist. Wer nur Modell, Leser und Numme
 `model` ab, etwa über 50 MiB, mit mehr als 10 000 Posten oder tiefer als 64 Ebenen verschachtelt
 (freemapper-print, Entscheidung 0019). Fehlertexte sind Englisch, die Anwendung übersetzt sie.
 
+Das Modul `description_symbols` enthält die Symbole der IOF-Postenbeschreibung (Zeichnung, deutscher und
+englischer Text) aus Purple Pens `symbols.xml`. Die Datei liegt unverändert in [`data/`](data/README.md). Purple
+Pen steht unter der BSD-Lizenz, Copyright (c) 2006-2008, Peter Golde; der volle Lizenztext steht dort. Er muss
+jeder Weitergabe der Bibliothek, auch als Binärdatei, beiliegen.
+
 Die Testdateien liegen in [`tests/fixtures/courses/`](tests/fixtures/courses/README.md), dort stehen
 Quelle und Lizenz.
 
@@ -49,6 +54,11 @@ feature `fit`, which is on by default. Code that needs only the model, the reade
 sets `default-features = false` and builds without `freemapper-omap` and `freemapper-georef`. The readers refuse files beyond the limits in `model`,
 such as more than 50 MiB, more than 10 000 controls or nesting deeper than 64 levels (freemapper-print
 decision 0019). Error texts are English; the app translates them.
+
+The module `description_symbols` holds the IOF control description symbols (drawing, German and English text)
+from Purple Pen's `symbols.xml`. The file sits unchanged in [`data/`](data/README.md). Purple Pen is published
+under the BSD licence, Copyright (c) 2006-2008, Peter Golde; the full licence text is there. It must accompany
+every redistribution of the library, binary form included.
 
 The test files are in [`tests/fixtures/courses/`](tests/fixtures/courses/README.md), with their source and
 licence.
