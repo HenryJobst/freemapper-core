@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- freemapper-course: Die Einpassung nutzt die UTM-Umrechnung aus freemapper-georef; das private Modul `tm` entfällt. Die Ergebnisse bleiben gleich.
+
 ## [0.5.0] - 2026-11-10
 
 ### Hinzugefügt

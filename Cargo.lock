@@ -86,6 +86,7 @@ dependencies = [
 name = "freemapper-course"
 version = "0.5.0"
 dependencies = [
+ "freemapper-georef",
  "freemapper-omap",
  "quick-xml",
  "serde",

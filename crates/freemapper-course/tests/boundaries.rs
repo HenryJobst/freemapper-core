@@ -1,4 +1,4 @@
-//! The crate's boundary (core ADR 0013): of the suite it uses `freemapper-omap` alone, so an app reads
+//! The crate's boundary (core ADR 0013): of the suite it uses `freemapper-omap` and `freemapper-georef` alone, so an app reads
 //! courses without building rule profiles, a renderer or another app's code.
 
 use std::path::{Path, PathBuf};
@@ -15,7 +15,7 @@ fn sources(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-/// The suite crates `text` names as a Rust path (`freemapper_…::`), other than this crate and the omap crate.
+/// The suite crates `text` names as a Rust path (`freemapper_…::`), other than this crate, the omap and the georef crate.
 /// A name without `::`, as in the placement module's own check, is no path.
 fn other_suite_crates(text: &str) -> Vec<String> {
     let mut out = Vec::new();
@@ -25,7 +25,11 @@ fn other_suite_crates(text: &str) -> Vec<String> {
             .take_while(|c| c.is_alphanumeric() || *c == '_')
             .collect();
         let path = text[i + name.len()..].starts_with("::");
-        if path && name != "freemapper_omap" && name != "freemapper_course" && !out.contains(&name)
+        if path
+            && name != "freemapper_omap"
+            && name != "freemapper_georef"
+            && name != "freemapper_course"
+            && !out.contains(&name)
         {
             out.push(name);
         }
@@ -34,7 +38,7 @@ fn other_suite_crates(text: &str) -> Vec<String> {
 }
 
 #[test]
-fn boundary_test_course_needs_only_omap() {
+fn boundary_test_course_needs_only_omap_and_georef() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut files = Vec::new();
     sources(&root.join("src"), &mut files);
@@ -53,7 +57,11 @@ fn boundary_test_course_needs_only_omap() {
     let suite: Vec<&str> = manifest
         .lines()
         .map(str::trim)
-        .filter(|l| l.starts_with("freemapper-") && !l.starts_with("freemapper-omap"))
+        .filter(|l| {
+            l.starts_with("freemapper-")
+                && !l.starts_with("freemapper-omap")
+                && !l.starts_with("freemapper-georef")
+        })
         .collect();
     assert!(suite.is_empty(), "{suite:?}");
 }

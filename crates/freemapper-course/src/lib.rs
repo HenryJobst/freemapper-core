@@ -18,8 +18,6 @@ pub mod model;
 pub mod number_offset;
 pub mod placement;
 pub mod ppen;
-#[cfg(feature = "fit")]
-mod tm;
 pub mod xml;
 
 #[cfg(feature = "fit")]
