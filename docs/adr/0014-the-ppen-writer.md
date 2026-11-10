@@ -36,6 +36,15 @@ file may hold more than the project knows: comments, part entries, objects made 
   (`WriteNote::PartialFlaggingDropped`), because the model reads partial flagging as no marked route anyway.
 - A rewritten object loses what the model does not hold: comments and part entries of the course, for
   example. A renamed course keeps its `name` tag with its attributes.
+- Every attribute `EventDB.Load` reads without a default is written. `tests/purple_pen_strict.rs` holds the
+  audit of `EventDB.Load` at `201417f` as a table (required attributes, required children, accepted values,
+  store order, unique ids) and checks the fixtures and the writer's output against it, from scratch and as a
+  patch. Added 2026-11-10, after Purple Pen 4.0 refused `<options>` without `description-kind`: the crate's
+  reader has defaults where Purple Pen has none, so a round trip cannot catch such a gap.
+- `<options>` always carries `description-kind`: `symbols` from scratch (Purple Pen's value for a new course,
+  the model keeps none), the base's value in a patch. A patch adds it to a base `<options>` that lacks it even
+  when the course is otherwise unchanged, so files of the 0.4.0 writer load again. (Claude's call: such a
+  file never loaded in Purple Pen, so no user edit is lost.)
 
 ## Consequences
 - Breaking: every `Special` variant gains `id: Option<u32>` and `CourseSource` gains `item_scaling`, so the
@@ -43,9 +52,12 @@ file may hold more than the project knows: comments, part entries, objects made 
   `special-object/@id` with a bad entity now.
 - Known limits: kept courses are checked along `next` only, so a patch can change a leg or gaps that only a
   branch of a kept forked course uses. Crossing points always get orientation 0. `<options>` is left out
-  without print scale, climb or length.
+  without print scale, climb or length; written from scratch, its `description-kind` is always `symbols`.
+  The strict check does not cover `EventDB.Validate` (Purple Pen runs it only in debug builds) or the base64
+  of `image-data`.
 - Cost if wrong: a patch that misreads a base file rewrites the user's own Purple Pen objects. The tests patch
-  fixtures with the event read from them and demand identical bytes, but no test has run Purple Pen 4.0.
+  fixtures with the event read from them and demand identical bytes, and the strict check stands in for Purple
+  Pen's loader, but no test has run Purple Pen 4.0 itself.
 
 Source: courseplan design §5.5 and §5.5a, the agreement with freemapper-print of 2026-11-10 (Task 1),
 `src/PurplePenCore/EventDB.cs` at `201417f`.
