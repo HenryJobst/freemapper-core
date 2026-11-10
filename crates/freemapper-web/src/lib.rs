@@ -10,7 +10,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::Router;
-use axum::extract::Request;
+use axum::extract::{DefaultBodyLimit, Request};
 use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
@@ -32,6 +32,9 @@ pub enum WebError {
     /// The operating system has no random source for the token.
     #[error("no random source: {0}")]
     NoRandom(String),
+    /// [`ServeOptions::csp`] is not a valid header value (for example it holds a line break).
+    #[error("the Content-Security-Policy is not a valid header value")]
+    BadCsp,
 }
 
 /// How [`serve`] starts.
@@ -45,11 +48,35 @@ pub struct ServeOptions {
     /// header equal to the page's origin is required, and the content type must be `application/json` or
     /// `application/octet-stream`. A cross-site form cannot meet either. With `false`, an `Origin` that is
     /// sent must still match, but a POST may omit it and use any content type.
+    ///
+    /// A request without a body is not exempt: a body-less POST must still send
+    /// `Content-Type: application/json` (in `fetch`: `headers` with that type and `body: "{}"`), or it gets 403.
     pub strict_post: bool,
+    /// Largest request body in bytes, applied to every route through [`DefaultBodyLimit`]; a larger body gets
+    /// 413 from the axum extractors (`Bytes`, `String`, `Json` …). A route may raise or lower it with its own
+    /// `DefaultBodyLimit::max(..)` layer, which is inner and wins. [`DEFAULT_MAX_BODY`] by default.
+    pub max_body: usize,
+}
+
+/// The default of [`ServeOptions::max_body`]: 1 MiB.
+pub const DEFAULT_MAX_BODY: usize = 1024 * 1024;
+
+impl ServeOptions {
+    /// System-chosen port, no strict POST rules, [`DEFAULT_MAX_BODY`], and the given CSP.
+    pub fn new(csp: &'static str) -> Self {
+        Self {
+            port: 0,
+            csp,
+            strict_post: false,
+            max_body: DEFAULT_MAX_BODY,
+        }
+    }
 }
 
 /// A running local server.
-#[derive(Debug)]
+///
+/// Dropping it does not stop the server: the task keeps running until the process ends or the
+/// [`Notify`] from [`LocalServer::shutdown`] is notified. Call [`LocalServer::finished`] to wait for it.
 pub struct LocalServer {
     /// `http://127.0.0.1:{port}/{token}/`
     pub url: String,
@@ -57,6 +84,13 @@ pub struct LocalServer {
     pub token: String,
     done: Arc<Notify>,
     task: tokio::task::JoinHandle<std::io::Result<()>>,
+}
+
+impl std::fmt::Debug for LocalServer {
+    /// Prints no field: `url` and `token` are the access secret and must not reach a log.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LocalServer").finish_non_exhaustive()
+    }
 }
 
 impl LocalServer {
@@ -78,12 +112,14 @@ struct Guard {
     strict_post: bool,
 }
 
-/// Binds 127.0.0.1, calls `build` with the path prefix `/{token}` and serves the routes it returns behind
-/// the guards.
+/// Binds 127.0.0.1, calls `build` with the path prefix `/{token}` and the shutdown [`Notify`], and serves the
+/// routes it returns behind the guards. The `Notify` is the one [`LocalServer::shutdown`] returns and the
+/// graceful shutdown waits on, so a handler (for example `done`) can call `notify_one()` to stop the server.
 pub async fn serve(
-    build: impl FnOnce(&str) -> Router,
+    build: impl FnOnce(&str, Arc<Notify>) -> Router,
     options: ServeOptions,
 ) -> Result<LocalServer, WebError> {
+    let csp = HeaderValue::from_str(options.csp).map_err(|_| WebError::BadCsp)?;
     let bind_error = |source| WebError::Bind {
         port: options.port,
         source,
@@ -97,16 +133,16 @@ pub async fn serve(
     let guard = Arc::new(Guard {
         origins: hosts.clone().map(|host| format!("http://{host}")),
         hosts,
-        csp: HeaderValue::from_static(options.csp),
+        csp,
         strict_post: options.strict_post,
     });
-    let app = build(&format!("/{token}")).layer(middleware::from_fn(
-        move |request: Request, next: Next| {
+    let done = Arc::new(Notify::new());
+    let app = build(&format!("/{token}"), Arc::clone(&done))
+        .layer(DefaultBodyLimit::max(options.max_body))
+        .layer(middleware::from_fn(move |request: Request, next: Next| {
             let guard = Arc::clone(&guard);
             async move { guarded(&guard, request, next).await }
-        },
-    ));
-    let done = Arc::new(Notify::new());
+        }));
     let stop = Arc::clone(&done);
     let task = tokio::spawn(async move {
         axum::serve(listener, app)
@@ -130,16 +166,25 @@ fn token() -> Result<String, WebError> {
 
 async fn guarded(guard: &Guard, request: Request, next: Next) -> Response {
     let headers = request.headers();
-    let host = headers
-        .get(header::HOST)
-        .and_then(|h| h.to_str().ok())
-        .unwrap_or_default();
-    let origin = headers.get(header::ORIGIN);
+    // Exactly one Host and at most one Origin: with duplicates the app could see another value than we checked.
+    let mut hosts = headers.get_all(header::HOST).iter();
+    let host = match (hosts.next(), hosts.next()) {
+        (Some(host), None) => host.to_str().unwrap_or_default(),
+        _ => "",
+    };
+    let mut origins = headers.get_all(header::ORIGIN).iter();
+    let origin = origins.next();
+    let one_origin = origins.next().is_none();
+    let cross_site = headers
+        .get("sec-fetch-site")
+        .is_some_and(|v| v == "cross-site");
     let mutating = !matches!(
         *request.method(),
         Method::GET | Method::HEAD | Method::OPTIONS
     );
-    let allowed = guard.hosts.iter().any(|allowed| allowed == host)
+    let allowed = one_origin
+        && !cross_site
+        && guard.hosts.iter().any(|allowed| allowed == host)
         // Browsers send Origin on cross-site requests: only the page itself may call.
         && origin.is_none_or(|origin| guard.origins.iter().any(|allowed| allowed == origin))
         && (!(guard.strict_post && mutating) || (origin.is_some() && strict_content_type(headers)));
@@ -181,20 +226,70 @@ fn strict_content_type(headers: &axum::http::HeaderMap) -> bool {
         || essence.eq_ignore_ascii_case("application/octet-stream")
 }
 
-/// An embedded file by path, with the MIME type rust-embed derives from its name; 404 if there is none.
+/// An embedded file by path; 404 if there is none or the path is not a plain relative one (empty, absolute,
+/// with a backslash, NUL, a `:` drive prefix or a `..` segment).
+///
+/// The content type comes from the extension for html, js, css, svg, png, webp, json and txt, and from
+/// rust-embed otherwise. Text types carry `; charset=utf-8`.
 pub fn embedded<E: rust_embed::RustEmbed>(path: &str) -> Response {
+    if !plain_relative(path) {
+        return StatusCode::NOT_FOUND.into_response();
+    }
     match E::get(path) {
-        Some(file) => (
-            [(header::CONTENT_TYPE, file.metadata.mimetype().to_string())],
-            file.data.into_owned(),
-        )
-            .into_response(),
+        Some(file) => {
+            let content_type = content_type(path, file.metadata.mimetype());
+            (
+                [(header::CONTENT_TYPE, content_type)],
+                file.data.into_owned(),
+            )
+                .into_response()
+        }
         None => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
-/// Opens `url` in the default browser without waiting for it.
+fn plain_relative(path: &str) -> bool {
+    !path.is_empty()
+        && !path.starts_with('/')
+        && !path.contains(['\\', '\0'])
+        && path.as_bytes().get(1) != Some(&b':')
+        && path.split('/').all(|segment| segment != "..")
+}
+
+fn content_type(path: &str, guessed: &str) -> String {
+    let extension = path.rsplit_once('.').map_or("", |(_, e)| e);
+    let fixed = match extension.to_ascii_lowercase().as_str() {
+        "html" | "htm" => "text/html; charset=utf-8",
+        "js" | "mjs" => "text/javascript; charset=utf-8",
+        "css" => "text/css; charset=utf-8",
+        "svg" => "image/svg+xml; charset=utf-8",
+        "json" => "application/json; charset=utf-8",
+        "txt" => "text/plain; charset=utf-8",
+        "png" => "image/png",
+        "webp" => "image/webp",
+        _ => {
+            return if guessed.starts_with("text/") && !guessed.contains("charset") {
+                format!("{guessed}; charset=utf-8")
+            } else {
+                guessed.to_string()
+            };
+        }
+    };
+    fixed.to_string()
+}
+
+/// Opens `url` in the default browser without waiting for it. Only [`LocalServer::url`] belongs here: a URL
+/// that does not start with `http://127.0.0.1:` is refused with an `InvalidInput` error, because the opener
+/// is a shell command on some platforms. The token is then visible in the process list while the opener runs.
 pub fn open_browser(url: &str) -> std::io::Result<()> {
+    if !url.starts_with("http://127.0.0.1:")
+        || url.contains(|c: char| c.is_whitespace() || c == '"')
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "only the URL of the local server can be opened",
+        ));
+    }
     let mut command = if cfg!(target_os = "macos") {
         std::process::Command::new("open")
     } else if cfg!(windows) {

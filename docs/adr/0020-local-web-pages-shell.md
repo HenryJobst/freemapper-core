@@ -11,7 +11,9 @@ them is a security hole. The suite rule is that shared code lives in core.
 
 ## Decision
 - The crate `freemapper-web` holds the shell and nothing else: no tiles, maps, projects or routes. Each app
-  brings its own routes through `serve(build, options)`. `build` receives the path prefix `/{token}`.
+  brings its own routes through `serve(build, options)`. `build` receives the path prefix `/{token}` and the
+  `Arc<tokio::sync::Notify>` that `LocalServer::shutdown()` returns and the graceful shutdown waits on, so a
+  handler in the app (a `done` route) can stop the server *(agreed with freemapper)*.
 - Rulings taken over from freemapper's `select.rs` *(agreed with freemapper)*:
   - Binds 127.0.0.1 only. Port 0 lets the system choose; a given port is forced, and a bind error names it.
   - The access token is a path prefix `/{token}/…`, not a header: 128 bits from `getrandom`, 32 hex digits. A
@@ -33,8 +35,13 @@ them is a security hole. The suite rule is that shared code lives in core.
   needs a CORS preflight that no route answers. Default for freemapper is `false`: its POSTs may omit the
   `Origin` and use any content type, as before. Courseplan sets `true`. Checks that belong to an app, such as a
   revision header, stay in the app.
-- `embedded::<E>(path)` serves a rust-embed file with the MIME type from its name, or 404. `open_browser(url)`
-  starts the platform's opener without waiting.
+- Hardening beyond select.rs: exactly one `Host` and at most one `Origin` header; `Sec-Fetch-Site: cross-site`
+  is refused; request bodies are limited by `ServeOptions::max_body` (1 MiB by default, a route may override it
+  with its own `DefaultBodyLimit` layer); a CSP that is not a valid header value is `WebError::BadCsp`.
+- `embedded::<E>(path)` serves a rust-embed file, or 404 for a missing file and for an empty, absolute,
+  backslash, NUL, drive-prefixed or `..` path. The content type is fixed by extension for html, js, css, svg,
+  png, webp, json and txt, with `; charset=utf-8` on text types. `open_browser(url)` starts the platform's
+  opener without waiting and takes only the URL of `LocalServer`; other URLs are refused.
 - freemapper-courseplan owns the crate (ADR 0005), as it brings it in.
 
 ## Consequences
@@ -42,6 +49,13 @@ them is a security hole. The suite rule is that shared code lives in core.
 - Pinned dependencies, all older than two weeks (ADR 0004): axum 0.8.9 (2026-04-14), rust-embed 8.13.0
   (2026-10-07), getrandom 0.4.3 (2026-06-17), tokio 1.54.1 (2026-10-21), the versions freemapper uses.
 - An app that serves JSON or forms adds the axum features it needs; the crate enables only `http1` and `tokio`.
+- No header-read timeouts and no connection limits: the server listens on loopback only, so only local
+  processes can hold sockets.
+- With `open_browser` the token is part of the opener's argument list and so visible in the process list of the
+  machine while the opener runs. That is a known limit, shared with freemapper's select. A possible hardening is
+  a one-time launch token in the URL that the first request exchanges for a cookie.
+- `build` changed from `FnOnce(&str)` to `FnOnce(&str, Arc<Notify>)` before the first release; the app ignores
+  the second argument if it does not need it. Dropping a `LocalServer` leaves the server running.
 - The host allowlist assumes the browser reaches the page at the printed URL. A reverse proxy or another host
   name is refused.
 
