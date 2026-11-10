@@ -3,7 +3,7 @@
 use std::path::Path;
 
 use freemapper_course::fit::{
-    FitError, FitNote, FitOptions, GEOREF_TOLERANCE_M, SkipReason, YAxis, fit,
+    FitError, FitNote, FitOptions, GEOREF_TOLERANCE_M, MapGrid, SkipReason, YAxis, fit,
 };
 use freemapper_course::model::Offset;
 use freemapper_course::{
@@ -679,4 +679,53 @@ fn file_scale_against_a_map_without_scale_reads_plainly() {
     let err = fit(ev, &map, &FitOptions::default()).unwrap_err();
     assert_eq!(err, FitError::MapScaleUnknown { file: 4000 });
     assert!(!err.to_string().contains("1:0"), "{err}");
+}
+
+#[test]
+fn map_grid_converts_between_map_mm_and_lat_lng_on_luebeck() {
+    let map = luebeck();
+    let grid = MapGrid::of(&map.georef).unwrap();
+    // Control 33 of the course file has only lat/lng; the georeferencing puts it at (-80, 90) mm (see above).
+    let event = luebeck_course();
+    let (lat, lng) = event
+        .controls
+        .iter()
+        .find(|c| c.code == "33")
+        .and_then(|c| c.geo)
+        .expect("control 33 has lat/lng");
+    let (x, y) = grid.map_mm_of(lat, lng);
+    assert!(
+        (x + 80.0).abs() < 0.001 && (y - 90.0).abs() < 0.001,
+        "{x} {y}"
+    );
+    let (lat2, lng2) = grid.latlon_of((x, y));
+    assert!((lat2 - lat).abs() < 1e-9 && (lng2 - lng).abs() < 1e-9);
+    // Round trip within 1 mm on the map, from the middle to the corners of the map.
+    for p in [
+        (0.0, 0.0),
+        (-150.0, -150.0),
+        (150.0, 150.0),
+        (150.0, -150.0),
+    ] {
+        let (la, ln) = grid.latlon_of(p);
+        let q = grid.map_mm_of(la, ln);
+        assert!(
+            (q.0 - p.0).abs() < 1e-3 && (q.1 - p.1).abs() < 1e-3,
+            "{p:?} {q:?}"
+        );
+    }
+    // 100 mm to the east at 1:4000 are about 400 m on the ground (grivation turns it, the distance stays).
+    let (a, b) = (grid.latlon_of((0.0, 0.0)), grid.latlon_of((100.0, 0.0)));
+    let m_per_deg_lat = 111_200.0;
+    let dn = (b.0 - a.0) * m_per_deg_lat;
+    let de = (b.1 - a.1) * m_per_deg_lat * a.0.to_radians().cos();
+    let d = dn.hypot(de);
+    assert!((d - 400.0).abs() < 2.0, "{d}");
+    // No CRS, no grid.
+    let mut plain = map.georef.clone();
+    plain.crs_spec = None;
+    assert!(matches!(
+        MapGrid::of(&plain),
+        Err(SkipReason::NotGeoreferenced)
+    ));
 }

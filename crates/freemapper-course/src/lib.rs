@@ -31,7 +31,7 @@ pub mod ppen;
 pub mod xml;
 
 #[cfg(feature = "fit")]
-pub use fit::{Fit, FitError, FitNote, SkipReason, fit};
+pub use fit::{Fit, FitError, FitNote, MapGrid, SkipReason, fit};
 pub use iof_xml::read_iof_xml;
 #[cfg(feature = "fit")]
 pub use model::FittedEvent;
