@@ -7,6 +7,27 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- freemapper-course: `placement::place_course_numbers` platziert alle Nummern einer Bahn in Laufreihenfolge. Die
+  Suche stammt aus `auto_place` von freemapper-courseplan (dort die Entscheidungen 0030 bis 0032). Gehaltene
+  Nummern (`NumberStop::kept`) bleiben, wo sie sind, und die anderen weichen ihnen aus. Jede gesetzte Nummer
+  ist Hindernis für die folgenden, Kreise und Strecken der Bahn zählen als Bahnaufdruck. Die Kartenhindernisse
+  kommen einmal je Bahn in ein Raster. Dazu kommen `CourseNumbers`, `NumberStop`, `NO_LEGS_DIRECTION_DEG`
+  (45 Grad an einem Posten ohne Strecken), `Rect::UNBOUNDED` und `GapRange::strictest`. Letzteres fasst
+  mehrere `number_gap`-Regeln zusammen, mit dem größten Minimum und dem kleinsten Maximum. Die bisherigen
+  Einträge von `placement` bleiben, wie sie sind. Entscheidung 0016.
+- freemapper-course: Das Modul `description_symbols` enthält die Symbole der IOF-Postenbeschreibung mit
+  Zeichnung sowie deutschem und englischem Text aus Purple Pens `symbols.xml` (BSD-Lizenz). Es stammt aus
+  freemapper-print (dort `describe::symbols`), die Datei liegt unverändert in `data/`. Gegenüber dort gibt es
+  `TextLang` statt `SheetLang`, `symbol_kind` (die Spalte, in die ein Symbol gehört) und `exists`. Dazu bildet
+  das Modul zwischen Purple-Pen-Kennungen und IOF-2024-Nummern ab. `iof_2024` ist die Vorwärtsabbildung von
+  courseplan. `ppen_symbol` und `ppen_columns` gehen zurück und liefern nur Kennungen, die der Standard hat und
+  die Purple Pen in dieser Spalte anbietet. Sie tauschen die Himmelsrichtungs- und Diagonalformen von 0.1 und
+  0.2 und schreiben schlichtes 9.1 und 9.3 als `high` mit Hinweis. Symbole, die eine 2004-Datei nicht kennt
+  (2.10, 15.6, 5.23 und 5.24 von 2024), weisen sie ab. `single` setzen sie in Spalte F (`10.1single`).
+  "Zwischen" (12.14) behält D und E und bekommt das schlichte `11.15`. Entscheidung 0017.
+
 ## [0.5.2] - 2026-11-10
 
 ### Hinzugefügt

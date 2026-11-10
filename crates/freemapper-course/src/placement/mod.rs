@@ -31,6 +31,8 @@ pub const CANDIDATE_STEP_DEG: f64 = 15.0;
 pub const CANDIDATES: usize = 24;
 /// The label [`score`] gives a box that leaves its bounds.
 pub const OUTSIDE: &str = "outside";
+/// The direction (degrees) [`place_course_numbers`] starts from at a control without legs, as courseplan's `auto_place`.
+pub const NO_LEGS_DIRECTION_DEG: f64 = 45.0;
 
 const EPS: f64 = 1e-9;
 /// Corners of the polygon that stands in for a circle when an overlap area is measured.
@@ -46,6 +48,12 @@ pub struct Rect {
 }
 
 impl Rect {
+    /// The whole plane, as bounds for a placement that may go anywhere.
+    pub const UNBOUNDED: Rect = Rect {
+        min: (f64::MIN, f64::MIN),
+        max: (f64::MAX, f64::MAX),
+    };
+
     /// The rectangle of `size` (width, height) centred on `centre`.
     pub fn centred(centre: Pt, size: (f64, f64)) -> Rect {
         Rect {
@@ -753,6 +761,25 @@ impl GapRange {
         Self::rounded(usable(min).unwrap_or(lo), usable(max).unwrap_or(hi))
     }
 
+    /// The limits of several rules combined: the largest usable minimum and the smallest usable maximum, a side
+    /// no rule gives left open. `None` when no rule gives a usable value. Usable means finite and above 0, as in
+    /// [`GapRange::from_limits`]. Pass the result to [`GapRange::from_limits`] for placement or to
+    /// [`GapRange::allowed`] for the check.
+    pub fn strictest(
+        rules: impl IntoIterator<Item = (Option<f64>, Option<f64>)>,
+    ) -> Option<(Option<f64>, Option<f64>)> {
+        let (mut min, mut max) = (None::<f64>, None::<f64>);
+        for (lo, hi) in rules {
+            if let Some(v) = usable(lo) {
+                min = Some(min.map_or(v, |m| m.max(v)));
+            }
+            if let Some(v) = usable(hi) {
+                max = Some(max.map_or(v, |m| m.min(v)));
+            }
+        }
+        (min.is_some() || max.is_some()).then_some((min, max))
+    }
+
     /// `min` to `max` held to [`GAP_LIMITS_MM`] and rounded inwards to 0.01 mm, the maximum at least the minimum.
     fn rounded(min: f64, max: f64) -> GapRange {
         let (lo, hi) = GAP_LIMITS_MM;
@@ -1035,6 +1062,9 @@ pub fn best_within<'a>(
         (p, near.labelled(s))
     }))
 }
+
+mod course;
+pub use course::{CourseNumbers, NumberStop, place_course_numbers};
 
 #[cfg(test)]
 mod tests;

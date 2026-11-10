@@ -2,6 +2,15 @@
 //! that also patches an existing file, the fit of a course file to an OOM map, and the placement of control
 //! numbers. Terms follow `docs/glossary.md`.
 //!
+//! Two modules serve the apps beyond reading and writing:
+//!
+//! - [`placement`] holds the number search of freemapper-print. `placement::place_course_numbers` places all
+//!   numbers of one course in running order, with kept numbers fixed and each placed number an obstacle for
+//!   the next (ADR 0016).
+//! - [`description_symbols`] holds the IOF control description symbols (pictograms and German and English
+//!   texts) from Purple Pen's `symbols.xml`, and the mapping between Purple Pen ids and IOF 2024 numbers in
+//!   both directions (ADR 0017).
+//!
 //! The crate uses no other suite crate than `freemapper-omap`, and that only for the fit: the cargo feature
 //! `fit` (on by default) brings in the fit, `FittedEvent` and `SourceFormat::y_axis` with the omap crate.
 //! Without it, the model, the readers and the number placement build alone. Loading the course file a project
@@ -11,6 +20,7 @@
 // core ADR 0013). ADR numbers, rulings and spec sections that the comments cite without naming a project are
 // freemapper-print's; "courseplan" means freemapper-courseplan.
 
+pub mod description_symbols;
 #[cfg(feature = "fit")]
 pub mod fit;
 pub mod iof_xml;

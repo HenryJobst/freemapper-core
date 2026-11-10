@@ -1,12 +1,12 @@
 [package]
 name = "freemapper-course"
-description = "Orienteering courses: course model, Purple Pen and IOF XML readers, a Purple Pen writer with patch mode, fitting to the map, number placement"
+description = "Orienteering courses: course model, Purple Pen and IOF XML readers, a Purple Pen writer with patch mode, fitting to the map, number placement, the control description symbols"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-include = ["Cargo.toml", "README.md", "src/**/*.rs", "tests/**/*"]
+include = ["Cargo.toml", "README.md", "src/**/*.rs", "tests/**/*", "data/**"]
 
 [features]
 default = ["fit"]
@@ -19,6 +19,9 @@ freemapper-omap = { workspace = true, optional = true }
 quick-xml.workspace = true
 serde.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+toml.workspace = true
 
 [[test]]
 name = "fit_courses"
