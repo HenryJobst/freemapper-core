@@ -7,6 +7,10 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- freemapper-render: the page builder from freemapper-print, unchanged in behaviour (decision 0023). `build::build_page` turns a `MapDocument` into the `RenderedPage` the PDF gets, plus a `BuildReport` with the page fields of print's `PrintReport` under the same names. `PageSpec` takes the symbol factor and the geometry factor as numbers; the scale rules (map kind, allowed scales, factors) stay in print. `Paper`, `Orientation`, `PAGE_MARGIN_MM`, `MAX_UNITS_PER_PAGE`, `frame_box`, the tags `SHEET_TAG`, `SCALE_BAR_TAG`, `BASE_TAG`, the map part `BASE_PART` and `is_sheet_object`, `is_base_object`, `is_north_line` move along with it. `build_page_within` takes another page budget, for tests. The crate now depends on `serde`.
+
 ## [0.12.0] - 2026-11-11
 
 ### Added

@@ -31,3 +31,4 @@ status to `Superseded by NNNN`.
 | [0020](0020-local-web-pages-shell.md) | The shell for local web pages |
 | [0021](0021-the-contract-gate.md) | The contract gate |
 | [0022](0022-svg-backend-and-hit-test.md) | SVG backend and hit test |
+| [0023](0023-page-builder-in-core.md) | The page builder moves to core |
