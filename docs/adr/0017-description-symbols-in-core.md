@@ -14,9 +14,9 @@ writer then refused.
 - The database moves to `freemapper-course::description_symbols`: the XML byte for byte (about 670 KB, embedded in
   the binary), the parser, `symbol`, `symbol_text`, `symbol_kind`, `exists` and `Standard`.
   The file is BSD-licensed; `data/README.md` carries the notice and its provenance (freemapper-print ADR 0036).
-- The forward mapping `iof_2024` moves unchanged from courseplan (`ppen_import.rs`; courseplan ADR 0034). I
-  compared Purple Pen's English names with the IOF 2024 text for every row and found no difference that needs
-  a standard parameter: an id means the same in the 2004 and 2018 definitions. Only 1.10 (drawing) and 11.7
+- The forward mapping `iof_2024` moves unchanged from courseplan (`ppen_import.rs`; courseplan ADR 0034). Purple Pen's English
+  names match the IOF 2024 text row by row, so the mapping needs no standard parameter: an id means the same in
+  the 2004 and 2018 definitions. Only 1.10 (drawing) and 11.7
   (column G in 2004, F in 2018) differ between the two, and neither changes the number.
 - The inverse is `ppen_symbol(id, standard)` for one number and `ppen_columns` for columns C to H. It is built
   from the database, not from a guessed list of ids. Where several Purple Pen ids give one number, the plain
@@ -38,10 +38,10 @@ writer then refused.
 | 2024 5.21, 5.22 | Written as 5.23, 5.24 in both standards | `symbols.xml` has 5.23 and 5.24 without a standard. 2024 5.21 is "Canopy", a covered passage, Purple Pen's "Building pass-through" |
 | 2024 5.25, 5.26, 14.1, 13.9, unknown numbers | `NoPurplePenId` | the database has no such number |
 | bend 11.1 in F, 2004 file | G when G is empty (as before) | `symbols.xml` has 11.7 as kind G in 2004 and kind F in 2018 |
-| bend 11.1 in F, 2004 file, G taken | **Deviation from the proposal:** `WrongColumn`, not `NotInStandard(Iof2004)` | 11.7 exists in 2004; only box F does not offer it |
+| bend 11.1 in F, 2004 file, G taken | Deviation from the proposal: `WrongColumn`, not `NotInStandard(Iof2004)` | 11.7 exists in 2004; only box F does not offer it |
 | D equal to E with 10.1 or 10.2 in F | D keeps the feature, E empty, F gets `10.1single` or `10.2single` | `10.1single` reads "{0} crossing" and has kind F |
-| D equal to E with 12.14 in G | **Deviation from the proposal:** D and E both stay, G gets the plain `11.15` | `11.15single` reads "between {1}" and `write_ppen` refuses it in column G (`COMBINATION_SYMBOLS`; Purple Pen throws on it). 2024 names both features in D and E for 12.14, so the plain symbol is correct. There is no `12.14single` |
-| a symbol outside the kinds a box offers | **Addition:** `Refusal::WrongColumn` (the proposal had two variants) | `purple_pen_strict.rs` `COLUMN_KINDS` |
+| D equal to E with 12.14 in G | Deviation from the proposal: D and E both stay, G gets the plain `11.15` | `11.15single` reads "between {1}" and `write_ppen` refuses it in column G (`COMBINATION_SYMBOLS`; Purple Pen throws on it). 2024 names both features in D and E for 12.14, so the plain symbol is correct. There is no `12.14single` |
+| a symbol outside the kinds a box offers | Addition: `Refusal::WrongColumn` (the proposal had two variants) | `purple_pen_strict.rs` `COLUMN_KINDS` |
 | any other number | the first Purple Pen id in the order above | |
 
 The old export table looked for `single` on the id in column D (`10.1` in D), which no description has. The new

@@ -8,7 +8,7 @@ Status: Accepted
 freemapper-print already uses (`best`). freemapper-courseplan has had its own copy, `numbers::auto_place`
 (courseplan ADR 0030 to 0032), and switches to the core function. Before it does, both implementations ran the
 same cases: `crates/freemapper-course/tests/fixtures/placement/cases.toml` (33 cases, a byte copy in
-courseplan). Reading the code had predicted six places where they could differ (D1 to D6). The first 24 cases
+courseplan). Reading the code showed six places where they could differ (D1 to D6). The first 24 cases
 agreed everywhere, so nine probe cases were added, and about 10 000 generated cases (sweeps over leg angles,
 bends, rule minimums, symbol ties, and 400 random courses with map clutter) were run on both sides and thrown
 away afterwards.
@@ -53,8 +53,7 @@ in the range of a line width (0.175 mm at sprint scale) or a rule minimum with t
   disappears with the old code.
 - `large_map_places_a_course_quickly` (core, `tests/placement_cases.rs`) places 40 numbers on 1000 polylines of
   100 segments (100 000 map segments in 400 × 400 mm) with gaps 0.5 to 5.0 mm. The bound is the larger of 2 s
-  and 30 times the old release time: three times as long as the old code in release mode would be the target,
-  times ten for a debug build.
+  and 30 times the old release time: three times the old time as the target, times ten for a debug build.
 
 | Time | Value |
 |---|---|

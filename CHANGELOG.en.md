@@ -9,15 +9,24 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- freemapper-course: `placement::place_course_numbers` places all numbers of a course in running order, taken
-  from freemapper-courseplan's `auto_place` (its decisions 0030 to 0032). Kept numbers (`NumberStop::kept`)
-  stay where they are, and the others keep clear of them. Each placed number blocks the ones after it, and the
-  circles and legs of the course count as overprint. The map obstacles go into one grid per course. Also new:
-  `CourseNumbers`, `NumberStop`, `NO_LEGS_DIRECTION_DEG` (45 degrees at a control without legs),
-  `Rect::UNBOUNDED` and `GapRange::strictest`, which combines several `number_gap` rules into the largest
-  minimum and the smallest maximum. The existing items of `placement` do not change.
-- freemapper-course: The module `description_symbols` brings the IOF control description symbols with their drawings and German and English texts from Purple Pen's `symbols.xml`, taken over from freemapper-print (`describe::symbols` there). The file sits unchanged in `data/`. New compared with there: `TextLang` instead of `SheetLang`, `symbol_kind` (the column a symbol belongs in) and `exists`.
-- freemapper-course: `description_symbols` maps between Purple Pen ids and IOF 2024 numbers. `iof_2024` is courseplan's forward mapping, moved. `ppen_symbol` and `ppen_columns` go back and write only ids that the standard has and that Purple Pen offers in that column. They swap the cardinal and diagonal forms of 0.1 and 0.2, write plain 9.1 and 9.3 as `high` with a note, refuse symbols a 2004 file lacks (2.10, 15.6, 5.23 and 5.24 of 2024), and put `single` into column F (`10.1single`). "Between" (12.14) keeps D and E and gets the plain `11.15`. ADR 0017.
+- freemapper-course: `placement::place_course_numbers` places all numbers of a course in running order. The
+  search comes from `auto_place` in freemapper-courseplan (its decisions 0030 to 0032). Kept numbers
+  (`NumberStop::kept`) stay where they are, and the others keep clear of them. Each placed number blocks the
+  ones after it, and the circles and legs of the course count as overprint. The map obstacles go into one grid
+  per course. Also added are `CourseNumbers`, `NumberStop`, `NO_LEGS_DIRECTION_DEG` (45 degrees at a control
+  without legs), `Rect::UNBOUNDED` and `GapRange::strictest`, which combines several `number_gap` rules into
+  the largest minimum and the smallest maximum. The existing items of `placement` stay as they are. Decision
+  0016.
+- freemapper-course: The module `description_symbols` holds the IOF control description symbols with their
+  drawings and German and English texts from Purple Pen's `symbols.xml` (BSD licence). It comes from
+  freemapper-print (`describe::symbols` there), and the file sits unchanged in `data/`. Compared with there it
+  has `TextLang` instead of `SheetLang`, `symbol_kind` (the column a symbol belongs in) and `exists`. The
+  module also maps between Purple Pen ids and IOF 2024 numbers. `iof_2024` is courseplan's forward mapping.
+  `ppen_symbol` and `ppen_columns` go back and return only ids that the standard has and that Purple Pen
+  offers in that column. They swap the cardinal and diagonal forms of 0.1 and 0.2, and write plain 9.1 and 9.3
+  as `high` with a note. They refuse symbols a 2004 file lacks (2.10, 15.6, 5.23 and 5.24 of 2024) and put
+  `single` into column F (`10.1single`). "Between" (12.14) keeps D and E and gets the plain `11.15`. Decision
+  0017.
 
 ## [0.5.2] - 2026-11-10
 

@@ -1,7 +1,15 @@
 //! Orienteering courses: the course model, readers for Purple Pen (`.ppen`) and IOF XML 3.0, a `.ppen` writer
 //! that also patches an existing file, the fit of a course file to an OOM map, and the placement of control
-//! numbers. `description_symbols` holds the IOF control description symbols (pictograms and German and English
-//! texts) from Purple Pen's `symbols.xml`. Terms follow `docs/glossary.md`.
+//! numbers. Terms follow `docs/glossary.md`.
+//!
+//! Two modules serve the apps beyond reading and writing:
+//!
+//! - [`placement`] holds the number search of freemapper-print. `placement::place_course_numbers` places all
+//!   numbers of one course in running order, with kept numbers fixed and each placed number an obstacle for
+//!   the next (ADR 0016).
+//! - [`description_symbols`] holds the IOF control description symbols (pictograms and German and English
+//!   texts) from Purple Pen's `symbols.xml`, and the mapping between Purple Pen ids and IOF 2024 numbers in
+//!   both directions (ADR 0017).
 //!
 //! The crate uses no other suite crate than `freemapper-omap`, and that only for the fit: the cargo feature
 //! `fit` (on by default) brings in the fit, `FittedEvent` and `SourceFormat::y_axis` with the omap crate.
