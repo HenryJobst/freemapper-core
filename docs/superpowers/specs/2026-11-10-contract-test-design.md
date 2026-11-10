@@ -1,7 +1,8 @@
 # Contract test for the suite: design
 
 Date: 2026-11-10
-Status: Proposal, not approved. Nothing is built until the user approves it.
+Status: Approved by the user on 2026-11-10, with the four points under "For the user to decide" as proposed.
+Plan for stage 1: `docs/superpowers/plans/2026-11-10-contract-test-stage-1.md`.
 Author: session freemapper, after the code review of freemapper `0f25841` (v0.9.0+3).
 
 ## Why
@@ -104,8 +105,9 @@ It has four parts.
 The area is small (a few dozen objects). The symbol set makes up most of a file: about 260 kB. Budget: 400 kB
 per fixture.
 
-**2. Expected values.** `expected.toml` says what every reader must find. It is written by hand when the
-fixture is made and reviewed like code. The numbers below only show the form.
+**2. Expected values.** `expected.toml` says what every reader must find. Its counts and boxes come from the
+crate's own census of the fixture and are checked by hand against the file before they are committed. The
+numbers below only show the form. Boxes are in map coordinates (1/1000 mm, y south).
 
 ```toml
 contract = 1
@@ -121,22 +123,22 @@ base = 1
 north_lines = 14
 content = 212
 
-[bbox_mm]                    # coordinates only, x right, y down
-content = [-61.2, -48.0, 61.2, 47.5]
-furniture = [-66.0, -55.0, 66.0, 74.9]
+[bbox]                       # min_x, min_y, max_x, max_y; content includes the north lines
+content = [-61200, -48000, 61200, 47500]
+furniture = [-66000, -55000, 66000, 74900]
 ```
 
 **3. Vocabulary.** `vocabulary.toml` lists the words of a file, without its content:
 
 - the part names,
-- every `freemapper:*` tag key that occurs,
-- per part `peripheral information` and `base`: the `freemapper:source` values found there,
+- per part `peripheral information` and `base`: the `freemapper:source` values and the `freemapper:*` tag
+  keys found there,
 - every value of `freemapper:sheet`,
 - the form of the CRS text and the symbol set name,
 - for the sidecar: the contract keys present and their types.
 
-`Vocabulary::of(omap_xml, sidecar_toml)` computes it for any file. Data source identifiers in content parts are
-left out, since that set is open.
+`Vocabulary::of(omap_xml, sidecar_toml)` computes it for any file. Tags of objects in content parts are left
+out, since that set is open and belongs to freemapper alone.
 
 **4. Rules.** `check(omap_xml, sidecar_toml) -> Vec<Violation>` holds the table above as code: the sidecar
 parses, the kind is known to the producer, the scale is allowed for the kind and equals the map's, the title is
@@ -174,18 +176,18 @@ would have failed here: the part `peripheral information` would have listed `she
 An ignored test (or a small example binary) writes the four fixture files into a folder named by an
 environment variable. That is how a fixture is refreshed.
 
-**Reader, in print** (`tests/contract.rs`). For every fixture: read the map with print's own reader and assert
+**Reader, in print** (a test module inside the crate, test names starting with `contract_`). For every fixture: read the map with print's own reader and assert
 against `expected.toml`:
 
 - the map kind and the title print derives,
 - the number of objects `is_sheet_object` and `is_base_object` accept,
-- that the painted bounds of a layout without sheet objects stay inside `bbox_mm.content` plus a margin for
+- that the painted bounds of a layout without sheet objects stay inside `bbox.content` plus a margin for
   symbol sizes, and do not reach the scale bar,
 - that every scale the contract allows for the kind is accepted by print's rule profile.
 
-**Reader, in courseplan** (`tests/contract.rs`). The same idea with its own functions: `map_kind_for_file`,
+**Reader, in courseplan** (a test module inside the crate, names starting with `contract_`). The same idea with its own functions: `map_kind_for_file`,
 the title, `is_sheet_furniture` counts (furniture plus base), and `MapIndex::extent()` inside
-`bbox_mm.content` plus margin.
+`bbox.content`.
 
 Each reader asserts what it derives itself. The contract does not ask the two readers to compute the same
 extent, only to agree with the classes and boxes in `expected.toml`.
@@ -197,8 +199,8 @@ is unchecked. A job in core closes that gap:
 
 - It runs when files under `crates/freemapper-contract/` change, on Linux only.
 - It checks out `main` of print and of courseplan, patches `freemapper-contract` to the pull request's checkout
-  (`cargo test --config 'patch."https://github.com/HenryJobst/freemapper-core".freemapper-contract.path=…' --test contract`)
-  and runs the reader tests.
+  (`cargo test --config 'patch."https://github.com/HenryJobst/freemapper-core".freemapper-contract.path=…' contract_`)
+  and runs the reader tests. The tests sit inside the crates because they use private functions.
 - Red means: this fixture or rule change breaks a reader as it is on `main`.
 
 freemapper's producer test runs in freemapper's CI on every push, as today's tests do.
@@ -250,7 +252,7 @@ Decided here without asking; each can be overruled.
 - The crate is named `freemapper-contract` and owned by the freemapper session.
 - The API is text-only; core types stay private to the crate.
 - The producer test compares vocabulary and rules, not coordinates.
-- `expected.toml` is written by hand, so that a wrong fixture is not blessed by the tool that produced it.
+- `expected.toml` is filled from the crate's census and checked by hand, and a test in core keeps the two equal.
 - The gate runs on Linux only and only for changes to the crate.
 - Fixture layout `fixtures/v<contract>/<name>/`, embedded, behind the feature `fixtures`.
 
