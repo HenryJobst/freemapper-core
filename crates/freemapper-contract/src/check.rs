@@ -22,9 +22,9 @@ pub enum Rule {
     CrsKnown,
     /// The CRS text of the map is `+init=epsg:<crs>`.
     CrsText,
-    /// Every object in the part `peripheral information` is sheet objects.
+    /// Every object in the part `peripheral information` is a sheet object.
     SheetPartOnlySheetObjects,
-    /// No sheet objects lies in another part.
+    /// No sheet object lies in another part.
     SheetObjectsOnlyInSheetPart,
     /// Every object in the part `base` is base area.
     BasePartOnlyBase,

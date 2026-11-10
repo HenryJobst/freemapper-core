@@ -71,7 +71,7 @@ expected value.
 | Fact | Meaning for readers |
 |---|---|
 | `freemapper:source=sheet` | Sheet objects (frame, title block, scale bar, credit line). Not map content, not part of the map extent. |
-| `freemapper:sheet=<role>` | Role of a sheet object, today only `scale-bar`. Readers never need it to recognise sheet. |
+| `freemapper:sheet=<role>` | Role of a sheet object, today only `scale-bar`. Readers never need it to recognise a sheet object. |
 | `freemapper:source=base` | The base area. Its own class: printed, but no feature. |
 | `freemapper:source=north-lines` | North lines. Map content. |
 | any other `freemapper:source` | Identifier of a data source. Map content. The set is open. |

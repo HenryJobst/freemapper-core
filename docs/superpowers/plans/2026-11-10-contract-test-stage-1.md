@@ -171,7 +171,7 @@ helpers live. print and courseplan: one test module each, named by their session
   equal.
 
 - [x] **Step 1: Write the failing tests** in `src/vocabulary.rs`:
-  - `lists_the_words_of_a_map`: parts `default`, `peripheral information`, `base`; sheet tagged `sheet`, one
+  - `lists_the_words_of_a_map`: parts `default`, `peripheral information`, `base`; sheet objects tagged `sheet`, one
     of them also `freemapper:sheet=scale-bar`; base tagged `base`; content tagged `freemapper:source=osm` and
     `freemapper:osm=x`; CRS `+init=epsg:25833`; sidecar with the four keys plus `buffer_m = 20.0`. Expect
     `sheet_part_sources == {sheet}`, `base_part_sources == {base}`,
