@@ -204,6 +204,39 @@ const MAX_ID: u32 = i32::MAX as u32;
 /// `options/@description-kind` of a course: Purple Pen's value for a new course (`DescriptionKind.Symbols`).
 const DEFAULT_DESCRIPTION_KIND: &str = "symbols";
 
+/// The symbols Purple Pen offers for the one description symbol of a finish, crossing point or map issue point
+/// (`symbols.xml` at the reader's commit, kinds Z, X and V), the first being the one `AddControlMode` gives a
+/// new control. After loading a file, Purple Pen looks this symbol up for every such control
+/// (`DescriptionFormatter.GetDirectiveLine` in the All Controls view it opens first) and throws if it is
+/// missing or unknown. `None` for the other kinds, which have six columns.
+fn directive_symbols(kind: ControlKind, map_issue: bool) -> Option<&'static [&'static str]> {
+    if map_issue {
+        return Some(&["13.6"]);
+    }
+    match kind {
+        ControlKind::Finish => Some(&["14.3", "14.1", "14.2"]),
+        ControlKind::CrossingPoint => Some(&["13.3", "13.4"]),
+        _ => None,
+    }
+}
+
+/// Symbols whose texts have two placeholders, for the two features they combine (`symbols.xml`). Purple Pen's
+/// `Textifier` formats the symbol of column C, and of column G unless it is `11.15`, with one argument, so
+/// one of these there makes it throw.
+const COMBINATION_SYMBOLS: &[&str] = &[
+    "10.1",
+    "10.1single",
+    "10.2",
+    "10.2single",
+    "9.2",
+    "9.3high",
+    "9.3deep",
+    "9.4",
+    "11.15single",
+    "basic_combo",
+    "course_length_climb",
+];
+
 /// Writes `event` as a new `.ppen` file.
 pub fn write_ppen(event: &RawEvent, options: &ScratchOptions) -> Result<Written, PpenWriteError> {
     check_limits(event)?;
@@ -224,6 +257,7 @@ pub fn write_ppen(event: &RawEvent, options: &ScratchOptions) -> Result<Written,
             map_scale: Some(f64::from(map_scale)),
             item_scaling: ItemScaling::None,
             map_issue: vec![false; event.controls.len()],
+            kept_symbols: vec![None; event.controls.len()],
             other_courses: Vec::new(),
         },
     )?;
@@ -484,6 +518,9 @@ struct Frame<'a> {
     item_scaling: ItemScaling,
     /// Per control of the event: it is a map issue point in the file (the model reads those as starts).
     map_issue: Vec<bool>,
+    /// Per control of the event: the symbol a finish, crossing point or map issue point keeps from the base
+    /// file because the event gives none.
+    kept_symbols: Vec<Option<&'a str>>,
     /// Courses of the file that are not in the event, by name and id, for the course lists of specials.
     other_courses: Vec<(&'a str, u32)>,
 }
@@ -511,6 +548,7 @@ impl<'a> Plan<'a> {
             map_scale,
             item_scaling,
             map_issue,
+            kept_symbols,
             other_courses,
         } = frame;
         let mut by_code: HashMap<&str, usize> = HashMap::with_capacity(ev.controls.len());
@@ -588,15 +626,15 @@ impl<'a> Plan<'a> {
                 let (from, to) = (w[0], w[1]);
                 let leg = course.legs.get(i).unwrap_or(&NO_LEG);
                 let target = &ev.controls[to];
+                let symbol = target
+                    .description
+                    .as_ref()
+                    .and_then(|d| d.columns[0].as_deref())
+                    .or(kept_symbols[to]);
                 // Purple Pen flags these legs on its own (`QueryEvent.GetLegFlagging`).
                 let implied = map_issue[from]
                     || target.kind == ControlKind::MapExchange
-                    || (target.kind == ControlKind::Finish
-                        && target
-                            .description
-                            .as_ref()
-                            .and_then(|d| d.columns[0].as_deref())
-                            == Some("14.1"));
+                    || (target.kind == ControlKind::Finish && symbol == Some("14.1"));
                 if implied && !leg.marked_route {
                     plan.notes.push(WriteNote::FlaggingImplied {
                         course: course.name.clone(),
@@ -880,8 +918,11 @@ fn control_element(
         .as_ref()
         .ok_or_else(|| PpenWriteError::Invalid(format!("{what} has no location")))?;
     kids.push(point_el("location", p, &what)?);
-    if let Some(d) = &c.description {
-        kids.extend(description_elements(c, d, standard, &what, map_issue)?);
+    match (&c.description, directive_symbols(c.kind, map_issue)) {
+        (Some(d), _) => kids.extend(description_elements(c, d, standard, &what, map_issue)?),
+        // Purple Pen fails on a finish, crossing point or map issue point without a symbol.
+        (None, Some(symbols)) => kids.push(directive_element(symbols[0])),
+        (None, None) => {}
     }
     for (scale, (g, _)) in gaps {
         if !g.is_empty() {
@@ -920,10 +961,22 @@ fn circle_gaps_element(
     ))
 }
 
+/// `<description box="all" iof-2004-ref=…>`: the one symbol of a finish, crossing point or map issue point.
+fn directive_element(symbol: &str) -> Element {
+    el(
+        "description",
+        vec![("box", "all".into()), ("iof-2004-ref", symbol.into())],
+        Body::Empty,
+    )
+}
+
 /// The `description` elements of a control: box `all` with the one symbol of a finish, crossing point or map
 /// issue point, else one per column C to H with a symbol, and the column F text as the text of box F. Purple
 /// Pen keeps one symbol for those three kinds and reads box D to H there as an error, and it allows column F
-/// text only at normal controls and starts (`ControlPoint.Validate`); anything else is refused.
+/// text only at normal controls and starts (`ControlPoint.Validate`); anything else is refused. The one symbol
+/// is Purple Pen's for a new control when the description has none, and a symbol Purple Pen does not offer
+/// for the kind is refused ([`directive_symbols`]), as is a combination symbol in column C or G
+/// ([`COMBINATION_SYMBOLS`]): Purple Pen throws on both once the file is open.
 fn description_elements(
     c: &Control<RawPoint>,
     d: &Description,
@@ -946,16 +999,39 @@ fn description_elements(
             None => Ok(Vec::new()),
         }
     };
-    if map_issue || matches!(c.kind, ControlKind::Finish | ControlKind::CrossingPoint) {
+    if let Some(symbols) = directive_symbols(c.kind, map_issue) {
         if d.columns[1..].iter().any(Option::is_some) || d.column_f_text.is_some() {
             return Err(PpenWriteError::Unsupported(format!(
                 "{what} is a finish, crossing point or map issue point, which has one description symbol \
                  (column C) in Purple Pen"
             )));
         }
-        let mut attrs = vec![("box", "all".to_string())];
-        attrs.extend(symbol(&d.columns[0])?);
-        return Ok(vec![el("description", attrs, Body::Empty)]);
+        let s = d.columns[0].as_deref().unwrap_or(symbols[0]);
+        if !symbols.contains(&s) {
+            return Err(PpenWriteError::Invalid(format!(
+                "{what} has the description symbol {s}; Purple Pen offers only {} for a {} and fails on \
+                 any other symbol once the file is open",
+                symbols.join(", "),
+                if map_issue {
+                    "map issue point"
+                } else if c.kind == ControlKind::Finish {
+                    "finish"
+                } else {
+                    "crossing point"
+                }
+            )));
+        }
+        return Ok(vec![directive_element(s)]);
+    }
+    for (i, column) in [(0, 'C'), (4, 'G')] {
+        if let Some(s) = d.columns[i].as_deref()
+            && (COMBINATION_SYMBOLS.contains(&s) || (column == 'C' && s == "11.15"))
+        {
+            return Err(PpenWriteError::Invalid(format!(
+                "{what} has the combination symbol {s} in column {column}; Purple Pen fails on it there once \
+                 the file is open"
+            )));
+        }
     }
     if d.column_f_text.is_some() && !matches!(c.kind, ControlKind::Control | ControlKind::Start) {
         return Err(PpenWriteError::Unsupported(format!(
