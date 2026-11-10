@@ -140,6 +140,21 @@ pub struct CourseSource {
     pub event_name: Option<String>,
     /// The map scale denominator the file states, if any.
     pub map_scale: Option<u32>,
+    /// How the file scales course symbols (Purple Pen `course-appearance/@scale-sizes`). `None` for IOF XML,
+    /// which has no such setting.
+    pub item_scaling: Option<ItemScaling>,
+}
+
+/// How Purple Pen scales the size of course symbols (`course-appearance/@scale-sizes`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ItemScaling {
+    /// Symbols keep their nominal size on the printed page.
+    #[default]
+    None,
+    /// Symbols scale with the map: their size relative to the map stays the same at every print scale.
+    RelativeToMap,
+    /// Symbols are sized for a print scale of 1:15000.
+    RelativeTo15000,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -266,34 +281,42 @@ pub enum CourseFilter {
     Only(Vec<String>),
 }
 
+/// A special object of the course layout. `id` is Purple Pen's id, see [`Special::id`].
 #[derive(Debug, Clone, PartialEq)]
 pub enum Special<P> {
     OutOfBounds {
+        id: Option<u32>,
         rings: Vec<Vec<P>>,
         courses: CourseFilter,
     },
     Dangerous {
+        id: Option<u32>,
         rings: Vec<Vec<P>>,
         courses: CourseFilter,
     },
     /// A forbidden route. Purple Pen marks one with a single cross, which is a path of one point.
     ForbiddenRoute {
+        id: Option<u32>,
         path: Vec<P>,
         courses: CourseFilter,
     },
     Boundary {
+        id: Option<u32>,
         path: Vec<P>,
         courses: CourseFilter,
     },
     MarkedRoute {
+        id: Option<u32>,
         path: Vec<P>,
         courses: CourseFilter,
     },
     FirstAid {
+        id: Option<u32>,
         pt: P,
         courses: CourseFilter,
     },
     Water {
+        id: Option<u32>,
         pt: P,
         courses: CourseFilter,
     },
@@ -302,22 +325,58 @@ pub enum Special<P> {
     /// leaves the font height to the box (an approximation: Purple Pen fits auto-sized text, possibly several
     /// lines, into the box).
     Text {
+        id: Option<u32>,
         pt: P,
         text: String,
         size_mm: f64,
         courses: CourseFilter,
     },
     Line {
+        id: Option<u32>,
         path: Vec<P>,
         courses: CourseFilter,
     },
     WhiteOut {
+        id: Option<u32>,
         rings: Vec<Vec<P>>,
         courses: CourseFilter,
     },
 }
 
 impl<P> Special<P> {
+    /// Purple Pen's id of the special object (`special-object/@id` in the `.ppen`), so that a writer can
+    /// refer to the same object again. `None` for an id outside `u32`.
+    pub fn id(&self) -> Option<u32> {
+        match self {
+            Special::OutOfBounds { id, .. }
+            | Special::Dangerous { id, .. }
+            | Special::ForbiddenRoute { id, .. }
+            | Special::Boundary { id, .. }
+            | Special::MarkedRoute { id, .. }
+            | Special::FirstAid { id, .. }
+            | Special::Water { id, .. }
+            | Special::Text { id, .. }
+            | Special::Line { id, .. }
+            | Special::WhiteOut { id, .. } => *id,
+        }
+    }
+
+    /// The courses the object belongs to.
+    pub fn courses(&self) -> &CourseFilter {
+        match self {
+            Special::OutOfBounds { courses, .. }
+            | Special::Dangerous { courses, .. }
+            | Special::ForbiddenRoute { courses, .. }
+            | Special::Boundary { courses, .. }
+            | Special::MarkedRoute { courses, .. }
+            | Special::FirstAid { courses, .. }
+            | Special::Water { courses, .. }
+            | Special::Text { courses, .. }
+            | Special::Line { courses, .. }
+            | Special::WhiteOut { courses, .. } => courses,
+        }
+    }
+
     pub fn map_points<Q>(self, f: impl Fn(P) -> Q) -> Special<Q> {
         let rings = |r: Vec<Vec<P>>| -> Vec<Vec<Q>> {
             r.into_iter()
@@ -326,44 +385,89 @@ impl<P> Special<P> {
         };
         let path = |v: Vec<P>| -> Vec<Q> { v.into_iter().map(&f).collect() };
         match self {
-            Special::OutOfBounds { rings: r, courses } => Special::OutOfBounds {
+            Special::OutOfBounds {
+                id,
+                rings: r,
+                courses,
+            } => Special::OutOfBounds {
+                id,
                 rings: rings(r),
                 courses,
             },
-            Special::Dangerous { rings: r, courses } => Special::Dangerous {
+            Special::Dangerous {
+                id,
+                rings: r,
+                courses,
+            } => Special::Dangerous {
+                id,
                 rings: rings(r),
                 courses,
             },
-            Special::ForbiddenRoute { path: p, courses } => Special::ForbiddenRoute {
+            Special::ForbiddenRoute {
+                id,
+                path: p,
+                courses,
+            } => Special::ForbiddenRoute {
+                id,
                 path: path(p),
                 courses,
             },
-            Special::Boundary { path: p, courses } => Special::Boundary {
+            Special::Boundary {
+                id,
+                path: p,
+                courses,
+            } => Special::Boundary {
+                id,
                 path: path(p),
                 courses,
             },
-            Special::MarkedRoute { path: p, courses } => Special::MarkedRoute {
+            Special::MarkedRoute {
+                id,
+                path: p,
+                courses,
+            } => Special::MarkedRoute {
+                id,
                 path: path(p),
                 courses,
             },
-            Special::FirstAid { pt, courses } => Special::FirstAid { pt: f(pt), courses },
-            Special::Water { pt, courses } => Special::Water { pt: f(pt), courses },
+            Special::FirstAid { id, pt, courses } => Special::FirstAid {
+                id,
+                pt: f(pt),
+                courses,
+            },
+            Special::Water { id, pt, courses } => Special::Water {
+                id,
+                pt: f(pt),
+                courses,
+            },
             Special::Text {
+                id,
                 pt,
                 text,
                 size_mm,
                 courses,
             } => Special::Text {
+                id,
                 pt: f(pt),
                 text,
                 size_mm,
                 courses,
             },
-            Special::Line { path: p, courses } => Special::Line {
+            Special::Line {
+                id,
+                path: p,
+                courses,
+            } => Special::Line {
+                id,
                 path: path(p),
                 courses,
             },
-            Special::WhiteOut { rings: r, courses } => Special::WhiteOut {
+            Special::WhiteOut {
+                id,
+                rings: r,
+                courses,
+            } => Special::WhiteOut {
+                id,
                 rings: rings(r),
                 courses,
             },

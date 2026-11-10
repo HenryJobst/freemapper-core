@@ -1,5 +1,6 @@
-//! Orienteering courses: the course model, readers for Purple Pen (`.ppen`) and IOF XML 3.0, the fit of a
-//! course file to an OOM map, and the placement of control numbers. Terms follow `docs/glossary.md`.
+//! Orienteering courses: the course model, readers for Purple Pen (`.ppen`) and IOF XML 3.0, a `.ppen` writer
+//! that also patches an existing file, the fit of a course file to an OOM map, and the placement of control
+//! numbers. Terms follow `docs/glossary.md`.
 //!
 //! The crate uses no other suite crate than `freemapper-omap`, and that only for the fit: the cargo feature
 //! `fit` (on by default) brings in the fit, `FittedEvent` and `SourceFormat::y_axis` with the omap crate.
@@ -28,10 +29,15 @@ pub use iof_xml::read_iof_xml;
 pub use model::FittedEvent;
 pub use model::{
     Control, ControlKind, Course, CourseEvent, CourseFilter, CourseKind, CourseNote, CourseSource,
-    Description, Leg, NumberPlacement, RawEvent, RawPoint, SourceFormat, Special, Stop,
+    Description, ItemScaling, Leg, NumberPlacement, RawEvent, RawPoint, SourceFormat, Special,
+    Stop,
 };
 pub use number_offset::{offset_from_placement, placement_from_offset};
-pub use ppen::read_ppen;
+pub use ppen::write::{
+    AssignedIds, Deletions, DescriptionStandard, KeptObject, LineEnding, MapStandard, PatchOptions,
+    PpenMap, PpenWriteError, ScratchOptions, WriteNote, Written, write_ppen, write_ppen_patch,
+};
+pub use ppen::{course_obj_ratio, read_ppen};
 
 /// Why a course file could not be read.
 #[derive(Debug, thiserror::Error)]

@@ -7,6 +7,44 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- freemapper-course: every variant of `Special` has a new first field `id: Option<u32>`, and `CourseSource`
+  has the field `item_scaling: Option<ItemScaling>`. Apps that build `Special` variants or `CourseSource`, or
+  destructure them without `..`, add `id: None` and `item_scaling: None`; code that destructures `Special`
+  with `..` needs no change. For freemapper-print this means literals gain `id: None` and
+  `item_scaling: None`. The reader also refuses a `special-object/@id` with a bad entity now, where it used to
+  ignore it. The library therefore moves to 0.4.0.
+
+### Added
+
+- freemapper-course: `Special::id` returns the id from `special-object/@id` of the `.ppen` (`None` for an id
+  outside `u32`), and `Special::courses` returns the course filter. `ItemScaling` (so far private to the
+  reader) is public, `CourseSource::item_scaling` holds the file's setting (`None` for IOF XML), and
+  `course_obj_ratio` computes the course object ratio from scaling, map scale and print scale. The reader
+  calls the same function. freemapper-courseplan's `.ppen` writer needs this.
+- freemapper-course: `write_ppen` writes an event as a new `.ppen` file, laid out as Purple Pen writes it
+  (module `ppen::write`). `ScratchOptions` sets the map (`PpenMap`), the map and description standards
+  (`MapStandard`, `DescriptionStandard`), the language of the descriptions and the line end (`LineEnding`,
+  default CRLF, which Purple Pen writes on Windows). The result `Written` holds the file text, the id each
+  object got (`AssignedIds`) and notes (`WriteNote`). Objects keep their ids; a missing or repeated id becomes
+  the largest id of its store plus one. The writer checks the event against the reader's limits first and
+  refuses with `PpenWriteError` what Purple Pen cannot store, for example two courses that draw the same leg
+  differently. Decision 0014.
+- freemapper-course: `write_ppen_patch` writes an event into an existing `.ppen`, the base file. The patch
+  matches controls and courses by code or name. It uses the event's ids only if `PatchOptions::ids_from_base`
+  says they come from this base file, as with the file a course plan is linked to; then a renamed course or a
+  control with a new code stays the same object. By default it ignores every id, so an event read from another
+  file cannot take over objects through ids that happen to coincide. An object with no changed field keeps its
+  bytes, so patching a file with the event the reader read from it gives back that file. Changed fields are
+  written anew, and attributes and elements the writer does not know stay where they are. Only what
+  `Deletions` in `PatchOptions` names by id is deleted; `Written::kept` lists the objects of the base file the
+  event does not mention. The patch refuses to change a leg or circle gaps that a course outside the event
+  also draws. Partial flagging whose point is no longer a bend of the leg is dropped and reported as
+  `WriteNote::PartialFlaggingDropped`. Known limits: the patch does not check the branches of a kept forked
+  course, crossing points always get orientation 0, and `options` is left out without a print scale, climb
+  and length. Decision 0014.
+
 ## [0.3.0] - 2026-11-10
 
 ### Added

@@ -7,6 +7,45 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- freemapper-course: Jede Variante von `Special` hat ein neues erstes Feld `id: Option<u32>` und
+  `CourseSource` das Feld `item_scaling: Option<ItemScaling>`. Anwendungen, die `Special`-Varianten oder
+  `CourseSource` aufbauen oder ohne `..` zerlegen, ergänzen `id: None` und `item_scaling: None`; wer
+  `Special` mit `..` zerlegt, ändert nichts. Für freemapper-print heißt das: Literale bekommen `id: None` und
+  `item_scaling: None`. Der Leser lehnt außerdem eine `special-object/@id` mit ungültiger Entität jetzt ab, wo
+  er sie früher übersah. Die Bibliothek geht deshalb auf 0.4.0.
+
+### Hinzugefügt
+
+- freemapper-course: `Special::id` liefert die ID aus `special-object/@id` der `.ppen` (`None` bei einer ID
+  außerhalb von `u32`), `Special::courses` den Bahnfilter. `ItemScaling` (bisher intern im Leser) ist
+  öffentlich, `CourseSource::item_scaling` hält die Einstellung der Datei (`None` bei IOF-XML), und
+  `course_obj_ratio` rechnet den Bahnobjektfaktor aus Skalierung, Karten- und Druckmaßstab aus. Der Leser
+  nutzt dieselbe Funktion. Das braucht der `.ppen`-Schreiber von freemapper-courseplan.
+- freemapper-course: `write_ppen` schreibt eine Veranstaltung als neue `.ppen`-Datei, so formatiert, wie
+  Purple Pen sie schreibt (Modul `ppen::write`). `ScratchOptions` legt die Karte (`PpenMap`), Karten- und
+  Beschreibungsstandard (`MapStandard`, `DescriptionStandard`), die Sprache der Beschreibungen und das
+  Zeilenende (`LineEnding`, Vorgabe CRLF wie Purple Pen unter Windows) fest. Das Ergebnis `Written` enthält den
+  Dateitext, die ID jedes Objekts (`AssignedIds`) und Hinweise (`WriteNote`). Objekte behalten ihre IDs; eine
+  fehlende oder doppelte ID wird zur größten ID ihrer Art plus eins. Der Schreiber prüft die Veranstaltung
+  zuerst gegen die Grenzen des Lesers und lehnt mit `PpenWriteError` ab, was Purple Pen nicht speichern kann,
+  etwa zwei Bahnen, die dieselbe Strecke verschieden zeichnen. Entscheidung 0014.
+- freemapper-course: `write_ppen_patch` schreibt eine Veranstaltung in eine vorhandene `.ppen`, die
+  Basisdatei. Der Patch ordnet Posten und Bahnen über Code oder Namen zu. Die IDs der Veranstaltung nutzt er
+  nur, wenn `PatchOptions::ids_from_base` sagt, dass sie aus dieser Basisdatei stammen, wie bei der Datei, mit
+  der eine Bahnplanung verknüpft ist; dann bleibt eine umbenannte Bahn oder ein Posten mit neuem Code dasselbe
+  Objekt. Als Vorgabe übergeht er jede ID, damit eine Veranstaltung aus einer anderen Datei keine Objekte über
+  zufällig gleiche IDs übernimmt. Ein Objekt ohne geänderte Felder behält seine Bytes, ein Patch mit der
+  Veranstaltung, die der Leser aus einer Datei gelesen hat, ergibt also genau diese Datei. Geänderte Felder
+  schreibt er neu, Attribute und Elemente, die der Schreiber nicht kennt, bleiben stehen. Gelöscht wird nur,
+  was `Deletions` in `PatchOptions` per ID nennt; `Written::kept` listet die Objekte der Basisdatei, die die
+  Veranstaltung nicht erwähnt. Eine Strecke oder Kreislücken, die auch eine Bahn außerhalb der Veranstaltung
+  zeichnet, ändert der Patch nicht, er lehnt ab. Eine Teilabflaggung, deren Punkt kein Knickpunkt der Strecke
+  mehr ist, entfällt und steht als `WriteNote::PartialFlaggingDropped` im Ergebnis. Bekannte Grenzen: Die
+  Zweige einer behaltenen Gabelungsbahn prüft der Patch nicht, Übergänge bekommen immer die Ausrichtung 0, und
+  `options` entfällt ohne Druckmaßstab, Höhenmeter und Länge. Entscheidung 0014.
+
 ## [0.3.0] - 2026-11-10
 
 ### Hinzugefügt

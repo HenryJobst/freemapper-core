@@ -28,7 +28,7 @@ The project is just starting. So far it contains `freemapper-course`, `freemappe
 | `freemapper-fs` | writing, copying and removing inside the project folder without following a link | freemapper | included |
 | `freemapper-omap` | map model, reading .omap, embedded symbol sets ISSprOM 2019 and school map 2019; no writer yet | freemapper, freemapper-print | included |
 | `freemapper-render` | map rendering, fonts, PDF | freemapper-print | planned |
-| `freemapper-course` | courses, reading .ppen and IOF XML, fitting to the map, number placement; no writer yet | freemapper-print, freemapper-courseplan | included |
+| `freemapper-course` | courses, reading .ppen and IOF XML, fitting to the map, number placement; also writes .ppen, new or as a patch of an existing file | freemapper-print, freemapper-courseplan | included |
 
 ## Use
 
