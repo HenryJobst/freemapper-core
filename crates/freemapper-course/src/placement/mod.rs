@@ -931,7 +931,11 @@ pub fn outer_bisector(incoming: Option<f64>, outgoing: Option<f64>) -> Option<f6
 /// Candidate `k` (0..[`CANDIDATES`]) around `preferred`: `preferred + 15·k` rounded to 0.1 degrees, so the value
 /// evaluated is the value stored (courseplan ADR 0031).
 pub fn candidate(preferred: f64, k: usize) -> f64 {
-    normalize_direction(((preferred + CANDIDATE_STEP_DEG * k as f64) * 10.0).round() / 10.0)
+    // Wrap first, round second: rounding a value above 360 and wrapping it afterwards leaves float noise
+    // (462.4 - 360 is 102.39999999999998).
+    let wrapped = normalize_direction(preferred + CANDIDATE_STEP_DEG * k as f64);
+    let rounded = (wrapped * 10.0).round() / 10.0;
+    if rounded >= 360.0 { 0.0 } else { rounded }
 }
 
 /// The key a candidate is ranked by, smaller being better.
