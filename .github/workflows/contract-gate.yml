@@ -1,0 +1,66 @@
+name: Contract gate
+
+# Runs the readers' contract tests against this checkout's freemapper-contract (ADR 0021). Red means: the
+# fixtures or rules here break freemapper-print or freemapper-courseplan as they are on their main.
+on:
+  push:
+    branches: [main]
+    paths:
+      - crates/freemapper-contract/**
+      - crates/freemapper-omap/**
+      - .github/workflows/contract-gate.yml
+  pull_request:
+    paths:
+      - crates/freemapper-contract/**
+      - crates/freemapper-omap/**
+      - .github/workflows/contract-gate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readers:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - reader: freemapper-print
+            package: freemapper-print
+          - reader: freemapper-courseplan
+            package: freemapper-courseplan
+    runs-on: ubuntu-latest
+    env:
+      # Replaces the contract crate of the reader's pinned core tag by the one in this checkout. The reader's
+      # other core crates stay on its tag: the contract crate's API is text and plain data.
+      PATCH: patch."https://github.com/HenryJobst/freemapper-core".freemapper-contract.path="${{ github.workspace }}/core/crates/freemapper-contract"
+    steps:
+      # Actions pinned to commits; the comment names the release.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: core
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: HenryJobst/${{ matrix.reader }}
+          path: reader
+      # The toolchain the reader pins in its rust-toolchain.toml.
+      - working-directory: reader
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: reader
+          key: ${{ matrix.reader }}
+      # The lock file names the tagged crate; without this step Cargo ignores a patch of another version.
+      - working-directory: reader
+        run: cargo update --config "$PATCH" -p freemapper-contract
+      - name: The patch is in use
+        working-directory: reader
+        run: |
+          cargo tree --config "$PATCH" -p ${{ matrix.package }} -e dev -i freemapper-contract | tee tree.txt
+          grep -q "core/crates/freemapper-contract" tree.txt
+      - name: Contract tests of the reader
+        working-directory: reader
+        run: |
+          cargo test --config "$PATCH" -p ${{ matrix.package }} --lib contract_ | tee tests.txt
+          # A filter that matches nothing passes; the readers have at least four such tests.
+          grep -Eq "test result: ok\. ([4-9]|[1-9][0-9]+) passed" tests.txt
