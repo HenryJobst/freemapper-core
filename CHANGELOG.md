@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.7.0] - 2026-11-10
+
 ### Hinzugefügt
 
 - freemapper-course: `MapGrid` (Feature `fit`) rechnet zwischen Kartenposition (mm, x rechts, y unten) und Breite/Länge um: `MapGrid::of(&MapGeoref)`, `latlon_of`, `map_mm_of`. Die Einpassung nutzt dieselbe Umrechnung.

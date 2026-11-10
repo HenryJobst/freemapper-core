@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-10
+
 ### Added
 
 - freemapper-course: `MapGrid` (feature `fit`) converts between a map position (mm, x right, y down) and latitude and longitude: `MapGrid::of(&MapGeoref)`, `latlon_of`, `map_mm_of`. The fit uses the same conversion.
