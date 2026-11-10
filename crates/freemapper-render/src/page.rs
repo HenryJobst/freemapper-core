@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 pub use crate::draw::{FillRule, Primitive, Shape, SymbolClass};
 pub use crate::geometry::Pt;
+pub use crate::hit::Hit;
 pub use crate::image::{ImageError, RasterImage};
 pub use crate::symbols::{Cap, Join, RenderColour};
 
@@ -44,6 +45,50 @@ pub struct RenderedPage {
     /// map visible, so the map is hidden in the union of their masked areas. The overprint, the sheet layer and
     /// everything outside `clip` are not affected. Empty on a page without a mask.
     pub map_clips: Vec<MapClip>,
+}
+
+impl RenderedPage {
+    /// The page mapping of this page, from [`RenderedPage::centre_mm`] and [`RenderedPage::page_mm`].
+    pub fn mapping(&self) -> PageMapping {
+        PageMapping {
+            centre_mm: self.centre_mm,
+            page_mm: self.page_mm,
+        }
+    }
+}
+
+/// Converts between the map in mm at the print scale and the page in mm, both with y down. A map position in mm
+/// at the print scale is the map's own coordinate (OOM 1/1000 mm) divided by 1000 and multiplied by the geometry
+/// factor. The page builder moves every primitive by the same offset, so that `centre_mm` lands in the middle
+/// of the page; this value applies that offset and takes it back.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PageMapping {
+    /// The point of the map at the centre of the page, in mm at the print scale.
+    pub centre_mm: Pt,
+    /// Width and height of the page.
+    pub page_mm: (f64, f64),
+}
+
+impl PageMapping {
+    /// What the page builder adds to every map position: from the centre to the middle of the page.
+    fn offset(&self) -> Pt {
+        (
+            self.page_mm.0 / 2.0 - self.centre_mm.0,
+            self.page_mm.1 / 2.0 - self.centre_mm.1,
+        )
+    }
+
+    /// The page position of `map_mm`, a map position in mm at the print scale.
+    pub fn to_page(&self, map_mm: Pt) -> Pt {
+        let d = self.offset();
+        (map_mm.0 + d.0, map_mm.1 + d.1)
+    }
+
+    /// The map position, in mm at the print scale, that lies at `page_mm` on the page.
+    pub fn to_map(&self, page_mm: Pt) -> Pt {
+        let d = self.offset();
+        (page_mm.0 - d.0, page_mm.1 - d.1)
+    }
 }
 
 /// Where the map stays visible under one mask: rings in page mm (y down) for the nonzero rule. The frame and the
@@ -162,4 +207,88 @@ pub enum SheetItem {
         rect: PaperBox,
         image: Arc<RasterImage>,
     },
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A page as freemapper-print's page builder (`print::render_page_within`) places it: the map drawn in mm at
+    /// the print scale (OOM coordinate / 1000 × geometry factor), the centre in the middle of the painted box, and
+    /// every primitive moved by `page / 2 − centre` (`print::translate`).
+    fn placed(
+        points_um: &[(i32, i32)],
+        geometry_factor: f64,
+        page_mm: (f64, f64),
+    ) -> (Vec<Pt>, Vec<Pt>, Pt) {
+        let map: Vec<Pt> = points_um
+            .iter()
+            .map(|&(x, y)| {
+                (
+                    f64::from(x) * geometry_factor / 1000.0,
+                    f64::from(y) * geometry_factor / 1000.0,
+                )
+            })
+            .collect();
+        let (min, max) = map.iter().fold(
+            ((f64::MAX, f64::MAX), (f64::MIN, f64::MIN)),
+            |(min, max), p| {
+                (
+                    (min.0.min(p.0), min.1.min(p.1)),
+                    (max.0.max(p.0), max.1.max(p.1)),
+                )
+            },
+        );
+        let centre = ((min.0 + max.0) / 2.0, (min.1 + max.1) / 2.0);
+        let offset = (page_mm.0 / 2.0 - centre.0, page_mm.1 / 2.0 - centre.1);
+        let page = map
+            .iter()
+            .map(|p| (p.0 + offset.0, p.1 + offset.1))
+            .collect();
+        (map, page, centre)
+    }
+
+    #[test]
+    fn mapping_follows_the_page_builder_and_round_trips() {
+        let points = [
+            (-120_000, 35_500),
+            (64_250, -80_000),
+            (3_000, 3_000),
+            (250_000, 190_125),
+        ];
+        // 1:15000 printed at 1:15000, 1:10000 and 1:7500; 1:4000 printed at 1:5000.
+        for geometry_factor in [1.0, 1.5, 2.0, 0.8] {
+            let page_mm = (210.0, 297.0);
+            let (map, page, centre) = placed(&points, geometry_factor, page_mm);
+            let mapping = RenderedPage {
+                primitives: Vec::new(),
+                clip: PaperBox {
+                    min: (0.0, 0.0),
+                    max: page_mm,
+                },
+                page_mm,
+                centre_mm: centre,
+                colours: Vec::new(),
+                sheet: Vec::new(),
+                overprint: Overprint::default(),
+                map_clips: Vec::new(),
+            }
+            .mapping();
+            for (m, p) in map.iter().zip(&page) {
+                let to_page = mapping.to_page(*m);
+                assert!(
+                    (to_page.0 - p.0).abs() < 1e-9 && (to_page.1 - p.1).abs() < 1e-9,
+                    "{to_page:?} vs {p:?}"
+                );
+                let back = mapping.to_map(*p);
+                assert!(
+                    (back.0 - m.0).abs() < 1e-9 && (back.1 - m.1).abs() < 1e-9,
+                    "{back:?} vs {m:?}"
+                );
+            }
+            // The centre of the map is the middle of the page.
+            let middle = mapping.to_page(centre);
+            assert!((middle.0 - 105.0).abs() < 1e-9 && (middle.1 - 148.5).abs() < 1e-9);
+        }
+    }
 }

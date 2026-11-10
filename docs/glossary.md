@@ -98,3 +98,7 @@ hier unverändert, mit denselben Code-Bezeichnern. Eine Bibliothek, die einen Be
 | Zugangstoken | access token | 128 zufällige Bits als 32 Hexziffern, erstes Pfadsegment jeder Adresse einer lokalen Seite; kein Header | `LocalServer::token` |
 | Fixture | fixture | Karte und Begleitdatei genau so, wie freemapper sie geschrieben hat, mit `expected.toml` und `vocabulary.toml`; mit dem Feature `fixtures` eingebettet | `Fixture`, `fixtures` |
 | Erwartungswerte | expected values | was ein Leser mit eigenem Code aus einem Fixture ableiten muss: Kartenart, Titel, Maßstab, KRS und Bestandsaufnahme (`expected.toml`) | `Expected` |
+| gerenderte Seite | rendered page | eine Seite als Zeichenbefehle in Seitenmillimetern (y nach unten), mit Clip-Rechteck, Seitengröße, Farben, Bahnaufdruck, Kartenclips und Blattebene; PDF und SVG zeichnen denselben Wert (Begriff aus freemapper-print) | `RenderedPage` |
+| Seitenabbildung | page mapping | rechnet zwischen der Karte in Millimetern beim Druckmaßstab (Kartenkoordinate durch 1000 mal Geometriefaktor) und der Seite in Millimetern; beide mit y nach unten (ADR 0022) | `PageMapping`, `RenderedPage::mapping` |
+| Treffer | hit | ein Kartenobjekt unter einem Punkt der Seite, mit Symbol und Farbpriorität; das oberste zuerst, jedes Objekt einmal (ADR 0022) | `Hit`, `RenderedPage::hits_at` |
+| SVG-Ansicht | SVG view | der Teil einer Seite, den ein SVG zeigt, in Seitenmillimetern, und seine Größe in Pixeln je Millimeter (ADR 0022) | `SvgView`, `write_svg` |

@@ -5,6 +5,7 @@
 use std::collections::BTreeSet;
 use std::sync::OnceLock;
 
+use crate::geometry::Pt;
 use crate::pdf::PdfError;
 use pdf_writer::types::{CidFontType, FontFlags, SystemInfo, UnicodeCmap};
 use pdf_writer::{Filter, Finish, Name, Pdf, Rect, Ref, Str};
@@ -95,6 +96,73 @@ pub fn text_width(text: &str, face: FontFace) -> f64 {
 /// Advance width of one character in em ([`text_width`]).
 pub fn char_width(c: char, face: FontFace) -> f64 {
     f64::from(face.advance(face.glyph(c).unwrap_or(GlyphId(0)))) / face.units_per_em()
+}
+
+/// One piece of a glyph outline in em: x along the baseline from the start of the text, y down.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) enum OutlineSegment {
+    Move(Pt),
+    Line(Pt),
+    Quad(Pt, Pt),
+    Cubic(Pt, Pt, Pt),
+    Close,
+}
+
+/// Collects the outline of one glyph, moved to its pen position and turned to y down.
+struct OutlineSink<'a> {
+    pen: f64,
+    em: f64,
+    out: &'a mut dyn FnMut(OutlineSegment),
+}
+
+impl OutlineSink<'_> {
+    fn pt(&self, x: f32, y: f32) -> Pt {
+        (self.pen + f64::from(x) / self.em, -f64::from(y) / self.em)
+    }
+}
+
+impl ttf_parser::OutlineBuilder for OutlineSink<'_> {
+    fn move_to(&mut self, x: f32, y: f32) {
+        let p = self.pt(x, y);
+        (self.out)(OutlineSegment::Move(p));
+    }
+
+    fn line_to(&mut self, x: f32, y: f32) {
+        let p = self.pt(x, y);
+        (self.out)(OutlineSegment::Line(p));
+    }
+
+    fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
+        let (c, p) = (self.pt(x1, y1), self.pt(x, y));
+        (self.out)(OutlineSegment::Quad(c, p));
+    }
+
+    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
+        let (c1, c2, p) = (self.pt(x1, y1), self.pt(x2, y2), self.pt(x, y));
+        (self.out)(OutlineSegment::Cubic(c1, c2, p));
+    }
+
+    fn close(&mut self) {
+        (self.out)(OutlineSegment::Close);
+    }
+}
+
+/// The glyph outlines of `text` in `face`, as the PDF shows them: one glyph after the other, each
+/// advanced by its width ([`char_width`]), no kerning, and a character without a glyph drawn as
+/// `.notdef`. Coordinates are in em ([`OutlineSegment`]).
+pub(crate) fn text_outline(text: &str, face: FontFace, mut out: impl FnMut(OutlineSegment)) {
+    let parsed = face.parsed();
+    let mut sink = OutlineSink {
+        pen: 0.0,
+        em: face.units_per_em(),
+        out: &mut out,
+    };
+    for c in text.chars() {
+        let glyph = face.glyph(c).unwrap_or(GlyphId(0));
+        // A glyph without contours (a space) yields nothing.
+        let _ = parsed.outline_glyph(glyph, &mut sink);
+        sink.pen += f64::from(face.advance(glyph)) / sink.em;
+    }
 }
 
 /// The cap height of `face` in em, from its OS/2 table. Arimo's digits are as tall as its capitals
@@ -425,6 +493,34 @@ mod tests {
             text_width("中", FontFace::Regular),
             f64::from(FontFace::Regular.advance(GlyphId(0))) / 2048.0
         );
+    }
+
+    #[test]
+    fn outlines_follow_the_advance_widths() {
+        let points = |text: &str| {
+            let mut points = Vec::new();
+            text_outline(text, FontFace::Regular, |s| match s {
+                OutlineSegment::Move(p) | OutlineSegment::Line(p) => points.push(p),
+                OutlineSegment::Quad(c, p) => points.extend([c, p]),
+                OutlineSegment::Cubic(c1, c2, p) => points.extend([c1, c2, p]),
+                OutlineSegment::Close => {}
+            });
+            points
+        };
+        let l = points("l");
+        let w = char_width('l', FontFace::Regular);
+        assert!(!l.is_empty());
+        for &(x, y) in &l {
+            assert!((0.0..=w).contains(&x), "{x}");
+            assert!((-ASCENT..=DESCENT).contains(&y), "{y}");
+        }
+        // The second glyph starts one advance further; a space has no outline.
+        let ll = points("l l");
+        assert_eq!(ll.len(), 2 * l.len());
+        let shift = w + char_width(' ', FontFace::Regular);
+        for (a, b) in l.iter().zip(&ll[l.len()..]) {
+            assert!((b.0 - a.0 - shift).abs() < 1e-12 && b.1 == a.1);
+        }
     }
 
     #[test]
