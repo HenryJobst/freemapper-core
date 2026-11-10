@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-10
+
 ### Added
 
 - freemapper-render: new crate with the renderer of freemapper-print, moved over with its behaviour unchanged (decision 0019). It draws OOM symbols into the render page model (`page`), writes PDF (`pdf`) and carries the Arimo fonts with their text metrics (`fonts`). Its only suite dependency is freemapper-omap. The feature `test-support` exposes `pdf::content_of`, `draw::work_units` and `draw::BUDGET_SLACK` for the apps' tests. The page builder (`print.rs`) stays in freemapper-print for now.
