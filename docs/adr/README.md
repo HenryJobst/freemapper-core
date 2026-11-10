@@ -22,3 +22,4 @@ status to `Superseded by NNNN`.
 | [0011](0011-rule-profiles-validated-against-an-app-schema.md) | Rule profiles are validated against an app schema |
 | [0012](0012-the-omap-crate.md) | The omap crate |
 | [0013](0013-the-course-crate.md) | The course crate |
+| [0014](0014-the-ppen-writer.md) | The .ppen writer |

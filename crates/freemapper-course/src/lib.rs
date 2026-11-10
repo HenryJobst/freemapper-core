@@ -1,5 +1,6 @@
-//! Orienteering courses: the course model, readers for Purple Pen (`.ppen`) and IOF XML 3.0, the fit of a
-//! course file to an OOM map, and the placement of control numbers. Terms follow `docs/glossary.md`.
+//! Orienteering courses: the course model, readers for Purple Pen (`.ppen`) and IOF XML 3.0, a `.ppen` writer
+//! that also patches an existing file, the fit of a course file to an OOM map, and the placement of control
+//! numbers. Terms follow `docs/glossary.md`.
 //!
 //! The crate uses no other suite crate than `freemapper-omap`, and that only for the fit: the cargo feature
 //! `fit` (on by default) brings in the fit, `FittedEvent` and `SourceFormat::y_axis` with the omap crate.

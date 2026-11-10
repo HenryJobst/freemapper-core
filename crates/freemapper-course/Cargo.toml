@@ -1,6 +1,6 @@
 [package]
 name = "freemapper-course"
-description = "Orienteering courses: course model, Purple Pen and IOF XML readers, fitting to the map, number placement"
+description = "Orienteering courses: course model, Purple Pen and IOF XML readers, a Purple Pen writer with patch mode, fitting to the map, number placement"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
