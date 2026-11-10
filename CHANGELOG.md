@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.6.0] - 2026-11-10
+
 ### Hinzugefügt
 
 - freemapper-course: `placement::place_course_numbers` platziert alle Nummern einer Bahn in Laufreihenfolge. Die

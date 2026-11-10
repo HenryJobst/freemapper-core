@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-10
+
 ### Added
 
 - freemapper-course: `placement::place_course_numbers` places all numbers of a course in running order. The
