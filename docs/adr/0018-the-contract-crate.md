@@ -62,19 +62,34 @@ writes maps with its own writer, without `freemapper-omap`.
 Maps written by freemapper v0.9.0 carry `freemapper:source=scale-bar` on the scale bar. Readers treat it as a
 sheet object. `check` reports it (`NoLegacySource`), because freemapper must not write it again.
 
+## Addendum 2026-11-10 (stage 3)
+
+Two more fixtures, for the readers only. Both break rules of `check` on purpose, and `breaks` in their
+`expected.toml` names the rules. Core's tests hold each fixture to exactly the rules it names.
+
+- `legacy-0.9.0-scale-bar`: the export of freemapper 0.9.0 (`8004542`). The scale bar carries
+  `freemapper:source=scale-bar`, and the sidecar has no `title`. `Expected::title` is therefore
+  `Option<String>`; with `None` a reader falls back to its own default, the file stem.
+- `future-kind`: a copy of `sprint-4000` with `map_kind = "gym"`, a sidecar key no reader knows and a sheet
+  object with the role `legend`. `Expected::map_kind` is `unknown`: a reader takes no kind from the sidecar,
+  reports no error and still reads the title. It recognises the sheet object by `freemapper:source=sheet`
+  whatever its role.
+
+`fixtures/README.md` says where each fixture comes from and what was edited by hand.
+
 ## Consequences
 - freemapper 0.9.2 passed all twelve rules on the first run. No rule was changed to get there.
 - The fixtures name templates (`templates/orthophoto.jpg` and others) that are not shipped. A reader must
   cope with missing templates, as it must for any map that was moved without them.
-- The two fixtures add about 540 kB to the repository. Most of it is the symbol set inside each map. An app
+- The four fixtures add about 1.1 MB to the repository. Most of it is the symbol set inside each map. An app
   that does not ask for the feature compiles none of it.
 - An app that takes the crate at a newer tag than its other core crates builds `freemapper-omap` twice in its
   tests. That is the price of the text-only API.
 - Cargo resolves a `[patch]` of this crate only when the pinned tag exists in the repository. The tag may
   predate the crate. The gate planned for core's CI (stage 2 of the design) has to work with that.
 - Cost if wrong: a rule that is too strict blocks a freemapper release until core is released again. A rule
-  that is too loose lets a mismatch through, as before. The reader tests cover two fixtures and no map from
-  v0.9.0 yet. A legacy fixture and one with an unknown `map_kind` follow in stage 3.
+  that is too loose lets a mismatch through, as before. The first release covered two fixtures and no map
+  from v0.9.0; the addendum of stage 3 adds one, and one with an unknown `map_kind`.
 
 Source: the user's approval of the design on 2026-11-10, the review of freemapper `0f25841`,
 `docs/superpowers/specs/2026-11-10-contract-test-design.md`, freemapper ADR 0085 and 0086.

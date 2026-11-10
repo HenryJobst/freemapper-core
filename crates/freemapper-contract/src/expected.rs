@@ -13,14 +13,23 @@ pub struct Expected {
     pub contract: u32,
     /// The freemapper version and commit that wrote the fixture.
     pub producer: String,
+    /// `sprint` or `schoolyard`, or `unknown` when the sidecar names a kind this contract version does not
+    /// know: the reader then takes no kind from the sidecar and reports no error.
     pub map_kind: String,
-    pub title: String,
+    /// The `title` of the sidecar; `None` when it has none (files of freemapper v0.9.0), and the reader
+    /// falls back to its own default.
+    #[serde(default)]
+    pub title: Option<String>,
     pub scale_denominator: u32,
     /// EPSG code.
     pub crs: u32,
     pub objects: ClassCounts,
     #[serde(default)]
     pub bbox: ClassBoxes,
+    /// The rules of [`crate::check`] the fixture breaks on purpose, by the name of the [`crate::Rule`];
+    /// empty for a fixture that shows what freemapper writes today.
+    #[serde(default)]
+    pub breaks: Vec<String>,
 }
 
 impl Expected {
@@ -46,6 +55,8 @@ mod tests {
         let expected = Expected::from_toml(&text).unwrap();
         assert_eq!(expected.contract, 1);
         assert_eq!(expected.map_kind, "sprint");
+        assert_eq!(expected.title.as_deref(), Some("A"));
+        assert!(expected.breaks.is_empty());
         assert_eq!(expected.scale_denominator, 4000);
         assert_eq!(expected.objects.sheet, 13);
         assert_eq!(expected.bbox.content, Some([-30000, -43091, 30000, 42276]));
@@ -59,6 +70,17 @@ mod tests {
             Expected::from_toml(&text).unwrap().bbox,
             ClassBoxes::default()
         );
+    }
+
+    #[test]
+    fn the_title_may_be_left_out_and_broken_rules_named() {
+        let text = format!(
+            "{}breaks = [\"TitlePresent\"]\n[objects]\nsheet = 0\nbase = 0\nnorth_lines = 0\ncontent = 0\n",
+            HEAD.replace("title = \"A\"\n", "")
+        );
+        let expected = Expected::from_toml(&text).unwrap();
+        assert_eq!(expected.title, None);
+        assert_eq!(expected.breaks, ["TitlePresent"]);
     }
 
     #[test]
