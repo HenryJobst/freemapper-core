@@ -7,6 +7,17 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- freemapper-course: `placement::place_course_numbers` platziert alle Nummern einer Bahn in Laufreihenfolge,
+  übernommen aus `auto_place` von freemapper-courseplan (dort Entscheidungen 0030 bis 0032). Gehaltene Nummern
+  (`NumberStop::kept`) bleiben, wo sie sind, und die anderen weichen ihnen aus. Jede gesetzte Nummer ist
+  Hindernis für die folgenden, Kreise und Strecken der Bahn zählen als Bahnaufdruck. Die Kartenhindernisse
+  kommen einmal je Bahn in ein Raster. Neu sind dazu `CourseNumbers`, `NumberStop`, `NO_LEGS_DIRECTION_DEG`
+  (45 Grad an einem Posten ohne Strecken), `Rect::UNBOUNDED` und `GapRange::strictest`. Letzteres fasst
+  mehrere `number_gap`-Regeln zusammen, mit dem größten Minimum und dem kleinsten Maximum. Die bisherigen
+  Einträge von `placement` ändern sich nicht.
+
 ## [0.5.2] - 2026-11-10
 
 ### Hinzugefügt

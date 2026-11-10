@@ -7,6 +7,16 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- freemapper-course: `placement::place_course_numbers` places all numbers of a course in running order, taken
+  from freemapper-courseplan's `auto_place` (its decisions 0030 to 0032). Kept numbers (`NumberStop::kept`)
+  stay where they are, and the others keep clear of them. Each placed number blocks the ones after it, and the
+  circles and legs of the course count as overprint. The map obstacles go into one grid per course. Also new:
+  `CourseNumbers`, `NumberStop`, `NO_LEGS_DIRECTION_DEG` (45 degrees at a control without legs),
+  `Rect::UNBOUNDED` and `GapRange::strictest`, which combines several `number_gap` rules into the largest
+  minimum and the smallest maximum. The existing items of `placement` do not change.
+
 ## [0.5.2] - 2026-11-10
 
 ### Added
