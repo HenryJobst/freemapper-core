@@ -7,6 +7,16 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Behoben
+
+- freemapper-course: Purple Pen 4.0 lehnte eine `.ppen` des Schreibers ab, sobald ein Kurs Steigung, Länge
+  oder Druckmaßstab hatte. Dem `<options>` des Kurses fehlte `description-kind`, und Purple Pen liest dieses
+  Attribut ohne Vorgabewert. `write_ppen` schreibt es jetzt in jedes `<options>`, mit `symbols` wie Purple
+  Pen für einen neuen Kurs. `write_ppen_patch` behält den Wert der Basisdatei und ergänzt ihn, wo er fehlt,
+  auch wenn am Kurs sonst nichts geändert ist. Eine mit 0.4.0 geschriebene Datei lädt Purple Pen also nach dem
+  nächsten Patch wieder. Ein neuer Test prüft die Ausgabe des Schreibers gegen die Attribute, Kindelemente
+  und Werte, ohne die `EventDB.Load` von Purple Pen eine Datei ablehnt.
+
 ## [0.4.0] - 2026-11-10
 
 ### Geändert

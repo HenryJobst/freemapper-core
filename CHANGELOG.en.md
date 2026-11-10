@@ -7,6 +7,16 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- freemapper-course: Purple Pen 4.0 refused a `.ppen` from the writer as soon as a course had climb, length
+  or a print scale. The course's `<options>` lacked `description-kind`, which Purple Pen reads without a
+  default. `write_ppen` now writes it in every `<options>`, as `symbols`, Purple Pen's value for a new course.
+  `write_ppen_patch` keeps the base file's value and adds one where it is missing, also when nothing else in
+  the course changed, so Purple Pen loads a file written by 0.4.0 again after the next patch. A new test
+  checks the writer's output against the attributes, child elements and values without which Purple Pen's
+  `EventDB.Load` refuses a file.
+
 ## [0.4.0] - 2026-11-10
 
 ### Changed

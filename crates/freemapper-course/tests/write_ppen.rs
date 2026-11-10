@@ -427,13 +427,15 @@ fn crossing_point_has_an_orientation() {
 
 #[test]
 fn options_always_carry_the_print_scale() {
-    // `Course.ReadAttributesAndContent` requires `options/@print-scale`.
+    // `Course.ReadAttributesAndContent` requires `options/@print-scale` and `options/@description-kind`.
     let mut ev = read("lincoln-park.ppen");
     ev.courses[0].print_scale_hint = None;
     ev.courses[0].climb_m = Some(20.0);
     let text = write("lincoln-park.ppen", &ev).unwrap();
     assert!(
-        text.contains("<options print-scale=\"15000\" climb=\"20\" />"),
+        text.contains(
+            "<options print-scale=\"15000\" climb=\"20\" description-kind=\"symbols\" />"
+        ),
         "{text}"
     );
     ev.courses[0].climb_m = None;
@@ -646,13 +648,13 @@ fn shapes(text: &str) -> BTreeMap<String, Shape> {
 fn shape_of_the_fixtures_written_from_scratch() {
     // What the fixtures have and the writer does not own (the model does not carry it), as
     // (object kind, child element or "" for the object's own attributes, name). Purple Pen reads every one
-    // of them with a default.
+    // of them with a default. (`options/@description-kind` has none: the writer always writes it, see
+    // `purple_pen_strict.rs`.)
     const NOT_OWNED: &[(&str, &str, &str)] = &[
         // `labels`, `print-area`: course labels and print area, written by Purple Pen with defaults.
         ("course", "", "labels"),
         ("course", "", "print-area"),
-        // `description-kind`: symbols or text on the description sheet, `hide-from-reports`, `load`.
-        ("course", "options", "description-kind"),
+        // `hide-from-reports`, `load`.
         ("course", "options", "hide-from-reports"),
         ("course", "options", "load"),
         // `gaps`: the bit-string copy of each `circle-gaps` that Purple Pen writes for 1.x; on load

@@ -201,6 +201,9 @@ pub enum WriteNote {
 /// Purple Pen keeps ids as `int`, and 0 means "none".
 const MAX_ID: u32 = i32::MAX as u32;
 
+/// `options/@description-kind` of a course: Purple Pen's value for a new course (`DescriptionKind.Symbols`).
+const DEFAULT_DESCRIPTION_KIND: &str = "symbols";
+
 /// Writes `event` as a new `.ppen` file.
 pub fn write_ppen(event: &RawEvent, options: &ScratchOptions) -> Result<Written, PpenWriteError> {
     check_limits(event)?;
@@ -1037,6 +1040,9 @@ fn course_element(
         options.push(("course-length", num(v, &format!("{what} length"))?));
     }
     if c.print_scale_hint.is_some() || options.len() > 1 {
+        // Required too (`EventDBUtil.ReadDescriptionKindAttribute` has no default); the model keeps no
+        // description kind, and symbols is what Purple Pen gives a new course.
+        options.push(("description-kind", DEFAULT_DESCRIPTION_KIND.into()));
         kids.push(el("options", options, Body::Empty));
     }
     Ok(el(
