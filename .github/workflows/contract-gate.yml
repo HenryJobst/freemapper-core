@@ -19,6 +19,11 @@ on:
 permissions:
   contents: read
 
+# bash with pipefail, so a failing `cargo … | tee` fails its step.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   readers:
     strategy:

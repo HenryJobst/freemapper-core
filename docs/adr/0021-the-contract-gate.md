@@ -24,6 +24,8 @@ reader until that reader raised its pin, after the release.
   then the gate is green and core is released (readers first). A release never goes out over a red gate.
 
 ## Consequences
+- Tried before the merge: with a wrong expected title in one fixture both reader jobs failed at
+  `contract_title`; with the fixtures as released both passed.
 - A reader whose `main` does not compile turns the gate red for a reason outside core. The run's log names the
   reader.
 - The gate adds two Linux jobs of a few minutes to changes of two crates and nothing to other changes.
