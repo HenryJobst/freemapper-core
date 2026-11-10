@@ -98,3 +98,4 @@ hier unverändert, mit denselben Code-Bezeichnern. Eine Bibliothek, die einen Be
 | Erwartungswerte | expected values | was ein Leser mit eigenem Code aus einem Fixture ableiten muss: Kartenart, Titel, Maßstab, KRS und Bestandsaufnahme (`expected.toml`) | `Expected` |
 | gerenderte Seite | rendered page | eine Seite als Zeichenbefehle in Seitenmillimetern (y nach unten), mit Clip-Rechteck, Seitengröße, Farben, Bahnaufdruck, Kartenclips und Blattebene; PDF und SVG zeichnen denselben Wert (Begriff aus freemapper-print) | `RenderedPage` |
 | Seitenabbildung | page mapping | rechnet zwischen der Karte in Millimetern beim Druckmaßstab (Kartenkoordinate durch 1000 mal Geometriefaktor) und der Seite in Millimetern; beide mit y nach unten (ADR 0021) | `PageMapping`, `RenderedPage::mapping` |
+| Treffer | hit | ein Kartenobjekt unter einem Punkt der Seite, mit Symbol und Farbpriorität; das oberste zuerst, jedes Objekt einmal (ADR 0021) | `Hit`, `RenderedPage::hits_at` |

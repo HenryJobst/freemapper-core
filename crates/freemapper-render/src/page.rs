@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 pub use crate::draw::{FillRule, Primitive, Shape, SymbolClass};
 pub use crate::geometry::Pt;
+pub use crate::hit::Hit;
 pub use crate::image::{ImageError, RasterImage};
 pub use crate::symbols::{Cap, Join, RenderColour};
 
