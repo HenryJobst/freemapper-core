@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.4.0] - 2026-11-10
+
 ### Geändert
 
 - freemapper-course: Jede Variante von `Special` hat ein neues erstes Feld `id: Option<u32>` und
