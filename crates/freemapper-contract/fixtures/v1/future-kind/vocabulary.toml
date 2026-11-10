@@ -1,0 +1,13 @@
+parts = ["base", "default part", "peripheral information"]
+sheet_part_sources = ["sheet"]
+base_part_sources = ["base"]
+reserved_part_tag_keys = ["freemapper:sheet", "freemapper:source"]
+sheet_roles = ["legend", "scale-bar"]
+crs_form = "+init=epsg:NNNNN"
+symbol_set = "ISSprOM 2019"
+
+[sidecar]
+crs = "integer"
+map_kind = "string"
+scale_denominator = "integer"
+title = "string"

@@ -7,6 +7,14 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- freemapper-contract: `Expected::title` ist jetzt `Option<String>`, weil Karten von freemapper 0.9.0 keinen Titel in der Begleitdatei haben. Lesertests vergleichen mit `expected.title.as_deref()`. `Expected::map_kind` kann `unknown` sein; ein Lesertest, der die Kartenart nachschlägt, muss diesen Fall behandeln. Neu ist `Expected::breaks` mit den Regeln, gegen die ein Fixture absichtlich verstößt.
+
+### Hinzugefügt
+
+- freemapper-contract: zwei Fixtures für die Leser (Entscheidung 0018, Nachtrag). `legacy-0.9.0-scale-bar` ist eine Karte von freemapper 0.9.0 mit dem alten Tag an der Maßstabsleiste und ohne Titel. `future-kind` hat eine Kartenart, einen Schlüssel und eine Rolle, die kein Leser kennt. `fixtures/README.md` nennt die Herkunft jedes Fixtures.
+
 ## [0.9.0] - 2026-11-10
 
 ### Hinzugefügt

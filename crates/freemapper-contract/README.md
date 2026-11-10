@@ -25,9 +25,16 @@ Mit dem Feature `fixtures` enthält die Bibliothek zwei Karten, die freemapper 0
 `vocabulary.toml` (was freemapper einhalten muss). Die Karten nennen Kartenvorlagen, die nicht mitgeliefert
 werden.
 
+Zwei weitere Fixtures sind nur für die Leser da und verstoßen absichtlich gegen Regeln; `breaks` in ihrer
+`expected.toml` nennt sie. `legacy-0.9.0-scale-bar` ist eine Karte von freemapper 0.9.0: Die Maßstabsleiste
+trägt `freemapper:source=scale-bar`, und die Begleitdatei hat keinen `title`. `future-kind` hat
+`map_kind = "gym"`, einen unbekannten Schlüssel und eine unbekannte Rolle eines Randobjekts. Ein Leser nimmt
+dann keine Kartenart aus der Begleitdatei, meldet keinen Fehler und liest den Titel trotzdem. Woher jedes
+Fixture stammt, steht in `fixtures/README.md`.
+
 ```toml
 [dev-dependencies]
-freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.8.0", features = ["fixtures"] }
+freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.10.0", features = ["fixtures"] }
 ```
 
 Ein Leser testet sich so: Er legt jedes Fixture mit `Fixture::write_into` in einen Ordner, liest es mit eigenem
@@ -64,9 +71,15 @@ With the feature `fixtures` the crate contains two maps written by freemapper 0.
 `sprint-4000`. Each has an `expected.toml` (what a reader must derive) and a `vocabulary.toml` (what freemapper
 must keep). The maps name templates that are not shipped.
 
+Two more fixtures are for the readers only and break rules on purpose; `breaks` in their `expected.toml` names
+them. `legacy-0.9.0-scale-bar` is a map from freemapper 0.9.0: the scale bar carries
+`freemapper:source=scale-bar`, and the sidecar file has no `title`. `future-kind` has `map_kind = "gym"`, an
+unknown key and an unknown role on a sheet object. A reader then takes no kind from the sidecar file, reports
+no error and still reads the title. `fixtures/README.md` says where each fixture comes from.
+
 ```toml
 [dev-dependencies]
-freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.8.0", features = ["fixtures"] }
+freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.10.0", features = ["fixtures"] }
 ```
 
 A reader tests itself like this: it puts each fixture into a folder with `Fixture::write_into`, reads it with

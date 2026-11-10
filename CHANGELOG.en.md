@@ -7,6 +7,14 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- freemapper-contract: `Expected::title` is now `Option<String>`, because maps from freemapper 0.9.0 have no title in the sidecar file. Reader tests compare with `expected.title.as_deref()`. `Expected::map_kind` can be `unknown`; a reader test that looks the kind up must handle that case. New: `Expected::breaks` with the rules a fixture breaks on purpose.
+
+### Added
+
+- freemapper-contract: two fixtures for the readers (decision 0018, addendum). `legacy-0.9.0-scale-bar` is a map from freemapper 0.9.0 with the old tag on the scale bar and without a title. `future-kind` has a kind, a key and a role no reader knows. `fixtures/README.md` names the source of each fixture.
+
 ## [0.9.0] - 2026-11-10
 
 ### Added

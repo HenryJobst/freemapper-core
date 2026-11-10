@@ -1,20 +1,42 @@
 //! The fixtures agree with what the crate derives from them.
 
+use std::collections::BTreeSet;
+
 use freemapper_contract::{CONTRACT_VERSION, Vocabulary, census, check, fixture, fixtures};
 
 #[test]
-fn there_are_two_fixtures_named_as_the_spec_says() {
+fn the_fixtures_are_named_as_the_spec_says() {
     let names: Vec<&str> = fixtures().iter().map(|f| f.name).collect();
-    assert_eq!(names, ["schoolyard-1000", "sprint-4000"]);
+    assert_eq!(
+        names,
+        [
+            "schoolyard-1000",
+            "sprint-4000",
+            "legacy-0.9.0-scale-bar",
+            "future-kind"
+        ]
+    );
     assert_eq!(fixture("sprint-4000").unwrap().name, "sprint-4000");
     assert!(fixture("forest-10000").is_none());
 }
 
 #[test]
-fn every_fixture_breaks_no_rule() {
+fn every_fixture_breaks_exactly_the_rules_it_names() {
     for fixture in fixtures() {
-        let violations = check(fixture.omap_xml, fixture.sidecar_toml).unwrap();
-        assert!(violations.is_empty(), "{}: {violations:#?}", fixture.name);
+        let broken: BTreeSet<String> = check(fixture.omap_xml, fixture.sidecar_toml)
+            .unwrap()
+            .iter()
+            .map(|v| format!("{:?}", v.rule))
+            .collect();
+        let named: BTreeSet<String> = fixture.expected().breaks.into_iter().collect();
+        assert_eq!(broken, named, "{}", fixture.name);
+    }
+    // What freemapper writes today breaks none.
+    for name in ["schoolyard-1000", "sprint-4000"] {
+        assert!(
+            fixture(name).unwrap().expected().breaks.is_empty(),
+            "{name}"
+        );
     }
 }
 
@@ -41,8 +63,18 @@ fn every_expected_file_matches_its_map() {
         assert_eq!(census.objects, expected.objects, "{}", fixture.name);
         assert_eq!(census.bbox, expected.bbox, "{}", fixture.name);
         let sidecar: toml::Table = fixture.sidecar_toml.parse().unwrap();
-        assert_eq!(sidecar["map_kind"].as_str(), Some(&*expected.map_kind));
-        assert_eq!(sidecar["title"].as_str(), Some(&*expected.title));
+        let kind = sidecar["map_kind"].as_str().unwrap();
+        if expected.map_kind == "unknown" {
+            assert!(!["sprint", "schoolyard", "forest"].contains(&kind));
+        } else {
+            assert_eq!(kind, expected.map_kind, "{}", fixture.name);
+        }
+        assert_eq!(
+            sidecar.get("title").and_then(|t| t.as_str()),
+            expected.title.as_deref(),
+            "{}",
+            fixture.name
+        );
         assert_eq!(
             sidecar["scale_denominator"].as_integer(),
             Some(i64::from(expected.scale_denominator))
@@ -61,7 +93,7 @@ fn every_class_a_kind_writes_is_in_its_fixture() {
         // Only the sprint map has a base area.
         assert_eq!(
             objects.base > 0,
-            fixture.expected().map_kind == "sprint",
+            fixture.expected().scale_denominator == 4000,
             "{}",
             fixture.name
         );

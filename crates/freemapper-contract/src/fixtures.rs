@@ -32,7 +32,12 @@ macro_rules! fixture {
     };
 }
 
-static FIXTURES: [Fixture; 2] = [fixture!("schoolyard-1000"), fixture!("sprint-4000")];
+static FIXTURES: [Fixture; 4] = [
+    fixture!("schoolyard-1000"),
+    fixture!("sprint-4000"),
+    fixture!("legacy-0.9.0-scale-bar"),
+    fixture!("future-kind"),
+];
 
 impl Fixture {
     /// What a reader must derive from this fixture.
@@ -62,7 +67,8 @@ impl Fixture {
     }
 }
 
-/// Every fixture of contract version [`crate::CONTRACT_VERSION`].
+/// Every fixture of contract version [`crate::CONTRACT_VERSION`]: first those that show what freemapper
+/// writes today, then those a reader must cope with although they break rules ([`Expected::breaks`]).
 pub fn fixtures() -> &'static [Fixture] {
     &FIXTURES
 }
