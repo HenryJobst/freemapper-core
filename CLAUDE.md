@@ -14,7 +14,7 @@ before changing code.
   | Crate | Owner |
   |---|---|
   | `freemapper-text`, `freemapper-rules` | freemapper-courseplan |
-  | `freemapper-georef`, `freemapper-fs` | freemapper |
+  | `freemapper-georef`, `freemapper-fs`, `freemapper-contract` | freemapper |
   | `freemapper-omap`, `freemapper-render`, `freemapper-course` | freemapper-print (after its M3) |
 
 - Source code (identifiers, comments), ADRs and plans are English. READMEs and changelogs are bilingual, German
@@ -30,8 +30,8 @@ before changing code.
   together with the apps (ADR 0003). Third-party dependencies at least two weeks old; the suite's own crates
   are exempt (ADR 0004).
 - `unsafe_code = "forbid"` and clippy `-D warnings` for the whole workspace. `cargo fmt`,
-  `cargo clippy --workspace --all-targets -- -D warnings` and `cargo test --workspace` must pass; CI runs them
-  on Linux, macOS and Windows.
+  `cargo clippy --workspace --all-targets --all-features -- -D warnings` and
+  `cargo test --workspace --all-features` must pass; CI runs them on Linux, macOS and Windows.
 - Public API: a crate is unstable (0.x) until its first release in an app; breaking changes then need a minor
   version step and a changelog entry under "Geändert"/"Changed" that says what the apps must change.
 - Apps depend on core through git dependencies pinned to a tag, and during development through a `[patch]` to

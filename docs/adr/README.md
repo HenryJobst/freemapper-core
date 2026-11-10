@@ -26,3 +26,4 @@ status to `Superseded by NNNN`.
 | [0015](0015-the-georef-crate.md) | The georef crate |
 | [0016](0016-course-number-placement-shared-with-courseplan.md) | Course number placement shared with courseplan |
 | [0017](0017-description-symbols-in-core.md) | Description symbols in core |
+| [0018](0018-the-contract-crate.md) | The contract crate |

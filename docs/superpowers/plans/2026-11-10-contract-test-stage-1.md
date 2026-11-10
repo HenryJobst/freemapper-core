@@ -260,20 +260,20 @@ helpers live. print and courseplan: one test module each, named by their session
   `sprint-4000`, with `<out>` from the environment variable `FREEMAPPER_CONTRACT_OUT`; and a private helper
   `fn contract_project(kind: MapKind) -> (String, String)` that returns map XML and sidecar text.
 
-- [ ] **Step 1:** Check `df -h .`; a freemapper worktree build needs several GB. Create the worktree
+- [x] **Step 1:** Check `df -h .`; a freemapper worktree build needs several GB. Create the worktree
   `.claude/worktrees/contract-test` on a branch `contract-test`. Add
   `[patch."https://github.com/HenryJobst/freemapper-core"]` pointing at core's `.worktrees/contract-test`, and
   the dev-dependency on `freemapper-contract` (git, the tag of Task 6; until then only the patch resolves it).
-- [ ] **Step 2: Write `contract_project`.** Schoolyard: `derived_school`, then export. Sprint: the project of
+- [x] **Step 2: Write `contract_project`.** Schoolyard: `derived_school`, then export. Sprint: the project of
   `sprint_with_ways`. Before the export set `title = Some("Clara-Zetkin-Schule")` in the project file (the
   default would be the temporary folder's name). Read the map from `map_path(dir)` and the sidecar from
   `PROJECT_FILE_NAME`.
-- [ ] **Step 3: Write a first test** `contract_output_breaks_no_rule`: for both kinds `check(...)` is empty; on
+- [x] **Step 3: Write a first test** `contract_output_breaks_no_rule`: for both kinds `check(...)` is empty; on
   failure print every violation.
-- [ ] **Step 4: Run** `cargo test -p freemapper contract_output_breaks_no_rule`. A violation here is a finding:
+- [x] **Step 4: Run** `cargo test -p freemapper contract_output_breaks_no_rule`. A violation here is a finding:
   either freemapper breaks its contract (fix freemapper, on its own commit) or the rule is wrong (fix the rule
   in core and say so in the ADR). Do not weaken a rule to make the test pass without one of the two.
-- [ ] **Step 5: Write `contract_write_fixtures`** and run it:
+- [x] **Step 5: Write `contract_write_fixtures`** and run it:
   `FREEMAPPER_CONTRACT_OUT=<core worktree>/crates/freemapper-contract/fixtures/v1 cargo test -p freemapper
   contract_write_fixtures -- --ignored`. Each `map.omap` stays under 400 kB.
 - [ ] **Step 6: Commit** in freemapper (without the `[patch]`):
@@ -312,7 +312,7 @@ helpers live. print and courseplan: one test module each, named by their session
   fixture in a text editor and count the objects of the parts `peripheral information` and `base` by hand
   against `[objects]`; say in the commit message that this was done. `census.toml` is not committed.
 
-- [ ] **Step 1: Write the failing tests** in `tests/fixtures.rs`, each looping over `fixtures()`:
+- [x] **Step 1: Write the failing tests** in `tests/fixtures.rs`, each looping over `fixtures()`:
   - `there_are_two_fixtures_named_as_the_spec_says`: names `schoolyard-1000`, `sprint-4000`.
   - `every_fixture_breaks_no_rule`: `check` is empty.
   - `every_vocabulary_file_matches_its_map`: `Vocabulary::of(...) == fixture.vocabulary()`.
@@ -323,12 +323,12 @@ helpers live. print and courseplan: one test module each, named by their session
   - `write_into_puts_map_and_sidecar_side_by_side`: in a `tempfile::tempdir()` the returned path is
     `<dir>/<name>.omap`, and `<dir>/freemapper.toml` holds the sidecar text.
   - `every_map_stays_under_400_kb`.
-- [ ] **Step 2: Run** `cargo test -p freemapper-contract --features fixtures --test fixtures` — fails to compile.
-- [ ] **Step 3: Implement** `expected.rs` and `fixtures.rs` (`include_str!`), write the two `expected.toml`.
-- [ ] **Step 4: Run** the three checks of Task 3 Step 4, plus
+- [x] **Step 2: Run** `cargo test -p freemapper-contract --features fixtures --test fixtures` — fails to compile.
+- [x] **Step 3: Implement** `expected.rs` and `fixtures.rs` (`include_str!`), write the two `expected.toml`.
+- [x] **Step 4: Run** the three checks of Task 3 Step 4, plus
   `cargo test --locked -p freemapper-contract --features fixtures`. Add `--features fixtures` for this crate to
   the test step of `.github/workflows/ci.yml` (`cargo test --locked --workspace --all-features`).
-- [ ] **Step 5: Commit** `feat(contract): fixtures schoolyard-1000 and sprint-4000 with expected values`.
+- [x] **Step 5: Commit** `feat(contract): fixtures schoolyard-1000 and sprint-4000 with expected values`.
 
 ### Task 6: Documents and release of core
 
@@ -338,17 +338,17 @@ helpers live. print and courseplan: one test module each, named by their session
   `README.en.md`, `CLAUDE.md` (owner table: `freemapper-contract` | freemapper),
   `docs/superpowers/specs/2026-11-10-contract-test-design.md` (anything Task 4 Step 4 changed)
 
-- [ ] **Step 1: ADR.** Decision: the contract lives in core as fixtures, expected values, vocabulary and rules;
+- [x] **Step 1: ADR.** Decision: the contract lives in core as fixtures, expected values, vocabulary and rules;
   text-only API; the producer compares vocabulary and rules, not coordinates; readers assert their own
   derivations against `expected.toml`. Cost if wrong. `Source:` the user's approval of 2026-11-10 and the
   review of freemapper `0f25841`. Copy the two contract tables from the spec.
-- [ ] **Step 2: Glossary rows** (German and English): Vertrag/contract, Erzeuger/producer, Leser/reader,
+- [x] **Step 2: Glossary rows** (German and English): Vertrag/contract, Erzeuger/producer, Leser/reader,
   Fixture/fixture, Vokabular/vocabulary (`Vocabulary`), Bestandsaufnahme/census (`Census`),
   Randangaben/sheet objects (`ObjectClass::Sheet`), Objektklasse/object class (`ObjectClass`). Where an
   app's glossary already has the term, take its row unchanged.
-- [ ] **Step 3: Changelog** under "Unveröffentlicht"/"Unreleased", crate `freemapper-contract`: what it is and
+- [x] **Step 3: Changelog** under "Unveröffentlicht"/"Unreleased", crate `freemapper-contract`: what it is and
   how an app uses it (dev-dependency with the feature `fixtures`). READMEs: one row in the crate table.
-- [ ] **Step 4: Run `unslop` and `humanizer`** over ADR, changelog entries, README rows and the crate README.
+- [x] **Step 4: Run `unslop` and `humanizer`** over ADR, changelog entries, README rows and the crate README.
 - [ ] **Step 5: Merge and release** as `CLAUDE.md` says: merge `--no-ff` into `main`, next minor version
   (v0.8.0 while `main` is at v0.7.x), `cargo update -w`, date the changelog, annotated tag, push `main` and the
   tag to both remotes, watch CI on the three systems. `cargo clean` in the worktree, then remove it.
@@ -416,7 +416,19 @@ helpers live. print and courseplan: one test module each, named by their session
 ## Progress
 
 - 2026-11-10: Tasks 1 to 3 done in one commit (the modules depend on each other): 35 tests, fmt, clippy and
-  the workspace tests green on macOS. Next: Task 4, which needs a freemapper worktree build.
+  the workspace tests green on macOS.
+- 2026-11-10: Tasks 4 and 5 done. freemapper 0.9.2 (`728fef5`) broke none of the twelve rules on the first run.
+  The fixtures hold 13 sheet objects each; the schoolyard map has no part `base`. Deviations from the plan:
+  - Task 4 Step 6 (commit in freemapper) moves to Task 7. Cargo cannot resolve a tag that does not exist yet,
+    even under a `[patch]`, so the branch would not build. Until the release the freemapper worktree pins
+    `v0.7.0` and patches the crate in (a patch may add a crate the tagged source lacks).
+  - `furniture` became `sheet` everywhere (class, counts, boxes, rules): print's glossary already calls these
+    objects "Randobjekte / sheet objects".
+  - `ContractError` got `Expected` and `Vocabulary`; `tests/fixtures.rs` got two more tests
+    (`every_class_a_kind_writes_is_in_its_fixture`, `no_fixture_has_a_carriage_return`).
+  - CI runs clippy and the tests with `--all-features`.
+  - Glossary: "Randobjekte / sheet objects", "Grundfläche / base area" and "Begleitdatei / sidecar file" come
+    from print's glossary; "Vertragsregel / contract rule" and "Erwartungswerte / expected values" were added.
 
 ## After stage 1
 
