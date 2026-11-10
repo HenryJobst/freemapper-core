@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.6.1] - 2026-11-10
+
 ### Behoben
 
 - freemapper-course: `placement::candidate` wickelt Richtungen über 360° vor dem Runden um und nicht danach. Neu platzierte Richtungen tragen kein Rundungsrauschen mehr (102,4 statt 102,39999999999998).

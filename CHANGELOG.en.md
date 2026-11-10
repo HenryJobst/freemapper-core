@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-10
+
 ### Fixed
 
 - freemapper-course: `placement::candidate` wraps directions above 360° before rounding, not after. Newly placed directions carry no float noise any more (102.4 instead of 102.39999999999998).
