@@ -1,8 +1,10 @@
 //! Purple Pen `.ppen` writer from scratch (M3b Task 4).
 
+use std::collections::{BTreeMap, BTreeSet};
+
 use freemapper_course::model::{
-    ControlKind, CourseFilter, MAX_CONTROLS, MAX_POINTS_PER_PATH, NumberPlacement, RawPoint,
-    Special, Stop,
+    ControlKind, CourseFilter, Description, MAX_CONTROLS, MAX_POINTS_PER_PATH, NumberPlacement,
+    RawPoint, Special, Stop,
 };
 use freemapper_course::{
     Control, Course, CourseEvent, CourseKind, CourseSource, DescriptionStandard, Leg, LineEnding,
@@ -352,7 +354,7 @@ fn start_and_finish_have_no_code() {
 fn crossing_point_description_box_all() {
     let text = write("overlapper.ppen", &read("overlapper.ppen")).unwrap();
     let cross = element(&text, "control", 17);
-    assert!(cross.starts_with("<control id=\"17\" kind=\"crossing-point\">"));
+    assert!(cross.starts_with("<control id=\"17\" kind=\"crossing-point\""));
     assert!(cross.contains("<description box=\"all\" iof-2004-ref=\"13.3\" />"));
     let finish = element(&text, "control", 11);
     assert!(finish.contains("<description box=\"all\" iof-2004-ref=\"14.3\" />"));
@@ -386,7 +388,9 @@ fn map_exchange_and_flip_at_a_control() {
     assert!(text.contains(
         "<course-control id=\"12\" control=\"75\" map-exchange=\"true\" map-flip=\"true\">"
     ));
-    assert!(text.contains("<course-control id=\"7\" control=\"81\">"));
+    // Purple Pen counts course parts from the flag alone, so a map-exchange control carries it too
+    // (`CourseControl.Validate`, sampleevent8 line 292).
+    assert!(text.contains("<course-control id=\"7\" control=\"81\" map-exchange=\"true\">"));
     let back = read_ppen(text.as_bytes()).unwrap();
     let stops = &back.courses[0].stops;
     assert_eq!(stops[3].kind, Some(ControlKind::MapExchange));
@@ -400,6 +404,312 @@ fn map_exchange_and_flip_at_a_control() {
         write("sampleevent8.ppen", &ev),
         Err(PpenWriteError::Unsupported(_))
     ));
+    // A flip at a map-exchange control is one Purple Pen allows.
+    let mut ev = read("sampleevent8.ppen");
+    assert_eq!(ev.courses[0].stops[6].control, "XCHG1");
+    ev.courses[0].stops[6].map_flip = true;
+    let text = write("sampleevent8.ppen", &ev).unwrap();
+    assert!(text.contains(
+        "<course-control id=\"7\" control=\"81\" map-exchange=\"true\" map-flip=\"true\">"
+    ));
+    assert!(read_ppen(text.as_bytes()).unwrap().courses[0].stops[6].map_flip);
+}
+
+#[test]
+fn crossing_point_has_an_orientation() {
+    // `ControlPoint.ReadAttributesAndContent` requires `orientation` on a crossing point.
+    let text = write("overlapper.ppen", &read("overlapper.ppen")).unwrap();
+    assert!(
+        element(&text, "control", 17)
+            .starts_with("<control id=\"17\" kind=\"crossing-point\" orientation=\"0\">")
+    );
+}
+
+#[test]
+fn options_always_carry_the_print_scale() {
+    // `Course.ReadAttributesAndContent` requires `options/@print-scale`.
+    let mut ev = read("lincoln-park.ppen");
+    ev.courses[0].print_scale_hint = None;
+    ev.courses[0].climb_m = Some(20.0);
+    let text = write("lincoln-park.ppen", &ev).unwrap();
+    assert!(
+        text.contains("<options print-scale=\"15000\" climb=\"20\" />"),
+        "{text}"
+    );
+    ev.courses[0].climb_m = None;
+    let text = write("lincoln-park.ppen", &ev).unwrap();
+    assert!(!text.contains("<options"), "{text}");
+}
+
+#[test]
+fn descriptions_fit_the_control_kind() {
+    // Column F text only at normal controls and starts (`ControlPoint.Validate`).
+    let mut ev = read("sampleevent8.ppen");
+    let map = ev.controls.iter_mut().find(|c| c.code == "XCHG1").unwrap();
+    assert_eq!(map.kind, ControlKind::MapExchange);
+    map.description.get_or_insert_with(|| Description {
+        columns: Default::default(),
+        standard: "2018".into(),
+        column_f_text: None,
+    });
+    map.description.as_mut().unwrap().column_f_text = Some("2x2".into());
+    match write("sampleevent8.ppen", &ev) {
+        Err(PpenWriteError::Unsupported(m)) => assert!(m.contains("column F"), "{m}"),
+        other => panic!("{other:?}"),
+    }
+}
+
+#[test]
+fn specials_purple_pen_cannot_draw_are_refused() {
+    let p = |x: f64| RawPoint { x_mm: x, y_mm: 1.0 };
+    let any = CourseFilter::All;
+    let one = vec![p(1.0)];
+    let cases = [
+        Special::Boundary {
+            id: None,
+            path: one.clone(),
+            courses: any.clone(),
+        },
+        Special::Line {
+            id: None,
+            path: one.clone(),
+            courses: any.clone(),
+        },
+        Special::OutOfBounds {
+            id: None,
+            rings: vec![one.clone()],
+            courses: any.clone(),
+        },
+        Special::Dangerous {
+            id: None,
+            rings: vec![one.clone()],
+            courses: any.clone(),
+        },
+        Special::WhiteOut {
+            id: None,
+            rings: vec![one.clone()],
+            courses: any.clone(),
+        },
+    ];
+    for s in cases {
+        let mut ev = read("lincoln-park.ppen");
+        ev.specials.push(s.clone());
+        match write("lincoln-park.ppen", &ev) {
+            Err(PpenWriteError::Invalid(m)) => assert!(m.contains("2 points"), "{m}"),
+            other => panic!("{s:?}: {other:?}"),
+        }
+    }
+    // A line gets the appearance Purple Pen gives a new line (`NormalCourseAppearance.lineSpecial*`).
+    let mut ev = read("lincoln-park.ppen");
+    ev.specials.push(Special::Line {
+        id: Some(9),
+        path: vec![p(1.0), p(2.0)],
+        courses: any,
+    });
+    let text = write("lincoln-park.ppen", &ev).unwrap();
+    assert!(
+        text.contains(
+            "<special-object id=\"9\" kind=\"line\">\r\n    \
+             <appearance line-kind=\"single\" color=\"purple\" line-width=\"0.35\" />\r\n    \
+             <location x=\"1\" y=\"1\" />"
+        ),
+        "{text}"
+    );
+    assert_eq!(read_ppen(text.as_bytes()).unwrap().specials, ev.specials);
+}
+
+#[test]
+fn empty_language_and_map_path_are_refused() {
+    let ev = read("overlapper.ppen");
+    let mut options = options_for("overlapper.ppen");
+    options.description_lang = String::new();
+    match write_ppen(&ev, &options) {
+        Err(PpenWriteError::Invalid(m)) => assert!(m.contains("language"), "{m}"),
+        other => panic!("{:?}", other.map(|w| w.text)),
+    }
+    let mut options = options_for("overlapper.ppen");
+    options.map = PpenMap::Ocad {
+        path: String::new(),
+    };
+    match write_ppen(&ev, &options) {
+        Err(PpenWriteError::Invalid(m)) => assert!(m.contains("map path"), "{m}"),
+        other => panic!("{:?}", other.map(|w| w.text)),
+    }
+}
+
+/// What a top-level object looks like: its attribute names and, per child element name, the attribute
+/// names of those children.
+type Shape = (BTreeSet<String>, BTreeMap<String, BTreeSet<String>>);
+
+/// The shape of every object of a `.ppen`, by a key that does not depend on the ids the writer renumbers:
+/// controls, courses and special objects by id, course-controls by course id and position in the course,
+/// legs by their pair of control ids. The `<event>` element is left out.
+fn shapes(text: &str) -> BTreeMap<String, Shape> {
+    use quick_xml::Reader;
+    use quick_xml::events::Event;
+    struct Obj {
+        name: String,
+        attrs: BTreeMap<String, String>,
+        shape: Shape,
+        first: Option<String>,
+        next: Option<String>,
+    }
+    let mut reader = Reader::from_str(text);
+    let mut depth = 0;
+    let mut objs: Vec<Obj> = Vec::new();
+    loop {
+        let event = reader.read_event().unwrap();
+        let (e, empty) = match &event {
+            Event::Start(e) => (e, false),
+            Event::Empty(e) => (e, true),
+            Event::End(_) => {
+                depth -= 1;
+                continue;
+            }
+            Event::Eof => break,
+            _ => continue,
+        };
+        let name = e.name().as_ref().to_string();
+        let attrs: BTreeMap<String, String> = e
+            .attributes()
+            .map(|a| {
+                let a = a.unwrap();
+                (a.key.as_ref().to_string(), a.value.to_string())
+            })
+            .collect();
+        match depth {
+            1 if name != "event" => objs.push(Obj {
+                name,
+                shape: (attrs.keys().cloned().collect(), BTreeMap::new()),
+                attrs,
+                first: None,
+                next: None,
+            }),
+            2 if !objs.is_empty() => {
+                let o = objs.last_mut().unwrap();
+                if name == "first" {
+                    o.first = attrs.get("course-control").cloned();
+                }
+                if name == "next" {
+                    o.next = attrs.get("course-control").cloned();
+                }
+                o.shape.1.entry(name).or_default().extend(attrs.into_keys());
+            }
+            _ => {}
+        }
+        if !empty {
+            depth += 1;
+        }
+    }
+    let ccs: BTreeMap<&str, &Obj> = objs
+        .iter()
+        .filter(|o| o.name == "course-control")
+        .map(|o| (o.attrs["id"].as_str(), o))
+        .collect();
+    let mut out = BTreeMap::new();
+    for o in &objs {
+        match o.name.as_str() {
+            "course" => {
+                let mut next = o.first.as_deref();
+                let mut i = 0;
+                while let Some(cc) = next.and_then(|id| ccs.get(id)) {
+                    out.insert(
+                        format!("course-control {}/{i}", o.attrs["id"]),
+                        cc.shape.clone(),
+                    );
+                    i += 1;
+                    next = cc.next.as_deref();
+                }
+                out.insert(format!("course {}", o.attrs["id"]), o.shape.clone());
+            }
+            "course-control" => {}
+            "leg" => {
+                out.insert(
+                    format!(
+                        "leg {}-{}",
+                        o.attrs["start-control"], o.attrs["end-control"]
+                    ),
+                    o.shape.clone(),
+                );
+            }
+            other => {
+                out.insert(format!("{other} {}", o.attrs["id"]), o.shape.clone());
+            }
+        }
+    }
+    out
+}
+
+/// Written from scratch, every object has the attributes and child elements Purple Pen gave it in the
+/// fixture, as far as the writer owns them.
+#[test]
+fn shape_of_the_fixtures_written_from_scratch() {
+    // What the fixtures have and the writer does not own (the model does not carry it), as
+    // (object kind, child element or "" for the object's own attributes, name). Purple Pen reads every one
+    // of them with a default.
+    const NOT_OWNED: &[(&str, &str, &str)] = &[
+        // `labels`, `print-area`: course labels and print area, written by Purple Pen with defaults.
+        ("course", "", "labels"),
+        ("course", "", "print-area"),
+        // `description-kind`: symbols or text on the description sheet, `hide-from-reports`, `load`.
+        ("course", "options", "description-kind"),
+        ("course", "options", "hide-from-reports"),
+        ("course", "options", "load"),
+        // `gaps`: the bit-string copy of each `circle-gaps` that Purple Pen writes for 1.x; on load
+        // `circle-gaps` wins over it.
+        ("control", "", "gaps"),
+        // `punch-pattern`: the punch of the control; optional.
+        ("control", "", "punch-pattern"),
+    ];
+    // The descriptions special (sampleevent8 id 3) is a box the reader does not read, so it is not written.
+    const NOT_READ: &[&str] = &["special-object 3"];
+    for name in FIXTURES {
+        let fixture = fixture(name);
+        let fixture = String::from_utf8(fixture).unwrap();
+        let written = write(name, &read(name)).unwrap();
+        let (want, got) = (shapes(&fixture), shapes(&written));
+        for (key, (attrs, kids)) in &want {
+            if NOT_READ.contains(&key.as_str()) {
+                assert!(!got.contains_key(key), "{name}: {key}");
+                continue;
+            }
+            let kind = key.split(' ').next().unwrap();
+            let owned = |child: &str, n: &str| !NOT_OWNED.contains(&(kind, child, n));
+            let (got_attrs, got_kids) = got
+                .get(key)
+                .unwrap_or_else(|| panic!("{name}: {key} not written"));
+            let want_attrs: BTreeSet<&String> = attrs.iter().filter(|a| owned("", a)).collect();
+            assert_eq!(
+                got_attrs.iter().collect::<BTreeSet<_>>(),
+                want_attrs,
+                "{name}: attributes of {key}"
+            );
+            // A control with circle gaps in the old form only (overlapper) gets them as `circle-gaps`.
+            let mut kids = kids.clone();
+            if kind == "control"
+                && !kids.contains_key("circle-gaps")
+                && let Some(a) = kids.get("gaps").cloned()
+            {
+                kids.insert("circle-gaps".into(), a);
+            }
+            let want_kids: BTreeMap<&String, BTreeSet<&String>> = kids
+                .iter()
+                .filter(|(k, _)| owned("", k))
+                .map(|(k, a)| (k, a.iter().filter(|a| owned(k, a)).collect()))
+                .collect();
+            let got_kids: BTreeMap<&String, BTreeSet<&String>> = got_kids
+                .iter()
+                .map(|(k, a)| (k, a.iter().collect()))
+                .collect();
+            assert_eq!(got_kids, want_kids, "{name}: children of {key}");
+        }
+        for key in got.keys() {
+            assert!(
+                want.contains_key(key),
+                "{name}: {key} is not in the fixture"
+            );
+        }
+    }
 }
 
 #[test]

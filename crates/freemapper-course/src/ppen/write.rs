@@ -37,7 +37,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use out::{Body, Child, Element, Style, num, text_ok, write_element};
 
-use super::{ROOT, gap_key};
+use super::{DEFAULT_PRINT_SCALE, MAX_GAP_SCALES, ROOT, gap_key};
 use crate::CourseError;
 use crate::model::*;
 
@@ -225,6 +225,7 @@ pub fn write_ppen(event: &RawEvent, options: &ScratchOptions) -> Result<Written,
             plan.ids.controls[i],
             &plan.circle_gaps[i],
             options.description_standard.as_str(),
+            false,
         )?));
     }
     for (i, c) in event.courses.iter().enumerate() {
@@ -244,7 +245,7 @@ pub fn write_ppen(event: &RawEvent, options: &ScratchOptions) -> Result<Written,
                 ids[si],
                 plan.ids.controls[control],
                 stop,
-                exchange_at_normal(stop, &event.controls[control]),
+                exchange(stop, &event.controls[control]),
                 ids.get(si + 1).copied(),
             )?));
         }
@@ -560,6 +561,13 @@ impl<'a> Plan<'a> {
                     }
                     Some(_) => {}
                     None => {
+                        let written = plan.circle_gaps[ci].values().filter(|(g, _)| !g.is_empty());
+                        if !stop.circle_gaps.is_empty() && written.count() >= MAX_GAP_SCALES {
+                            return Err(PpenWriteError::Limit(format!(
+                                "circle gaps for more than {MAX_GAP_SCALES} scales at control {}",
+                                stop.control
+                            )));
+                        }
                         plan.circle_gaps[ci].insert(key, (&stop.circle_gaps, &course.name));
                     }
                 }
@@ -709,17 +717,21 @@ fn check_stop(
             )));
         }
     }
-    if stop.map_flip && !exchange_at_normal(stop, control) {
+    if stop.map_flip && !exchange(stop, control) {
         return Err(PpenWriteError::Unsupported(format!(
-            "{}: a map flip without a map exchange at a normal control",
+            "{}: a map flip without a map exchange",
             at()
         )));
     }
     Ok(())
 }
 
-fn exchange_at_normal(stop: &Stop, control: &Control<RawPoint>) -> bool {
-    stop.kind == Some(ControlKind::MapExchange) && control.kind == ControlKind::Control
+/// The stop is a map exchange, so its course-control carries `map-exchange="true"`: at a map-exchange
+/// control, or as a map exchange at a normal control. Purple Pen counts the parts of a course from this flag
+/// alone (`QueryEvent.CountCourseParts`), and `CourseControl.Validate` requires it at a map-exchange control.
+fn exchange(stop: &Stop, control: &Control<RawPoint>) -> bool {
+    control.kind == ControlKind::MapExchange
+        || (stop.kind == Some(ControlKind::MapExchange) && control.kind == ControlKind::Control)
 }
 
 fn el(name: &'static str, attrs: Vec<(&'static str, String)>, body: Body) -> Element {
@@ -782,6 +794,11 @@ fn event_element(
         }
         None => Body::Empty,
     };
+    if path.is_some_and(|p| p.is_empty()) {
+        return Err(PpenWriteError::Invalid(
+            "the map path is empty; Purple Pen would look for the map in a directory".into(),
+        ));
+    }
     kids.push(el("map", attrs, body));
     kids.push(el(
         "standards",
@@ -800,6 +817,12 @@ fn event_element(
         Body::Empty,
     ));
     kids.push(el("course-appearance", Vec::new(), Body::Empty));
+    // Purple Pen reads an empty `lang` as a missing one and refuses the file.
+    if options.description_lang.trim().is_empty() {
+        return Err(PpenWriteError::Invalid(
+            "the description language is empty".into(),
+        ));
+    }
     text_ok(&options.description_lang, "description language")?;
     kids.push(el(
         "descriptions",
@@ -809,13 +832,15 @@ fn event_element(
     Ok(el("event", vec![("id", "1".into())], children(kids)))
 }
 
-/// `<control>`: id and kind; code (normal controls only), location, descriptions and the circle gaps per
-/// scale (`CircleGap.EncodeGaps`).
+/// `<control>`: id, kind and (crossing points only) orientation; code (normal controls only), location,
+/// descriptions and the circle gaps per scale (`CircleGap.EncodeGaps`). `map_issue` says that the control is a
+/// map issue point in the file (the model reads it as a start), which holds one description symbol.
 fn control_element(
     c: &Control<RawPoint>,
     id: u32,
     gaps: &ControlGaps<'_>,
     standard: &str,
+    map_issue: bool,
 ) -> Result<Element, PpenWriteError> {
     let what = format!("control {}", c.code);
     let kind = match c.kind {
@@ -845,18 +870,20 @@ fn control_element(
         .ok_or_else(|| PpenWriteError::Invalid(format!("{what} has no location")))?;
     kids.push(point_el("location", p, &what)?);
     if let Some(d) = &c.description {
-        kids.extend(description_elements(c, d, standard, &what)?);
+        kids.extend(description_elements(c, d, standard, &what, map_issue)?);
     }
     for (scale, (g, _)) in gaps {
         if !g.is_empty() {
             kids.push(circle_gaps_element(*scale, g, &what)?);
         }
     }
-    Ok(el(
-        "control",
-        vec![("id", id.to_string()), ("kind", kind.into())],
-        children(kids),
-    ))
+    let mut attrs = vec![("id", id.to_string()), ("kind", kind.into())];
+    if c.kind == ControlKind::CrossingPoint {
+        // Required by `ControlPoint.ReadAttributesAndContent`; the model keeps no orientation, and 0 is
+        // Purple Pen's own for a new crossing point.
+        attrs.push(("orientation", "0".into()));
+    }
+    Ok(el("control", attrs, children(kids)))
 }
 
 /// `<circle-gaps scale=K>start:stop,…</circle-gaps>` (`CircleGap.EncodeGaps`).
@@ -882,13 +909,16 @@ fn circle_gaps_element(
     ))
 }
 
-/// The `description` elements of a control: box `all` with the one symbol of a finish or crossing point,
-/// else one per column C to H with a symbol, and the column F text as the text of box F.
+/// The `description` elements of a control: box `all` with the one symbol of a finish, crossing point or map
+/// issue point, else one per column C to H with a symbol, and the column F text as the text of box F. Purple
+/// Pen keeps one symbol for those three kinds and reads box D to H there as an error, and it allows column F
+/// text only at normal controls and starts (`ControlPoint.Validate`); anything else is refused.
 fn description_elements(
     c: &Control<RawPoint>,
     d: &Description,
     standard: &str,
     what: &str,
+    map_issue: bool,
 ) -> Result<Vec<Element>, PpenWriteError> {
     if d.standard != standard {
         return Err(PpenWriteError::Invalid(format!(
@@ -905,15 +935,21 @@ fn description_elements(
             None => Ok(Vec::new()),
         }
     };
-    if matches!(c.kind, ControlKind::Finish | ControlKind::CrossingPoint) {
+    if map_issue || matches!(c.kind, ControlKind::Finish | ControlKind::CrossingPoint) {
         if d.columns[1..].iter().any(Option::is_some) || d.column_f_text.is_some() {
             return Err(PpenWriteError::Unsupported(format!(
-                "{what} is a finish or crossing point, which has one description symbol (column C) in Purple Pen"
+                "{what} is a finish, crossing point or map issue point, which has one description symbol \
+                 (column C) in Purple Pen"
             )));
         }
         let mut attrs = vec![("box", "all".to_string())];
         attrs.extend(symbol(&d.columns[0])?);
         return Ok(vec![el("description", attrs, Body::Empty)]);
+    }
+    if d.column_f_text.is_some() && !matches!(c.kind, ControlKind::Control | ControlKind::Start) {
+        return Err(PpenWriteError::Unsupported(format!(
+            "{what} has column F text; Purple Pen allows that only at normal controls and starts"
+        )));
     }
     let mut out = Vec::new();
     for (i, col) in d.columns.iter().enumerate() {
@@ -962,15 +998,20 @@ fn course_element(
             Body::Empty,
         ));
     }
-    let mut options = Vec::new();
-    if let Some(s) = c.print_scale_hint {
-        if s == 0 {
-            return Err(PpenWriteError::Invalid(format!(
-                "{what} has a print scale of 0"
-            )));
-        }
-        options.push(("print-scale", s.to_string()));
-    }
+    // `options/@print-scale` is required by `Course.ReadAttributesAndContent`: without a hint it is Purple
+    // Pen's default. The element itself is written only when the course has something for it.
+    let mut options = vec![(
+        "print-scale",
+        match c.print_scale_hint {
+            Some(0) => {
+                return Err(PpenWriteError::Invalid(format!(
+                    "{what} has a print scale of 0"
+                )));
+            }
+            Some(s) => s.to_string(),
+            None => num(DEFAULT_PRINT_SCALE, "default print scale")?,
+        },
+    )];
     if let Some(v) = c.climb_m {
         if v < 0.0 {
             return Err(PpenWriteError::Invalid(format!(
@@ -987,7 +1028,7 @@ fn course_element(
         }
         options.push(("course-length", num(v, &format!("{what} length"))?));
     }
-    if !options.is_empty() {
+    if c.print_scale_hint.is_some() || options.len() > 1 {
         kids.push(el("options", options, Body::Empty));
     }
     Ok(el(
@@ -1002,8 +1043,7 @@ fn course_element(
 }
 
 /// `<course-control>`: id, control, map exchange and flip; next and number location. `exchange` says that the
-/// stop is a map exchange at a normal control (`map-exchange="true"`); a map exchange control is one by its
-/// kind.
+/// stop is a map exchange (see [`exchange`]), the only place a map flip can be.
 fn course_control_element(
     id: u32,
     control: u32,
@@ -1132,16 +1172,40 @@ fn special_element(
             return unsupported("a marked route special object, which Purple Pen does not have");
         }
     };
-    if points.is_empty() {
+    // `Special.Validate`: lines and areas need at least 2 points.
+    let lines = matches!(
+        s,
+        Special::Boundary { .. }
+            | Special::Line { .. }
+            | Special::OutOfBounds { .. }
+            | Special::Dangerous { .. }
+            | Special::WhiteOut { .. }
+    );
+    if points.is_empty() || (lines && points.len() < 2) {
+        let n = points.len();
         return Err(PpenWriteError::Invalid(format!(
-            "a {kind} special object without points"
+            "a {kind} special object with {n} point{}; Purple Pen draws it from at least 2 points",
+            if n == 1 { "" } else { "s" }
         )));
     }
     let what = format!("special object {id}");
-    let mut kids = points
-        .iter()
-        .map(|p| point_el("location", p, &what))
-        .collect::<Result<Vec<_>, _>>()?;
+    let mut kids = Vec::new();
+    if kind == "line" {
+        // Without `appearance` Purple Pen draws a line of width 0. These are the values it gives a new line
+        // (`NormalCourseAppearance.lineSpecial*`, `SpecialColor.ToString`); the model keeps no line style.
+        kids.push(el(
+            "appearance",
+            vec![
+                ("line-kind", "single".into()),
+                ("color", "purple".into()),
+                ("line-width", "0.35".into()),
+            ],
+            Body::Empty,
+        ));
+    }
+    for p in points {
+        kids.push(point_el("location", p, &what)?);
+    }
     kids.push(courses_element(courses));
     Ok(el(
         "special-object",

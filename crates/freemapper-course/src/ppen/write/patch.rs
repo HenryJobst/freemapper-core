@@ -14,7 +14,7 @@ use super::out::{Body, Child, Element, Style, escape_attr, write_element};
 use super::{
     AssignedIds, Frame, KeptObject, MAX_ID, Plan, PpenWriteError, Written, check_limits,
     circle_gaps_element, control_element, course_control_element, course_element, courses_element,
-    exchange_at_normal, leg_element, same_points, same_ranges, special_element,
+    exchange, leg_element, same_points, same_ranges, special_element,
 };
 use crate::CourseError;
 use crate::model::*;
@@ -1269,7 +1269,7 @@ impl<'a> Patch<'a> {
             let id = self.plan.ids.controls[ei];
             let gaps = &self.plan.circle_gaps[ei];
             let Some(bi) = self.m.controls[ei] else {
-                let e = control_element(ec, id, gaps, &self.v.standard)?;
+                let e = control_element(ec, id, gaps, &self.v.standard, false)?;
                 self.insert(Store::Control, &e);
                 continue;
             };
@@ -1301,7 +1301,9 @@ impl<'a> Patch<'a> {
             {
                 continue;
             }
-            let full = control_element(ec, id, &BTreeMap::new(), &v.standard)?;
+            // A map issue point keeps its kind (the model reads it as a start) and so its one description box.
+            let map_issue = pc.kind == PKind::MapIssue;
+            let full = control_element(ec, id, &BTreeMap::new(), &v.standard, map_issue)?;
             let obj = v.control_objs[bi];
             let mut m = Merge::object(v.text, v.object(obj));
             m.attr("id", true, None);
@@ -1442,7 +1444,7 @@ impl<'a> Patch<'a> {
         for (si, stop) in course.stops.iter().enumerate() {
             let ci = self.plan.stop_controls[ei][si];
             let control = self.plan.ids.controls[ci];
-            let exchange = exchange_at_normal(stop, &self.ev.controls[ci]);
+            let exchange = exchange(stop, &self.ev.controls[ci]);
             let id = self.cc_ids[ei][si];
             let next = self.cc_ids[ei].get(si + 1).copied();
             let Some(bid) = chain.get(si) else {
@@ -1453,12 +1455,8 @@ impl<'a> Patch<'a> {
             let (Some(pcc), Some(&obj)) = (v.st.ccs.get(bid), v.cc_objs.get(bid)) else {
                 return Err(mismatch());
             };
-            let at_normal = v
-                .control_by_id
-                .get(&pcc.control)
-                .is_some_and(|&i| v.st.controls[i].kind == PKind::Normal);
             let same_control = pcc.control == i64::from(control);
-            let same_exchange = (pcc.map_exchange && at_normal) == exchange;
+            let same_exchange = pcc.map_exchange == exchange;
             let same_flip = (pcc.map_flip && pcc.map_exchange) == stop.map_flip;
             let same_next = pcc.next == next.map(i64::from);
             let same_number = pcc.number_at.map(|o| (bits(o.dx_mm), bits(o.dy_mm)))
