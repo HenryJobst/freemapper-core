@@ -1,0 +1,28 @@
+[package]
+name = "freemapper-render"
+description = "Renderer for OpenOrienteering Mapper maps: symbol drawing, the render page model, PDF backend, Arimo text metrics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+# The Arimo fonts under assets/ are embedded with include_bytes! and must ship with the crate.
+include = ["Cargo.toml", "README.md", "src/**/*.rs", "tests/**/*.rs", "assets/fonts/*"]
+
+[features]
+# Test helpers for freemapper-print's tests: the work counter of the object budget and the decompressed page
+# content of a PDF. An app enables it under [dev-dependencies] only.
+test-support = []
+
+[dependencies]
+freemapper-omap.workspace = true
+image.workspace = true
+miniz_oxide.workspace = true
+pdf-writer.workspace = true
+quick-xml.workspace = true
+subsetter.workspace = true
+thiserror.workspace = true
+ttf-parser.workspace = true
+
+[lints]
+workspace = true

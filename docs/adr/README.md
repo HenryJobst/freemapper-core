@@ -27,3 +27,4 @@ status to `Superseded by NNNN`.
 | [0016](0016-course-number-placement-shared-with-courseplan.md) | Course number placement shared with courseplan |
 | [0017](0017-description-symbols-in-core.md) | Description symbols in core |
 | [0018](0018-the-contract-crate.md) | The contract crate |
+| [0019](0019-the-render-crate.md) | The render crate |

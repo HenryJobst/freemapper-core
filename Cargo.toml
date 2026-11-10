@@ -16,6 +16,7 @@ freemapper-omap = { path = "crates/freemapper-omap" }
 freemapper-course = { path = "crates/freemapper-course" }
 freemapper-georef = { path = "crates/freemapper-georef" }
 freemapper-contract = { path = "crates/freemapper-contract" }
+freemapper-render = { path = "crates/freemapper-render" }
 # Pinned to the versions in freemapper-courseplan's Cargo.lock. Fluent catalogs for program texts.
 fluent-bundle = "=0.16.0"
 fluent-syntax = "=0.12.0"
@@ -30,6 +31,13 @@ same-file = "=1.0.6"
 quick-xml = "=0.42.0"
 # Pinned to the version in freemapper-print's Cargo.lock. Number placements and the y axis in project files.
 serde = { version = "=1.0.229", features = ["derive"] }
+# Pinned to the versions in freemapper-print's Cargo.lock. The renderer: PDF writer, deflate, raster images,
+# font subsetting and metrics.
+image = { version = "=0.25.10", default-features = false, features = ["jpeg", "png"] }
+miniz_oxide = "=0.9.1"
+pdf-writer = "=0.15.0"
+subsetter = { version = "=0.2.6", default-features = false }
+ttf-parser = { version = "=0.25.1", default-features = false, features = ["std"] }
 # Test only: temporary folders.
 tempfile = "3.27.0"
 
