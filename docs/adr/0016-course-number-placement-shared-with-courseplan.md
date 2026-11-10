@@ -60,7 +60,7 @@ in the range of a line width (0.175 mm at sprint scale) or a rule minimum with t
 | courseplan `auto_place`, release | 1.1475 s |
 | core `place_course_numbers`, release | 0.030 s |
 | core `place_course_numbers`, debug | 0.077 s |
-| bound in the test | 34.4 s |
+| bound in the test | 2 s |
 
 ## Consequences
 - After the switch, courseplan positions move in exactly the two situations above: a bend within a line width of

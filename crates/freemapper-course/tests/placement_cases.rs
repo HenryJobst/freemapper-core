@@ -371,6 +371,8 @@ fn large_map_places_a_course_quickly() {
     );
     assert_eq!(placed.len(), 40);
     assert!(placed.iter().all(Option::is_some));
-    let limit = (30.0 * OLD_RELEASE_SECS).max(2.0);
+    // The old courseplan code needed OLD_RELEASE_SECS in release; core needs about 0.08 s in debug.
+    // 2 s leaves room for slow CI machines and still catches a return to quadratic behaviour.
+    let limit = 2.0_f64.min(2.0 * OLD_RELEASE_SECS);
     assert!(took < limit, "took {took:.3} s, limit {limit:.3} s");
 }
