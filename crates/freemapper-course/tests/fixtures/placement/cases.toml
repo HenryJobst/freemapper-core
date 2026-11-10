@@ -1,0 +1,347 @@
+# Shared number placement cases for freemapper-core and freemapper-courseplan.
+#
+# Source: freemapper-core (this repository), crates/freemapper-course/tests/fixtures/placement/cases.toml,
+#   commit: see `git log` of this file. Written for the move of courseplan's `auto_place` into core's
+#   `placement::place_course_numbers`. freemapper-courseplan copies this file unchanged and runs it through its
+#   old code; both repositories read it with `placement_cases_match_expected`.
+# Date: 2026-11-10
+# Licence: GPL-3.0-or-later (same as the repository)
+#
+# FORMAT (format = 1). Coordinates are map mm, y points down. Angles are degrees, 0 = east, counter-clockwise
+# on the page (so "north" is -y).
+#
+# [[case]]
+#   name        unique string
+#   map_kind    "sprint" | "forest"        sprint: circle 6.0, line 0.35, number height 4.0, base scale 4000
+#                                          forest: circle 5.0, line 0.35, number height 4.0, base scale 15000
+#   map_scale   u32                        factor = base scale / map_scale
+#   start       [x, y]                     the start; no stop, no circle, no number
+#   finish      [x, y]                     the finish; likewise
+#   start_bends [[x, y], ...]              optional: bends of the leg that leaves the start
+#   gap_min, gap_max                       optional floats: the rule limits before rounding, in print mm, as the
+#                                          arguments of GapRange::from_limits
+#   stops       array of tables, in running order, between start and finish
+#   map_points  [[x, y], ...]              zero-length map segments, half width 0.5 (no scaling by factor)
+#   map_lines   [[[x, y], ...], ...]       map polylines, half width 0.15 (no scaling by factor)
+#   expected    array, one entry per stop: { direction = f, gap = f } or "none"   (absent until Task 4)
+#
+# Lengths derived from the kind, all multiplied by factor: circle radius = diameter / 2, half line width =
+# line / 2, number box = (0.6 * height * digits, height), gaps (unit = factor). Map points and lines are
+# not scaled. The map elements are Tier::MapSymbol, one label per feature, never named c<n>, l<n> or n<n>.
+#
+# A stop is { at = [x, y], crossing = true | absent, kept = { direction, gap } | absent,
+#             bends = [[x, y], ...] | absent, repeat = n | absent, step = [dx, dy] | absent }.
+#   * Numbers are NOT given. courseplan numbers controls 1, 2, 3, ... in running order and gives crossing
+#     points no number (control_numbers), so the number of a stop is its place among the non-crossing stops;
+#     a number of 10 or more is two digits, of 100 or more three.
+#   * bends: courseplan's convention. The bends sit on the stop the leg LEAVES (CourseControl.bends); the leg
+#     start -> first stop has start_bends, the leg last stop -> finish has the bends of the last stop. The
+#     polyline of leg k is [from, bends..., to], with from = start or stop k-1 and to = stop k or the finish.
+#     A bend before the first stop is thus start_bends, a bend before the finish the last stop's bends.
+#   * repeat = n, step = [dx, dy] expands the entry into n stops at at, at + step, at + 2 step, ... The copies
+#     share crossing; kept and bends are not allowed together with repeat > 1. This builds courses with 10 or
+#     100 numbered controls.
+#   * kept belongs to numbered stops only (a crossing point has no number to keep).
+#   * A control visited twice is two stops with the same `at`.
+#
+# `expected` and the dump (PLACEMENT_CASES_DUMP) have ONE entry per stop AFTER expansion, crossing points
+# included. A crossing point's entry is "none". courseplan's auto_place returns entries for numbered controls
+# only, so its harness (Task 3) inserts "none" at every crossing stop to get the same shape, and compares
+# direction and gap per entry. The dump is `[[result]]` tables in case order with `name` and `placements`
+# (array of { direction, gap } or "none").
+#
+format = 1
+
+
+[[case]]
+name = "behind_straight_leg"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [40.0, 20.0]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [20.0, 20.0]
+
+[[case]]
+name = "obtuse_angle_outer_bisector"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [60.0, -10.0]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [50.0, -10.0]
+
+[[case]]
+name = "blocked_behind"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [45.0, 25.0]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [45.0, 0.0]
+
+[[case]]
+name = "neighbour_circle"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [60.0, 20.0]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [26.0, 2.0]
+[[case.stops]]
+at = [40.0, 20.0]
+
+[[case]]
+name = "numbers_avoid_each_other"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [40.0, 10.0]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [24.0, 6.0]
+[[case.stops]]
+at = [28.0, 0.0]
+
+[[case]]
+name = "kept_numbers_are_obstacles"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [45.0, 0.0]
+[[case.stops]]
+at = [20.0, 0.0]
+kept = { direction = 0.0, gap = 0.5 }
+[[case.stops]]
+at = [28.0, 3.0]
+[[case.stops]]
+at = [40.0, 0.0]
+
+[[case]]
+name = "kept_gap_outside_range"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [50.0, 0.0]
+gap_min = 0.5
+gap_max = 1.0
+[[case.stops]]
+at = [20.0, 0.0]
+kept = { direction = 90.0, gap = 5.0 }
+[[case.stops]]
+at = [35.0, 10.0]
+
+[[case]]
+name = "crossing_point"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [60.0, 20.0]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [30.0, 10.0]
+crossing = true
+[[case.stops]]
+at = [40.0, 0.0]
+[[case.stops]]
+at = [50.0, 10.0]
+
+[[case]]
+name = "same_control_twice"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [30.0, 30.0]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [40.0, 10.0]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [10.0, 20.0]
+
+[[case]]
+name = "no_legs"
+map_kind = "sprint"
+map_scale = 4000
+start = [20.0, 20.0]
+finish = [20.0, 20.0]
+[[case.stops]]
+at = [20.0, 20.0]
+
+[[case]]
+name = "zero_length_incoming"
+map_kind = "sprint"
+map_scale = 4000
+start = [20.0, 0.0]
+finish = [60.0, 0.0]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [40.0, 0.0]
+
+[[case]]
+name = "bend_before_control"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [50.0, 20.0]
+start_bends = [[20.0, -20.0]]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [40.0, 20.0]
+
+[[case]]
+name = "point_symbol_at_exactly_half_mm"
+map_kind = "sprint"
+map_scale = 4000
+start = [20.0, 30.0]
+finish = [40.0, 0.0]
+map_points = [[20.0, -8.175]]
+[[case.stops]]
+at = [20.0, 0.0]
+
+[[case]]
+name = "line_symbol_at_exactly_0_15_mm"
+map_kind = "sprint"
+map_scale = 4000
+start = [20.0, 30.0]
+finish = [40.0, 0.0]
+map_lines = [[[10.0, -7.825], [30.0, -7.825]]]
+[[case.stops]]
+at = [20.0, 0.0]
+
+[[case]]
+name = "every_direction_covered"
+map_kind = "sprint"
+map_scale = 4000
+start = [20.0, 30.0]
+finish = [40.0, 0.0]
+map_points = [[25.5, 0.0], [25.312592044589877, -1.423504748063864], [24.763139720814415, -2.7499999999999996], [23.88908729652601, -3.889087296526011], [22.75, -4.763139720814412], [21.423504748063863, -5.312592044589875], [20.0, -5.5], [18.576495251936134, -5.312592044589875], [17.25, -4.763139720814413], [16.11091270347399, -3.8890872965260117], [15.236860279185587, -2.7499999999999996], [14.687407955410125, -1.4235047480638656], [14.5, -6.735557395310443e-16], [14.687407955410125, 1.4235047480638643], [15.236860279185588, 2.7500000000000004], [16.11091270347399, 3.889087296526011], [17.249999999999996, 4.7631397208144115], [18.576495251936137, 5.312592044589875], [20.0, 5.5], [21.423504748063863, 5.312592044589876], [22.75, 4.763139720814412], [23.88908729652601, 3.889087296526012], [24.76313972081441, 2.7500000000000027], [25.312592044589877, 1.4235047480638638]]
+[[case.stops]]
+at = [20.0, 0.0]
+
+[[case]]
+name = "overprint_outranks_map"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [60.0, 0.0]
+map_points = [[24.763139720814415, -2.7499999999999996], [23.88908729652601, -3.889087296526011], [22.75, -4.763139720814412], [21.423504748063863, -5.312592044589875], [20.0, -5.5], [18.576495251936134, -5.312592044589875], [17.25, -4.763139720814413], [16.11091270347399, -3.8890872965260117], [15.236860279185587, -2.7499999999999996], [14.687407955410125, -1.4235047480638656], [14.5, -6.735557395310443e-16], [14.687407955410125, 1.4235047480638643], [15.236860279185588, 2.7500000000000004], [16.11091270347399, 3.889087296526011], [17.249999999999996, 4.7631397208144115], [18.576495251936137, 5.312592044589875], [20.0, 5.5], [21.423504748063863, 5.312592044589876], [22.75, 4.763139720814412], [23.88908729652601, 3.889087296526012], [24.76313972081441, 2.7500000000000027]]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [27.0, 0.0]
+
+[[case]]
+name = "gap_range_moves_out_before_turning"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [50.0, 20.0]
+gap_min = 0.5
+gap_max = 3.0
+map_points = [[24.5, 0.0]]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [40.0, 20.0]
+
+[[case]]
+name = "three_decimal_min"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [40.0, 20.0]
+gap_min = 0.333
+gap_max = 2.0
+map_points = [[24.5, 0.0]]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [20.0, 20.0]
+
+[[case]]
+name = "gaps_below_half_line"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [40.0, 20.0]
+gap_min = 0.01
+gap_max = 0.1
+map_points = [[24.5, 0.0]]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [20.0, 20.0]
+
+[[case]]
+name = "max_only"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [40.0, 20.0]
+gap_max = 2.0
+map_points = [[24.5, 0.0]]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [20.0, 20.0]
+
+[[case]]
+name = "min_above_max"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [40.0, 20.0]
+gap_min = 2.0
+gap_max = 1.0
+map_points = [[24.5, 0.0]]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [20.0, 20.0]
+
+[[case]]
+name = "bisector_tie_at_half_tenth"
+map_kind = "sprint"
+map_scale = 4000
+start = [40.0, 0.0]
+finish = [28.017151282347708, -28.90891359625869]
+[[case.stops]]
+at = [20.0, 0.0]
+
+[[case]]
+name = "forest_at_1_10000"
+map_kind = "forest"
+map_scale = 10000
+start = [0.0, 0.0]
+finish = [40.0, 20.0]
+map_points = [[25.0, 0.0]]
+[[case.stops]]
+at = [20.0, 0.0]
+[[case.stops]]
+at = [20.0, 20.0]
+
+[[case]]
+name = "two_and_three_digit_numbers"
+map_kind = "sprint"
+map_scale = 4000
+start = [0.0, 0.0]
+finish = [1284.0, 0.0]
+[[case.stops]]
+at = [12.0, 0.0]
+repeat = 105
+step = [12.0, 0.0]

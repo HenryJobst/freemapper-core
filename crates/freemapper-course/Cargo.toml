@@ -20,6 +20,9 @@ quick-xml.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 
+[dev-dependencies]
+toml.workspace = true
+
 [[test]]
 name = "fit_courses"
 required-features = ["fit"]
