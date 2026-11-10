@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.13.0] - 2026-11-11
+
 ### Hinzugefügt
 
 - freemapper-render: der Seitenaufbau aus freemapper-print, unverändert im Verhalten (Entscheidung 0023). `build::build_page` macht aus einer `MapDocument` die `RenderedPage`, die auch das PDF bekommt, und einen `BuildReport` mit den Seitenfeldern des `PrintReport` von freemapper-print unter denselben Namen. `PageSpec` nimmt Symbolfaktor und Geometriefaktor als Zahlen; die Maßstabsregeln (Kartenart, erlaubte Maßstäbe, Faktoren) bleiben in print. Mit dem Seitenaufbau ziehen `Paper`, `Orientation`, `PAGE_MARGIN_MM`, `MAX_UNITS_PER_PAGE`, `frame_box`, die Tags `SHEET_TAG`, `SCALE_BAR_TAG`, `BASE_TAG`, der Kartenteil `BASE_PART` und `is_sheet_object`, `is_base_object`, `is_north_line` um. `build_page_within` nimmt ein anderes Seitenbudget, für Tests. Die Bibliothek hängt jetzt von `serde` ab.
