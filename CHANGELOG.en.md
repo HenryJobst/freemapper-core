@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-10
+
 ### Added
 
 - freemapper-contract: new crate with the contract between freemapper and its readers freemapper-print and freemapper-courseplan (decision 0018). `census` counts the objects of a map per object class (sheet objects, base area, north lines, content) and returns the boxes of content and of sheet objects. `Vocabulary::of` collects the words of a map and its sidecar file, and `check` tests twelve rules for freemapper's output. Map and sidecar file go in as text; no type of freemapper-omap is part of the API.
