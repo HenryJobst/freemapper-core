@@ -95,8 +95,8 @@ helpers live. print and courseplan: one test module each, named by their session
   pub struct ClassCounts { pub furniture: usize, pub base: usize, pub north_lines: usize, pub content: usize }
   #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
   pub struct ClassBoxes { pub content: Option<Bbox>, pub furniture: Option<Bbox> }   // None is left out of TOML
-  #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-  pub struct Census { pub objects: ClassCounts, pub bbox: ClassBoxes }
+  #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]   // the writer's census.toml
+  pub struct Census { pub objects: ClassCounts, #[serde(default)] pub bbox: ClassBoxes }
   pub fn census(omap_xml: &str) -> Result<Census, ContractError>;
   // test only, src/testing.rs:
   pub(crate) struct TestObject { pub tags: Vec<(&'static str, &'static str)>, pub coords: Vec<(i32, i32)> }
@@ -110,7 +110,7 @@ helpers live. print and courseplan: one test module each, named by their session
 - `test_map` writes OOM XML version 9 that `freemapper_omap::read_map` accepts; model it on `map_with` in the
   tests of `crates/freemapper-omap/src/read.rs`.
 
-- [ ] **Step 1: Write the failing tests** in `src/census.rs`:
+- [x] **Step 1: Write the failing tests** in `src/census.rs`:
   - `classes_come_from_the_source_tag`: one object per source value `sheet`, `scale-bar`, `base`,
     `north-lines`, `osm`, and one without tags; counts are furniture 2, base 1, north_lines 1, content 2.
   - `boxes_cover_content_and_furniture_apart`: content at (0,0)-(10_000,5_000), north line from (0,-2_000) to
@@ -120,11 +120,11 @@ helpers live. print and courseplan: one test module each, named by their session
   - `a_map_without_objects_has_no_boxes`: both boxes `None`; `toml::to_string(&ClassBoxes::default())` is empty
     and `toml::from_str::<ClassBoxes>("")` gives the default.
   - `an_unreadable_map_is_an_error`: `census("not xml")` is `Err(ContractError::Map(_))`.
-- [ ] **Step 2: Run** `cargo test -p freemapper-contract` — fails to compile (no crate yet).
-- [ ] **Step 3: Implement** the manifest, `lib.rs`, `class.rs`, `census.rs`, `testing.rs` with the signatures
+- [x] **Step 2: Run** `cargo test -p freemapper-contract` — fails to compile (no crate yet).
+- [x] **Step 3: Implement** the manifest, `lib.rs`, `class.rs`, `census.rs`, `testing.rs` with the signatures
   above. Reserved words are `pub(crate) const` in `class.rs`.
-- [ ] **Step 4: Run** `cargo test -p freemapper-contract` — 5 passed.
-- [ ] **Step 5: Commit** `feat(contract): object classes and census of a map`.
+- [x] **Step 4: Run** `cargo test -p freemapper-contract` — 5 passed.
+- [x] **Step 5: Commit** `feat(contract): object classes and census of a map`.
 
 ### Task 2: Vocabulary
 
@@ -170,7 +170,7 @@ helpers live. print and courseplan: one test module each, named by their session
 - `differences`: one line per field that differs, naming the field and the words only one side has. Empty when
   equal.
 
-- [ ] **Step 1: Write the failing tests** in `src/vocabulary.rs`:
+- [x] **Step 1: Write the failing tests** in `src/vocabulary.rs`:
   - `lists_the_words_of_a_map`: parts `default`, `peripheral information`, `base`; furniture tagged `sheet`, one
     of them also `freemapper:sheet=scale-bar`; base tagged `base`; content tagged `freemapper:source=osm` and
     `freemapper:osm=x`; CRS `+init=epsg:25833`; sidecar with the four keys plus `buffer_m = 20.0`. Expect
@@ -185,10 +185,10 @@ helpers live. print and courseplan: one test module each, named by their session
     the three reserved sets and `sidecar` are empty.
   - `round_trips_through_toml`: `Vocabulary::from_toml(&v.to_toml()) == v`.
   - `a_sidecar_with_bom_and_crlf_parses`: `"\u{feff}title = \"A\"\r\nmap_kind = \"sprint\"\r\n"` gives two keys.
-- [ ] **Step 2: Run** `cargo test -p freemapper-contract vocabulary` — fails to compile.
-- [ ] **Step 3: Implement** `sidecar.rs` and `vocabulary.rs`.
-- [ ] **Step 4: Run** `cargo test -p freemapper-contract` — all pass.
-- [ ] **Step 5: Commit** `feat(contract): vocabulary of a map and its sidecar`.
+- [x] **Step 2: Run** `cargo test -p freemapper-contract vocabulary` — fails to compile.
+- [x] **Step 3: Implement** `sidecar.rs` and `vocabulary.rs`.
+- [x] **Step 4: Run** `cargo test -p freemapper-contract` — all pass.
+- [x] **Step 5: Commit** `feat(contract): vocabulary of a map and its sidecar`.
 
 ### Task 3: Rules
 
@@ -228,7 +228,7 @@ helpers live. print and courseplan: one test module each, named by their session
 - `detail` names the part and the object's index in it, or the key and its value.
 - A missing part is no violation. An unreadable map or sidecar is `Err`, everything else a `Violation`.
 
-- [ ] **Step 1: Write the failing tests** in `src/check.rs`. A helper `good()` returns the map and sidecar of
+- [x] **Step 1: Write the failing tests** in `src/check.rs`. A helper `good()` returns the map and sidecar of
   `lists_the_words_of_a_map` (kind `schoolyard`, scale 1000, title `Clara-Zetkin-Schule`, crs 25833).
   - `a_map_as_freemapper_writes_it_has_no_violation`.
   - One test per rule, each changing one thing in `good()` and asserting that exactly this rule is reported:
@@ -239,12 +239,12 @@ helpers live. print and courseplan: one test module each, named by their session
   - `sprint_at_3000_is_not_allowed` and `sprint_at_5000_is_allowed`.
   - `a_sidecar_without_contract_keys_gives_violations_not_an_error`: `KindKnown`, `TitlePresent`,
     `ScaleMatchesMap`, `CrsKnown` and `CrsText` are reported; the result is `Ok`.
-- [ ] **Step 2: Run** `cargo test -p freemapper-contract check` — fails to compile.
-- [ ] **Step 3: Implement** `check.rs`. The scale table is a private `fn allowed_scales(kind: &str) ->
+- [x] **Step 2: Run** `cargo test -p freemapper-contract check` — fails to compile.
+- [x] **Step 3: Implement** `check.rs`. The scale table is a private `fn allowed_scales(kind: &str) ->
   Option<&'static [u32]>`.
-- [ ] **Step 4: Run** `cargo fmt --all --check && cargo clippy --locked --workspace --all-targets -- -D warnings
+- [x] **Step 4: Run** `cargo fmt --all --check && cargo clippy --locked --workspace --all-targets -- -D warnings
   && cargo test --locked --workspace` — green.
-- [ ] **Step 5: Commit** `feat(contract): rules for what freemapper writes`.
+- [x] **Step 5: Commit** `feat(contract): rules for what freemapper writes`.
 
 ### Task 4: Fixture writer in freemapper
 
@@ -412,6 +412,11 @@ helpers live. print and courseplan: one test module each, named by their session
 - [ ] Changelog entry, commit, CI green.
 
 ---
+
+## Progress
+
+- 2026-11-10: Tasks 1 to 3 done in one commit (the modules depend on each other): 35 tests, fmt, clippy and
+  the workspace tests green on macOS. Next: Task 4, which needs a freemapper worktree build.
 
 ## After stage 1
 

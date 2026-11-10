@@ -1,0 +1,19 @@
+[package]
+name = "freemapper-contract"
+description = "The contract between freemapper's map and sidecar and the programs that read them: object classes, census, vocabulary and rules"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+include = ["Cargo.toml", "README.md", "src/**/*.rs"]
+
+[dependencies]
+# Private: no type of it appears in this crate's public API, so an app may pin another core tag for its own reader.
+freemapper-omap.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+toml.workspace = true
+
+[lints]
+workspace = true

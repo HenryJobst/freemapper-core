@@ -15,6 +15,7 @@ freemapper-rules = { path = "crates/freemapper-rules" }
 freemapper-omap = { path = "crates/freemapper-omap" }
 freemapper-course = { path = "crates/freemapper-course" }
 freemapper-georef = { path = "crates/freemapper-georef" }
+freemapper-contract = { path = "crates/freemapper-contract" }
 # Pinned to the versions in freemapper-courseplan's Cargo.lock. Fluent catalogs for program texts.
 fluent-bundle = "=0.16.0"
 fluent-syntax = "=0.12.0"
