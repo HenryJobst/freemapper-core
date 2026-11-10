@@ -173,8 +173,13 @@ impl YAxis {
 }
 
 /// OOM's map-to-grid transform (`Georeferencing::updateTransformation`): map mm less the map reference
-/// point, scaled to metres with y flipped, turned by the grivation, plus the projected reference point.
-struct Georef {
+/// point, scaled to metres with y flipped, turned by the grivation, plus the projected reference point. With the
+/// UTM projection of the map's CRS it converts between map positions and latitude and longitude.
+///
+/// A map position is the position on the paper at the map's scale, in the `.omap` file's own coordinates: x to
+/// the right, y down. [`MapGrid::latlon_of`] and [`MapGrid::map_mm_of`] take and give millimetres,
+/// [`fit`] works in micrometres internally.
+pub struct MapGrid {
     tm: TransverseMercator,
     ref_grid: (f64, f64),
     map_ref_um: (f64, f64),
@@ -182,8 +187,10 @@ struct Georef {
     grivation_rad: f64,
 }
 
-impl Georef {
-    fn of(g: &MapGeoref) -> Result<Self, SkipReason> {
+impl MapGrid {
+    /// The transform of `g`: [`SkipReason::NotGeoreferenced`] without a CRS, a reference point or a scale,
+    /// [`SkipReason::UnsupportedCrs`] for a CRS that is not UTM.
+    pub fn of(g: &MapGeoref) -> Result<Self, SkipReason> {
         let (Some(spec), Some(ref_grid)) = (&g.crs_spec, g.ref_projected) else {
             return Err(SkipReason::NotGeoreferenced);
         };
@@ -228,6 +235,18 @@ impl Georef {
 
     fn grid_of(&self, (lat, lng): (f64, f64)) -> (f64, f64) {
         self.tm.forward(lat, lng)
+    }
+
+    /// Latitude and longitude (degrees, in that order) of a map position `map_mm` (mm, x right, y down).
+    pub fn latlon_of(&self, (x, y): (f64, f64)) -> (f64, f64) {
+        let (e, n) = self.to_grid((x * 1000.0, y * 1000.0));
+        self.tm.inverse(e, n)
+    }
+
+    /// The map position (mm, x right, y down) of `lat`, `lng` (degrees): the inverse of [`Self::latlon_of`].
+    pub fn map_mm_of(&self, lat: f64, lng: f64) -> (f64, f64) {
+        let (x, y) = self.to_map(self.grid_of((lat, lng)));
+        (x / 1000.0, y / 1000.0)
     }
 
     /// Metres between a map position and the grid point of `geo`; infinite when either is not finite.
@@ -282,7 +301,7 @@ pub fn fit(event: RawEvent, map: &MapDocument, options: &FitOptions) -> Result<F
     }
 
     let georef = if options.check_georef {
-        Georef::of(&map.georef)
+        MapGrid::of(&map.georef)
     } else {
         Err(SkipReason::CheckOff)
     };
@@ -448,7 +467,7 @@ mod tests {
         // (georeferencing.cpp, Georeferencing::updateTransformation); QTransform::rotate(a) maps
         // (x, y) to (x·cos a − y·sin a, x·sin a + y·cos a). With grivation 90°, magnetic north (map up)
         // points grid east, so 1 mm up on the map at 1:1000 is 1 m east.
-        let g = Georef {
+        let g = MapGrid {
             tm: TransverseMercator::utm(32, false, freemapper_georef::tm::GRS80),
             ref_grid: (500_000.0, 6_000_000.0),
             map_ref_um: (0.0, 0.0),

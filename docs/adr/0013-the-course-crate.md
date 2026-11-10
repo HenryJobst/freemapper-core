@@ -20,7 +20,8 @@ ADR 0039 kept these modules apart). freemapper-courseplan places numbers by the 
   with y up, so a writer negates `dy_mm` of the result (and a reader of a raw file before the call).
 - The `From` conversions between `NumberPlacement` and `placement::Placement` come along, since print may not
   implement them any more. `xml::{Handler, drive, local, attr, number}` are public for print's description
-  symbol reader; `tm` moved to `freemapper-georef` (ADR 0015) and `fit` uses it from there.
+  symbol reader; `MapGrid` (the map-to-grid transform of the fit, public since v0.7.0) converts map positions to latitude and
+  longitude for the apps; `tm` moved to `freemapper-georef` (ADR 0015) and `fit` uses it from there.
 
 ## Consequences
 - Code that builds `Control` or `Course` literals adds `id: None`. `xml::Handler` and `attr` take quick-xml
