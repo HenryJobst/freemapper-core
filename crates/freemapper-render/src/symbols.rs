@@ -167,7 +167,7 @@ pub struct PointDef {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextDef {
-    /// Font family named by the symbol (`<font family>`); Arimo draws every family (ADR 0017).
+    /// Font family named by the symbol (`<font family>`); Arimo draws every family (freemapper-print ADR 0017).
     pub family: String,
     pub color: i32,
     /// Em size (0.001 mm).

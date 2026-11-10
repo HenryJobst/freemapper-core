@@ -1,5 +1,5 @@
 //! The embedded fonts: Arimo, metric-compatible with Arial, stands in for every OOM font family
-//! (ADR 0017). Texts are measured with Arimo's advance widths, and each PDF page embeds a subset of
+//! (freemapper-print ADR 0017). Texts are measured with Arimo's advance widths, and each PDF page embeds a subset of
 //! the faces it uses as Type0 / CIDFontType2 fonts with Identity-H encoding.
 
 use std::collections::BTreeSet;

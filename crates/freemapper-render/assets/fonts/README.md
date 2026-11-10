@@ -1,6 +1,6 @@
 # Fonts
 
-Arimo, metric-compatible with Arial, is embedded in the PDF for every map text (ADR 0017). The four static
+Arimo, metric-compatible with Arial, is embedded in the PDF for every map text (freemapper-print ADR 0017). The four static
 instances come unchanged from the Arimo repository.
 
 | File | Source | Licence |

@@ -1,6 +1,6 @@
 //! Copied from freemapper 743ce4b (ADR 0014).
 //! Drawing primitives as a one-page PDF: DeviceCMYK colours, painted in the page's order, texts in
-//! embedded subsets of Arimo (ADR 0017).
+//! embedded subsets of Arimo (freemapper-print ADR 0017).
 
 use std::cell::Cell;
 use std::collections::BTreeSet;

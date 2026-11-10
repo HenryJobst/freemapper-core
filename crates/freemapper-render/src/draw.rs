@@ -137,7 +137,7 @@ pub(crate) fn mm(v: f64) -> f64 {
 
 /// Most units of work one map object may use: one per primitive plus its kept points
 /// ([`KEPT_POINTS_PER_UNIT`]), one per step that draws nothing (a pattern line or point
-/// placement without output, a symbol call), one per [`POINTS_PER_UNIT`] points handled.
+/// placement without output, a symbol call), one per `POINTS_PER_UNIT` points handled.
 /// Guards against hostile or broken files (dense patterns, symbols nested into each other, a
 /// combined symbol that draws the same large area many times); real objects stay far below it.
 pub const MAX_UNITS_PER_OBJECT: usize = 250_000;
@@ -149,14 +149,14 @@ pub(crate) const POINTS_PER_UNIT: usize = 64;
 
 /// Points kept in the output per unit of budget. A primitive costs one unit plus one per this
 /// many of its points (rounded down). A clip outline costs one unit per this many points
-/// (rounded up) for each clip block the PDF writes for it ([`Sink::charge_outline`]). Kept
+/// (rounded up) for each clip block the PDF writes for it (`Sink::charge_outline`). Kept
 /// points stay in memory until the page is written, and the PDF writes each one again as text,
-/// so they cost more than points that are only handled ([`POINTS_PER_UNIT`]). A unit keeps
+/// so they cost more than points that are only handled (`POINTS_PER_UNIT`). A unit keeps
 /// fewer than eight points.
 pub const KEPT_POINTS_PER_UNIT: usize = 8;
 
 /// The points (or text bytes) `shape` keeps; a clipped shape's outline is charged separately
-/// ([`Sink::charge_outline`]).
+/// (`Sink::charge_outline`).
 fn kept_points(shape: &Shape) -> usize {
     match shape {
         Shape::Fill { rings, .. } => rings.iter().map(Vec::len).sum(),
@@ -267,7 +267,7 @@ impl Sink {
         self.left = self.left.saturating_sub(units);
     }
 
-    /// Charges the work of handling `points` coordinates ([`POINTS_PER_UNIT`]).
+    /// Charges the work of handling `points` coordinates (`POINTS_PER_UNIT`).
     pub(crate) fn charge_points(&mut self, points: usize) {
         self.charge(points / POINTS_PER_UNIT);
     }
@@ -527,7 +527,7 @@ pub(crate) fn ring(def: &PointDef, at: Pt) -> Option<Primitive> {
 }
 
 /// An element's coordinates rotated about the point centre `at` and moved there, back in
-/// 0.001 mm; the copy is charged to `sink` ([`POINTS_PER_UNIT`]).
+/// 0.001 mm; the copy is charged to `sink` (`POINTS_PER_UNIT`).
 pub(crate) fn element_coords(
     element: &Element,
     at: Pt,
@@ -672,7 +672,7 @@ struct TextLine<'a> {
 /// A box text wraps a paragraph at the last space where the line still fits the box width (a
 /// word wider than the box stays whole) and aligns the lines to the box edges; a single-anchor
 /// text aligns them to the anchor. Each line costs one unit of `sink`, plus the characters
-/// measured ([`POINTS_PER_UNIT`]), and layout stops when the budget is spent.
+/// measured (`POINTS_PER_UNIT`), and layout stops when the budget is spent.
 fn text_layout<'a>(
     def: &TextDef,
     text: &'a str,
