@@ -14,6 +14,11 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 ### Hinzugefügt
 
 - freemapper-contract: zwei Fixtures für die Leser (Entscheidung 0018, Nachtrag). `legacy-0.9.0-scale-bar` ist eine Karte von freemapper 0.9.0 mit dem alten Tag an der Maßstabsleiste und ohne Titel. `future-kind` hat eine Kartenart, einen Schlüssel und eine Rolle, die kein Leser kennt. `fixtures/README.md` nennt die Herkunft jedes Fixtures.
+
+## [0.9.0] - 2026-11-10
+
+### Hinzugefügt
+
 - freemapper-render: neue Bibliothek mit der Darstellung aus freemapper-print, unverändert im Verhalten übernommen (Entscheidung 0019). Sie zeichnet OOM-Symbole in das Seitenmodell (`page`), schreibt PDF (`pdf`) und bringt die Schrift Arimo mit ihren Textmaßen mit (`fonts`). Einzige Abhängigkeit aus der Suite ist freemapper-omap. Das Feature `test-support` macht `pdf::content_of`, `draw::work_units` und `draw::BUDGET_SLACK` für die Tests der Anwendungen zugänglich. Der Seitenbau (`print.rs`) bleibt vorerst in freemapper-print.
 
 ## [0.8.0] - 2026-11-10

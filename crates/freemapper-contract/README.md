@@ -34,7 +34,7 @@ Fixture stammt, steht in `fixtures/README.md`.
 
 ```toml
 [dev-dependencies]
-freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.9.0", features = ["fixtures"] }
+freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.10.0", features = ["fixtures"] }
 ```
 
 Ein Leser testet sich so: Er legt jedes Fixture mit `Fixture::write_into` in einen Ordner, liest es mit eigenem
@@ -79,7 +79,7 @@ no error and still reads the title. `fixtures/README.md` says where each fixture
 
 ```toml
 [dev-dependencies]
-freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.9.0", features = ["fixtures"] }
+freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.10.0", features = ["fixtures"] }
 ```
 
 A reader tests itself like this: it puts each fixture into a folder with `Fixture::write_into`, reads it with
