@@ -276,7 +276,7 @@ helpers live. print and courseplan: one test module each, named by their session
 - [x] **Step 5: Write `contract_write_fixtures`** and run it:
   `FREEMAPPER_CONTRACT_OUT=<core worktree>/crates/freemapper-contract/fixtures/v1 cargo test -p freemapper
   contract_write_fixtures -- --ignored`. Each `map.omap` stays under 400 kB.
-- [ ] **Step 6: Commit** in freemapper (without the `[patch]`):
+- [x] **Step 6: Commit** in freemapper (without the `[patch]`):
   `test(contract): fixture writer and rule check for the suite contract`.
 
 ### Task 5: Fixtures in core
@@ -349,7 +349,7 @@ helpers live. print and courseplan: one test module each, named by their session
 - [x] **Step 3: Changelog** under "Unveröffentlicht"/"Unreleased", crate `freemapper-contract`: what it is and
   how an app uses it (dev-dependency with the feature `fixtures`). READMEs: one row in the crate table.
 - [x] **Step 4: Run `unslop` and `humanizer`** over ADR, changelog entries, README rows and the crate README.
-- [ ] **Step 5: Merge and release** as `CLAUDE.md` says: merge `--no-ff` into `main`, next minor version
+- [x] **Step 5: Merge and release** as `CLAUDE.md` says: merge `--no-ff` into `main`, next minor version
   (v0.8.0 while `main` is at v0.7.x), `cargo update -w`, date the changelog, annotated tag, push `main` and the
   tag to both remotes, watch CI on the three systems. `cargo clean` in the worktree, then remove it.
 
@@ -363,18 +363,18 @@ helpers live. print and courseplan: one test module each, named by their session
 **Interfaces:**
 - Consumes: `freemapper_contract::{fixture, Vocabulary, check}`, `contract_project` from Task 4.
 
-- [ ] **Step 1: Write the failing test** `contract_vocabulary_matches_the_fixture`: for (`Schoolyard`,
+- [x] **Step 1: Write the failing test** `contract_vocabulary_matches_the_fixture`: for (`Schoolyard`,
   `schoolyard-1000`) and (`Sprint`, `sprint-4000`), `Vocabulary::of(map, sidecar)` equals
   `fixture(name).unwrap().vocabulary()`; on failure print `differences` and the sentence "A change to these
   words is a change to the suite contract: refresh the fixtures in freemapper-core first (core ADR 00NN)."
-- [ ] **Step 2: Run** it with the `[patch]` removed and the tag pinned — passes. Then prove it bites: change
+- [x] **Step 2: Run** it with the `[patch]` removed and the tag pinned — passes. Then prove it bites: change
   `SCALE_BAR_ROLE` handling locally so the bar is tagged `freemapper:source=scale-bar`, run, see both
   `contract_vocabulary_matches_the_fixture` and `contract_output_breaks_no_rule` fail, revert.
-- [ ] **Step 3: ADR and changelog** (through `unslop` and `humanizer`): freemapper's output is checked against
+- [x] **Step 3: ADR and changelog** (through `unslop` and `humanizer`): freemapper's output is checked against
   core's contract in every test run; how to refresh the fixtures.
-- [ ] **Step 4: Run** freemapper's full checks (`cargo fmt --all --check`, clippy `-D warnings`,
+- [x] **Step 4: Run** freemapper's full checks (`cargo fmt --all --check`, clippy `-D warnings`,
   `cargo test --locked --workspace`).
-- [ ] **Step 5: Commit, merge, push**; watch CI on the three systems. `cargo clean` in the worktree, remove it.
+- [x] **Step 5: Commit, merge, push**; watch CI on the three systems. `cargo clean` in the worktree, remove it.
 
 ### Task 8: Reader test in freemapper-print (print session)
 
@@ -429,6 +429,11 @@ helpers live. print and courseplan: one test module each, named by their session
   - CI runs clippy and the tests with `--all-features`.
   - Glossary: "Randobjekte / sheet objects", "Grundfläche / base area" and "Begleitdatei / sidecar file" come
     from print's glossary; "Vertragsregel / contract rule" and "Erwartungswerte / expected values" were added.
+- 2026-11-10: Tasks 6 and 7 done. Core v0.8.0 is tagged (`5028aeb`, CI green on the three systems before the
+  tag). freemapper main has the two producer tests and ADR 0089 (`d08d530`, CI green on the three systems). The bite check of Task 7 Step 2 ran
+  before the core release, against the patched crate: with the scale bar tagged `scale-bar` both tests failed.
+  Tasks 8 and 9 wait for the print and courseplan sessions; they were not reachable over SendMessage, so the
+  task texts went to the user as files.
 
 ## After stage 1
 
