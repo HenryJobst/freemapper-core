@@ -1,4 +1,4 @@
-//! The SVG backend for the browser editors (ADR 0021): a [`RenderedPage`] as one SVG document, painted in the
+//! The SVG backend for the browser editors (ADR 0022): a [`RenderedPage`] as one SVG document, painted in the
 //! order of the PDF backend.
 //!
 //! The viewBox is in page mm (y down), so every coordinate in the document is a page millimetre, the same

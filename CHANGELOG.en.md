@@ -9,8 +9,15 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- freemapper-render: SVG backend for the browser editors (decision 0021). `svg::write_svg` writes a `RenderedPage` as SVG in the same order as the PDF, with masks as clip paths and the course overprint with `mix-blend-mode:multiply`. The viewBox is in page mm; `SvgView` picks the part of the page and the pixels per mm, and shapes outside it are left out. Texts are Arimo glyph outlines, images PNG data URIs, and colours go from CMYK to sRGB by r = 255 · (1 − c) · (1 − k). A page beyond `svg::MAX_UNITS` gives `SvgError::TooLarge`.
-- freemapper-render: `RenderedPage::mapping` returns the page mapping `PageMapping` between the map (mm at the print scale) and the page (mm). `RenderedPage::hits_at` lists the map objects under a page point, topmost first, and respects the clip rectangle, the masks and the fill rules (decision 0021).
+- freemapper-render: SVG backend for the browser editors (decision 0022). `svg::write_svg` writes a `RenderedPage` as SVG in the same order as the PDF, with masks as clip paths and the course overprint with `mix-blend-mode:multiply`. The viewBox is in page mm; `SvgView` picks the part of the page and the pixels per mm, and shapes outside it are left out. Texts are Arimo glyph outlines, images PNG data URIs, and colours go from CMYK to sRGB by r = 255 · (1 − c) · (1 − k). A page beyond `svg::MAX_UNITS` gives `SvgError::TooLarge`.
+- freemapper-render: `RenderedPage::mapping` returns the page mapping `PageMapping` between the map (mm at the print scale) and the page (mm). `RenderedPage::hits_at` lists the map objects under a page point, topmost first, and respects the clip rectangle, the masks and the fill rules (decision 0022).
+- freemapper-contract: when the crate or freemapper-omap changes, CI now runs the contract tests (`contract_*`) of freemapper-print and freemapper-courseplan against the new state (decision 0022). A red run means the change breaks a reader; the reader then learns the new form first, and core is released after that.
+
+## [0.11.0] - 2026-11-11
+
+### Added
+
+- freemapper-web: new crate with the shell for local web pages (decision 0020), generalised from the area selection of freemapper. `serve` binds 127.0.0.1 (port 0 picks a free one), puts a random 128-bit token in front of the app's routes and guards them: only the hosts `127.0.0.1:PORT` and `localhost:PORT` are served, an `Origin` that is sent must be the page itself, and every response carries `Cache-Control: no-store` (unless the handler sets its own), the app's Content-Security-Policy, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` and `X-Content-Type-Options: nosniff`. With `ServeOptions::strict_post`, a request that changes state also needs an `Origin` and the content type `application/json` or `application/octet-stream`. `embedded` serves rust-embed files, `open_browser` starts the browser, `LocalServer::shutdown` and `finished` stop and await the server.
 
 ## [0.10.0] - 2026-11-10
 

@@ -9,8 +9,15 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ### Hinzugefügt
 
-- freemapper-render: SVG-Ausgabe für die Editoren im Browser (Entscheidung 0021). `svg::write_svg` schreibt eine `RenderedPage` als SVG, in derselben Reihenfolge wie das PDF, mit Abdeckungen als Clip-Pfade und dem Bahnaufdruck mit `mix-blend-mode:multiply`. Die viewBox ist in Seitenmillimetern; `SvgView` wählt den Ausschnitt und die Pixel je Millimeter, Formen außerhalb fallen weg. Texte sind Glyphenumrisse aus Arimo, Bilder PNG-Daten-URIs, Farben werden mit r = 255 · (1 − c) · (1 − k) von CMYK nach sRGB umgerechnet. Eine Seite über `svg::MAX_UNITS` ergibt `SvgError::TooLarge`.
-- freemapper-render: `RenderedPage::mapping` liefert die Seitenabbildung `PageMapping` zwischen Karte (mm beim Druckmaßstab) und Seite (mm). `RenderedPage::hits_at` nennt die Kartenobjekte unter einem Punkt der Seite, das oberste zuerst, und beachtet Clip-Rechteck, Abdeckungen und Füllregeln (Entscheidung 0021).
+- freemapper-render: SVG-Ausgabe für die Editoren im Browser (Entscheidung 0022). `svg::write_svg` schreibt eine `RenderedPage` als SVG, in derselben Reihenfolge wie das PDF, mit Abdeckungen als Clip-Pfade und dem Bahnaufdruck mit `mix-blend-mode:multiply`. Die viewBox ist in Seitenmillimetern; `SvgView` wählt den Ausschnitt und die Pixel je Millimeter, Formen außerhalb fallen weg. Texte sind Glyphenumrisse aus Arimo, Bilder PNG-Daten-URIs, Farben werden mit r = 255 · (1 − c) · (1 − k) von CMYK nach sRGB umgerechnet. Eine Seite über `svg::MAX_UNITS` ergibt `SvgError::TooLarge`.
+- freemapper-render: `RenderedPage::mapping` liefert die Seitenabbildung `PageMapping` zwischen Karte (mm beim Druckmaßstab) und Seite (mm). `RenderedPage::hits_at` nennt die Kartenobjekte unter einem Punkt der Seite, das oberste zuerst, und beachtet Clip-Rechteck, Abdeckungen und Füllregeln (Entscheidung 0022).
+- freemapper-contract: Ändert sich die Bibliothek oder freemapper-omap, führt die CI jetzt die Vertragstests (`contract_*`) von freemapper-print und freemapper-courseplan gegen den neuen Stand aus (Entscheidung 0022). Ein roter Lauf heißt, dass die Änderung einen Leser bricht; dann lernt erst der Leser die neue Form, danach wird core veröffentlicht.
+
+## [0.11.0] - 2026-11-11
+
+### Hinzugefügt
+
+- freemapper-web: neue Bibliothek mit dem Rahmen für lokale Webseiten (Entscheidung 0020), verallgemeinert aus der Gebietsauswahl von freemapper. `serve` bindet 127.0.0.1 (Port 0 wählt einen freien), setzt ein zufälliges 128-Bit-Token vor die Routen der Anwendung und schützt sie: bedient werden nur die Hosts `127.0.0.1:PORT` und `localhost:PORT`, ein gesendeter `Origin` muss die Seite selbst sein, und jede Antwort trägt `Cache-Control: no-store` (außer der Handler setzt eigenen), die Content-Security-Policy der Anwendung, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` und `X-Content-Type-Options: nosniff`. Mit `ServeOptions::strict_post` braucht eine Anfrage, die etwas ändert, zusätzlich einen `Origin` und den Inhaltstyp `application/json` oder `application/octet-stream`. `embedded` liefert rust-embed-Dateien, `open_browser` startet den Browser, `LocalServer::shutdown` und `finished` beenden den Server und warten darauf.
 
 ## [0.10.0] - 2026-11-10
 

@@ -1,4 +1,4 @@
-# 0021. SVG backend and hit test
+# 0022. SVG backend and hit test
 
 Date: 2026-11-11
 Status: Accepted

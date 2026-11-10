@@ -28,4 +28,6 @@ status to `Superseded by NNNN`.
 | [0017](0017-description-symbols-in-core.md) | Description symbols in core |
 | [0018](0018-the-contract-crate.md) | The contract crate |
 | [0019](0019-the-render-crate.md) | The render crate |
-| [0021](0021-svg-backend-and-hit-test.md) | SVG backend and hit test |
+| [0020](0020-local-web-pages-shell.md) | The shell for local web pages |
+| [0021](0021-the-contract-gate.md) | The contract gate |
+| [0022](0022-svg-backend-and-hit-test.md) | SVG backend and hit test |

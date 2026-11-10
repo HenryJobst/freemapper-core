@@ -10,7 +10,7 @@ Der Code stammt aus freemapper 743ce4b. freemapper-print hat ihn dort kopiert (f
 Bibliothek sind die alten Pfade unterhalb von `render`, zum Beispiel `freemapper_render::pdf::write_pdf`.
 Einzige Abhängigkeit aus der Suite ist `freemapper-omap`.
 
-Für die Editoren (Entscheidung 0021):
+Für die Editoren (Entscheidung 0022):
 
 - `RenderedPage::mapping()` liefert die Seitenabbildung (`PageMapping`). `to_page` und `to_map` rechnen
   zwischen der Karte in Millimetern beim Druckmaßstab und der Seite in Millimetern um, beide mit y nach unten.
@@ -43,7 +43,7 @@ The code comes from freemapper 743ce4b. freemapper-print copied it from there (f
 the old paths below `render`, for example `freemapper_render::pdf::write_pdf`. The only suite dependency is
 `freemapper-omap`.
 
-For the editors (decision 0021):
+For the editors (decision 0022):
 
 - `RenderedPage::mapping()` returns the page mapping (`PageMapping`). `to_page` and `to_map` convert between
   the map in mm at the print scale and the page in mm, both with y down.
