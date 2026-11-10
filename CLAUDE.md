@@ -16,6 +16,7 @@ before changing code.
   | `freemapper-text`, `freemapper-rules` | freemapper-courseplan |
   | `freemapper-georef`, `freemapper-fs`, `freemapper-contract` | freemapper |
   | `freemapper-omap`, `freemapper-render`, `freemapper-course` | freemapper-print (after its M3) |
+  | `freemapper-web` | freemapper-courseplan |
 
 - Source code (identifiers, comments), ADRs and plans are English. READMEs and changelogs are bilingual, German
   and English. With the user, speak German.

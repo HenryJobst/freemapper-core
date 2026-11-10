@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- freemapper-web: neue Bibliothek mit dem Rahmen für lokale Webseiten (Entscheidung 0020), verallgemeinert aus der Gebietsauswahl von freemapper. `serve` bindet 127.0.0.1 (Port 0 wählt einen freien), setzt ein zufälliges 128-Bit-Token vor die Routen der Anwendung und schützt sie: bedient werden nur die Hosts `127.0.0.1:PORT` und `localhost:PORT`, ein gesendeter `Origin` muss die Seite selbst sein, und jede Antwort trägt `Cache-Control: no-store` (außer der Handler setzt eigenen), die Content-Security-Policy der Anwendung, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` und `X-Content-Type-Options: nosniff`. Mit `ServeOptions::strict_post` braucht eine Anfrage, die etwas ändert, zusätzlich einen `Origin` und den Inhaltstyp `application/json` oder `application/octet-stream`. `embedded` liefert rust-embed-Dateien, `open_browser` startet den Browser, `LocalServer::shutdown` und `finished` beenden den Server und warten darauf.
+
 ## [0.9.0] - 2026-11-10
 
 ### Hinzugefügt

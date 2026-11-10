@@ -17,6 +17,7 @@ freemapper-course = { path = "crates/freemapper-course" }
 freemapper-georef = { path = "crates/freemapper-georef" }
 freemapper-contract = { path = "crates/freemapper-contract" }
 freemapper-render = { path = "crates/freemapper-render" }
+freemapper-web = { path = "crates/freemapper-web" }
 # Pinned to the versions in freemapper-courseplan's Cargo.lock. Fluent catalogs for program texts.
 fluent-bundle = "=0.16.0"
 fluent-syntax = "=0.12.0"
@@ -38,6 +39,11 @@ miniz_oxide = "=0.9.1"
 pdf-writer = "=0.15.0"
 subsetter = { version = "=0.2.6", default-features = false }
 ttf-parser = { version = "=0.25.1", default-features = false, features = ["std"] }
+# Same versions as freemapper's Cargo.lock. The local web page shell: HTTP server, embedded assets, token.
+axum = { version = "=0.8.9", default-features = false }
+getrandom = "=0.4.3"
+rust-embed = "=8.13.0"
+tokio = { version = "=1.54.1", default-features = false }
 # Test only: temporary folders.
 tempfile = "3.27.0"
 

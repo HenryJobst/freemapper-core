@@ -1,0 +1,21 @@
+[package]
+name = "freemapper-web"
+description = "Shell for the local web pages of the suite: guarded 127.0.0.1 server, token path, embedded assets"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+axum = { workspace = true, features = ["http1", "tokio"] }
+getrandom.workspace = true
+rust-embed = { workspace = true, features = ["mime-guess"] }
+thiserror.workspace = true
+tokio = { workspace = true, features = ["net", "rt", "sync"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "io-util", "time"] }
+
+[lints]
+workspace = true
