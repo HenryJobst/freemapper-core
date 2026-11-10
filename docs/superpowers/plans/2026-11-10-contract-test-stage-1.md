@@ -383,7 +383,7 @@ helpers live. print and courseplan: one test module each, named by their session
   the feature `fixtures`; print's own `infer_kind`, `read_sidecar_title`, `is_sheet_object`, `is_base_object`,
   `symbol_factor`, `painted_bounds`.
 
-- [ ] Tests in a `#[cfg(test)]` module inside the crate (the two `is_*` functions are private), every test name
+- [x] Tests in a `#[cfg(test)]` module inside the crate (the two `is_*` functions are private), every test name
   starting with `contract_`, each looping over `fixtures()` after `write_into` a temporary folder and reading
   the map with print's own reader:
   - `contract_kind`: `infer_kind(&map, &path)` names `expected.map_kind`.
@@ -394,7 +394,7 @@ helpers live. print and courseplan: one test module each, named by their session
   - `contract_bounds`: the painted bounds of a layout without sheet objects end north of
     `expected.bbox.sheet`'s southern edge by more than the bar's height, and lie inside
     `expected.bbox.content` grown by a margin the session sets for symbol sizes.
-- [ ] Changelog entry, commit, CI green.
+- [x] Changelog entry, commit, CI green.
 
 ### Task 9: Reader test in freemapper-courseplan (courseplan session)
 
@@ -402,14 +402,14 @@ helpers live. print and courseplan: one test module each, named by their session
 - Consumes: the same crate items; courseplan's own `map_kind_for_file`, `title_from_config`,
   `is_sheet_furniture`, `MapIndex::from_document`, `MapIndex::extent`.
 
-- [ ] Tests in a `#[cfg(test)]` module inside the crate, names starting with `contract_`, looping over
+- [x] Tests in a `#[cfg(test)]` module inside the crate, names starting with `contract_`, looping over
   `fixtures()`:
   - `contract_kind`: `map_kind_for_file(&doc, &path)` names `expected.map_kind`.
   - `contract_title`: `title_from_config(dir)` is `Some(expected.title)`.
   - `contract_classes`: the number of objects `is_sheet_furniture` accepts is
     `expected.objects.sheet + expected.objects.base`.
   - `contract_extent`: `MapIndex::from_document(&doc).extent()` lies inside `expected.bbox.content`.
-- [ ] Changelog entry, commit, CI green.
+- [x] Changelog entry, commit, CI green.
 
 ---
 
@@ -434,6 +434,9 @@ helpers live. print and courseplan: one test module each, named by their session
   before the core release, against the patched crate: with the scale bar tagged `scale-bar` both tests failed.
   Tasks 8 and 9 wait for the print and courseplan sessions; they were not reachable over SendMessage, so the
   task texts went to the user as files.
+- 2026-11-10: Tasks 8 and 9 done by this session at the user's request (print ADR 0050, courseplan ADR 0041).
+  Stage 3 followed the same day: core v0.10.0 with `legacy-0.9.0-scale-bar` and `future-kind`, print ADR 0052
+  (an unknown `map_kind` counts as absent), reader tests over all four fixtures. Stage 2 (the gate) is next.
 
 ## After stage 1
 
