@@ -7,6 +7,12 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.14.1] - 2026-11-11
+
+### Behoben
+
+- freemapper-render: Bézier-Kurven werden pro Pfad nur noch bis zu einer Obergrenze von einer Million Stützpunkten geglättet. Eine Kurve kann bis zu 65.536 Punkte brauchen, eine manipulierte Karte also die Arbeit eines Seitenaufbaus vervielfachen, bevor das Seitenbudget greift. Ist die Grenze erreicht, werden die übrigen Kurven des Pfads zu je einer Sehne. Normale Karten bleiben unverändert.
+
 ## [0.14.0] - 2026-11-11
 
 ### Hinzugefügt

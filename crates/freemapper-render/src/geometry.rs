@@ -23,6 +23,10 @@ pub struct Part {
 /// Bézier flattening: chords at most 1 mm, control polygon at most 0.005 mm longer than the chord.
 const MAX_CHORD: f64 = 1.0;
 const MAX_ERROR: f64 = 0.005;
+/// Flattened points per path (all parts together). A curve needs up to 2^16 points at the depth
+/// limit, so a hostile file could multiply its size by 65,536; once a path has this many points,
+/// the remaining curves become single chords.
+const MAX_FLATTENED_POINTS: usize = 1_000_000;
 /// At most this many dashes or mid symbols per part; more means a broken symbol definition, and
 /// the line is drawn solid (dashes) or without mid symbols.
 pub(crate) const MAX_REPEATS: usize = 100_000;
@@ -87,6 +91,7 @@ pub fn parts(coords: &[MapCoord]) -> Vec<Part> {
             dash_points.push(points.len() - 1);
         }
     };
+    let mut total = 0usize;
     let mut i = 0;
     // At each step `coords[i]` is the last point of the part so far.
     while i < n {
@@ -96,6 +101,7 @@ pub fn parts(coords: &[MapCoord]) -> Vec<Part> {
         }
         let c = coords[i];
         if c.flags & FLAG_HOLE != 0 || i + 1 == n {
+            total += points.len();
             parts.push(Part {
                 points: std::mem::take(&mut points),
                 closed: c.flags & FLAG_CLOSE != 0,
@@ -105,7 +111,13 @@ pub fn parts(coords: &[MapCoord]) -> Vec<Part> {
         } else if c.flags & FLAG_CURVE_START != 0 && i + 3 < n {
             let p0 = mm(c);
             let (p1, p2, p3) = (mm(coords[i + 1]), mm(coords[i + 2]), mm(coords[i + 3]));
-            flatten_cubic(p0, p1, p2, p3, &mut points, 0);
+            // Over the budget: start at the depth limit, which emits the chord p0..p3 only.
+            let depth = if total + points.len() >= MAX_FLATTENED_POINTS {
+                16
+            } else {
+                0
+            };
+            flatten_cubic(p0, p1, p2, p3, &mut points, depth);
             mark(coords[i + 3], &points, &mut dash_points);
             i += 3;
         } else {
@@ -611,6 +623,33 @@ mod tests {
         assert_eq!(parts.len(), 2);
         assert!(parts[0].closed && !parts[1].closed);
         assert_eq!(parts[1].points, [(5.0, 0.0), (6.0, 0.0)]);
+    }
+
+    #[test]
+    fn many_huge_curves_stay_within_the_point_budget() {
+        // 200 curves of 2 km each would need 65,536 points apiece at the depth limit.
+        let mut coords = Vec::new();
+        for i in 0..200 {
+            let x = i * 3_000_000;
+            let mut c = [
+                MapCoord::new(x, 0),
+                MapCoord::new(x + 1_000_000, 2_000_000),
+                MapCoord::new(x + 2_000_000, -2_000_000),
+                MapCoord::new(x + 3_000_000, 0),
+            ];
+            c[0].flags = FLAG_CURVE_START;
+            coords.extend(c);
+        }
+        let part = &parts(&coords)[0];
+        assert!(
+            part.points.len() <= MAX_FLATTENED_POINTS + 70_000,
+            "{}",
+            part.points.len()
+        );
+        assert!(
+            part.points.len() > 100_000,
+            "the first curves are still flattened"
+        );
     }
 
     #[test]

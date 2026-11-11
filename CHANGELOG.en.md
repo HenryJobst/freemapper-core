@@ -7,6 +7,12 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-11-11
+
+### Fixed
+
+- freemapper-render: Bézier curves are flattened only up to one million points per path. One curve can need up to 65,536 points, so a crafted map could multiply the work of a page build before the page budget applies. Once the limit is reached, the remaining curves of the path become one chord each. Ordinary maps are unchanged.
+
 ## [0.14.0] - 2026-11-11
 
 ### Added
