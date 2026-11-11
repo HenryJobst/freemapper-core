@@ -583,3 +583,574 @@ fn tokens_are_unique() {
         (0..100).map(|_| token().expect("token")).collect();
     assert_eq!(tokens.len(), 100);
 }
+
+// --- Suite assets (ADR 0030) ---
+
+const SUITE_FILES: [(&str, &str); 5] = [
+    ("suite.css", "text/css; charset=utf-8"),
+    ("api.js", "text/javascript; charset=utf-8"),
+    ("texts.js", "text/javascript; charset=utf-8"),
+    ("status.js", "text/javascript; charset=utf-8"),
+    ("tree.js", "text/javascript; charset=utf-8"),
+];
+
+async fn get_path(server: &LocalServer, path: &str, host_header: &str) -> Reply {
+    request(port_of(server), "GET", path, &[("Host", host_header)], "").await
+}
+
+#[tokio::test]
+async fn suite_files_are_served_below_the_token_with_type_and_headers() {
+    let server = start(true).await;
+    let host = host(port_of(&server));
+    for (name, content_type) in SUITE_FILES {
+        let reply = get_path(&server, &format!("/{}/suite/{name}", server.token), &host).await;
+        assert_eq!(reply.status, 200, "{name}");
+        assert_eq!(reply.header("content-type"), Some(content_type), "{name}");
+        assert_eq!(reply.header("content-security-policy"), Some(CSP), "{name}");
+        assert_eq!(reply.header("x-content-type-options"), Some("nosniff"));
+        assert_eq!(reply.header("referrer-policy"), Some("no-referrer"));
+        assert_eq!(reply.header("x-frame-options"), Some("DENY"));
+        assert_eq!(reply.header("cache-control"), Some("no-store"));
+        assert!(!reply.body.is_empty(), "{name}");
+    }
+}
+
+#[tokio::test]
+async fn an_app_without_routes_gets_the_suite_files() {
+    let server = serve(|_, _| Router::new(), ServeOptions::new(CSP))
+        .await
+        .expect("serve");
+    let host = host(port_of(&server));
+    let reply = get_path(&server, &format!("/{}/suite/api.js", server.token), &host).await;
+    assert_eq!(reply.status, 200);
+    assert!(reply.body.contains("X-Freemapper-Revision"));
+}
+
+#[tokio::test]
+async fn a_suite_path_outside_the_list_is_404() {
+    let server = start(false).await;
+    let host = host(port_of(&server));
+    let token = &server.token;
+    for path in [
+        format!("/{token}/suite/missing.js"),
+        format!("/{token}/suite/"),
+        format!("/{token}/suite"),
+        format!("/{token}/suite/../Cargo.toml"),
+        format!("/{token}/suite/%2e%2e/Cargo.toml"),
+        format!("/{token}/suite/%2fetc%2fpasswd"),
+        format!("/{token}/suite/SUITE.CSS"),
+        format!("/{token}/suite/suite.css/x"),
+    ] {
+        let reply = get_path(&server, &path, &host).await;
+        assert_eq!(reply.status, 404, "{path}");
+        assert_eq!(reply.header("x-content-type-options"), Some("nosniff"));
+    }
+}
+
+#[tokio::test]
+async fn suite_files_need_the_token_and_the_host() {
+    let server = start(false).await;
+    let port = port_of(&server);
+    let good = host(port);
+    let wrong = format!("/{}/suite/suite.css", "0".repeat(32));
+    assert_eq!(get_path(&server, &wrong, &good).await.status, 404);
+    assert_eq!(
+        get_path(&server, "/suite/suite.css", &good).await.status,
+        404
+    );
+    let path = format!("/{}/suite/suite.css", server.token);
+    let reply = get_path(&server, &path, &format!("evil.example:{port}")).await;
+    assert_eq!(reply.status, 403);
+}
+
+#[tokio::test]
+async fn suite_files_refuse_a_post() {
+    let server = start(true).await;
+    let port = port_of(&server);
+    let path = format!("/{}/suite/suite.css", server.token);
+    let host = host(port);
+    let origin = origin(port);
+    let headers = [
+        ("Host", host.as_str()),
+        ("Origin", origin.as_str()),
+        ("Content-Type", "application/json"),
+    ];
+    let reply = request(port, "POST", &path, &headers, "{}").await;
+    assert_eq!(reply.status, 405);
+}
+
+// --- Revision, stale and refused (ADR 0030) ---
+
+/// freemapper-courseplan's `sync::base::fnv1a64`, copied as the cross-check.
+fn courseplan_fnv1a64(bytes: &[u8]) -> String {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for &b in bytes {
+        hash ^= u64::from(b);
+        hash = hash.wrapping_mul(0x0100_0000_01b3);
+    }
+    format!("{hash:016x}")
+}
+
+#[test]
+fn revision_matches_the_published_fnv1a64_values() {
+    assert_eq!(revision(b""), "cbf29ce484222325");
+    assert_eq!(revision(b"a"), "af63dc4c8601ec8c");
+    assert_eq!(revision(b"foobar"), "85944171f73967e8");
+}
+
+#[test]
+fn revision_is_courseplans_fnv1a64() {
+    let long: Vec<u8> = (0..=255u8).cycle().take(10_000).collect();
+    for bytes in [
+        &b""[..],
+        b"\0",
+        b"[event]\nname = \"x\"\n",
+        "Größe".as_bytes(),
+        &long,
+    ] {
+        let ours = revision(bytes);
+        assert_eq!(ours, courseplan_fnv1a64(bytes));
+        assert_eq!(ours.len(), 16);
+        assert!(
+            ours.chars().all(|c| matches!(c, '0'..='9' | 'a'..='f')),
+            "{ours}"
+        );
+    }
+}
+
+#[test]
+fn revision_header_is_lower_case() {
+    assert_eq!(REVISION_HEADER, "x-freemapper-revision");
+    assert!(axum::http::HeaderName::from_static(REVISION_HEADER) == "X-Freemapper-Revision");
+}
+
+async fn parts(response: Response) -> (u16, String, String) {
+    let status = response.status().as_u16();
+    let content_type = response
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("body");
+    (
+        status,
+        content_type,
+        String::from_utf8(bytes.to_vec()).expect("utf-8"),
+    )
+}
+
+#[tokio::test]
+async fn stale_is_409_with_the_sentence_and_the_current_revision() {
+    let (status, content_type, body) =
+        parts(stale("af63dc4c8601ec8c", "The file changed meanwhile.")).await;
+    assert_eq!(status, 409);
+    assert_eq!(content_type, "application/json");
+    assert_eq!(
+        body,
+        r#"{"error":"The file changed meanwhile.","revision":"af63dc4c8601ec8c"}"#
+    );
+}
+
+#[tokio::test]
+async fn stale_escapes_its_json_strings() {
+    let (_, _, body) = parts(stale("a\"b", "Zeile 1\nZeile \\2\t\u{1}ß")).await;
+    assert_eq!(
+        body,
+        r#"{"error":"Zeile 1\nZeile \\2\t\u0001ß","revision":"a\"b"}"#
+    );
+}
+
+#[tokio::test]
+async fn refused_is_422_with_the_sentence_as_plain_text() {
+    let (status, content_type, body) =
+        parts(refused("Ein Posten liegt außerhalb der Karte.")).await;
+    assert_eq!(status, 422);
+    assert_eq!(content_type, "text/plain; charset=utf-8");
+    assert_eq!(body, "Ein Posten liegt außerhalb der Karte.");
+}
+
+// --- Language of the page texts (ADR 0030) ---
+
+#[test]
+fn a_fixed_language_wins() {
+    assert_eq!(texts_language(Some("de"), Some("en-US,en")), "de");
+    assert_eq!(texts_language(Some("en"), Some("de-DE,de")), "en");
+    assert_eq!(texts_language(Some("DE"), None), "de");
+    assert_eq!(texts_language(Some("de-AT"), Some("en")), "de");
+}
+
+#[test]
+fn a_fixed_language_other_than_de_or_en_is_ignored() {
+    assert_eq!(texts_language(Some("fr"), Some("de")), "de");
+    assert_eq!(texts_language(Some(""), Some("de")), "de");
+    assert_eq!(texts_language(Some("fr"), None), "en");
+}
+
+#[test]
+fn accept_language_picks_de_or_en_by_q_value() {
+    let cases = [
+        ("de-DE,de;q=0.9,en;q=0.8", "de"),
+        ("en-US,en;q=0.9,de;q=0.8", "en"),
+        ("fr-FR, de;q=0.5, en;q=0.7", "en"),
+        ("fr, en;q=0.2, de;q=0.9", "de"),
+        // Equal q: the first in the header.
+        ("fr, de;q=0.5, en;q=0.5", "de"),
+        ("en;q=0.5, de;q=0.5", "en"),
+        ("de-DE", "de"),
+        ("DE-de", "de"),
+        ("de_DE", "de"),
+        ("  de-DE ; q=0.9 , fr", "de"),
+        ("de;q=1.0", "de"),
+        ("de;Q=0.4,en;q=0.3", "de"),
+        ("nl, de-CH;q=0.3", "de"),
+        // q=0 means "not wanted".
+        ("de;q=0, en;q=0.1", "en"),
+        ("de;q=0.000", "en"),
+    ];
+    for (header, want) in cases {
+        assert_eq!(texts_language(None, Some(header)), want, "{header}");
+    }
+}
+
+#[test]
+fn accept_language_wildcard_garbage_and_empty_give_english() {
+    for header in [
+        "*",
+        "",
+        " ",
+        ",,,",
+        ";;;",
+        "!!!",
+        "fr-FR,fr;q=0.9",
+        "deu",
+        "english",
+        "de;q=abc",
+        "de;q=2",
+        "de;q=-1",
+        "de;q=NaN",
+        "de;q=",
+        "\u{e4}\u{f6}",
+    ] {
+        assert_eq!(texts_language(None, Some(header)), "en", "{header:?}");
+    }
+    assert_eq!(texts_language(None, None), "en");
+}
+
+#[test]
+fn accept_language_wildcard_does_not_hide_a_listed_language() {
+    assert_eq!(texts_language(None, Some("*, de;q=0.5")), "de");
+    assert_eq!(texts_language(None, Some("fr, *;q=0.5")), "en");
+}
+
+// --- Page rules (ADR 0030) ---
+
+const CLEAN_PAGE: &str = r#"<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title data-text="page-title"></title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="suite/suite.css">
+  <script type="module" src="assets/main.js"></script>
+  <!-- <script>alert(1)</script> <a onclick="x"> -->
+</head>
+<body class="frame">
+  <p data-on="x" aria-controls="y">Click on = here, or onward.</p>
+  <img src="https://tiles.example/1.png" alt="">
+  <button type="button" data-text="page-run"></button>
+</body>
+</html>
+"#;
+const CLEAN_CSS: &str = "@import \"base.css\";\n.a { background: url(img/a.png); }\n.b { background: url('data:image/png;base64,AA'); }\n";
+const CLEAN_JS: &str = "import { get } from \"../suite/api.js\";\nimport './side.js';\nexport { t } from './texts.js';\nconst x = Array.from([1]);\nconst m = await import(\"./lazy.js\");\n";
+
+fn check(files: &[(&str, &str)], budget: usize) -> Result<(), Vec<String>> {
+    let files: Vec<(&str, &[u8])> = files.iter().map(|(n, c)| (*n, c.as_bytes())).collect();
+    check_page_rules(&files, budget)
+}
+
+fn problems(files: &[(&str, &str)]) -> Vec<String> {
+    check(files, usize::MAX).expect_err("problems")
+}
+
+#[test]
+fn a_clean_page_passes() {
+    let files = [
+        ("index.html", CLEAN_PAGE),
+        ("app.css", CLEAN_CSS),
+        ("main.js", CLEAN_JS),
+        ("pixel.png", "\u{89}PNG javascript"),
+    ];
+    assert_eq!(check(&files, usize::MAX), Ok(()));
+}
+
+#[test]
+fn inline_scripts_and_handlers_are_reported() {
+    for page in [
+        "<script>alert(1)</script>",
+        "<SCRIPT type=\"module\">import './a.js';</SCRIPT>",
+        "<script\ntype=module>x</script>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(
+            found.iter().any(|p| p.contains("inline script")),
+            "{page}: {found:?}"
+        );
+    }
+    for page in [
+        "<button onclick=\"go()\">x</button>",
+        "<body ONLOAD = 'go()'>",
+        "<img src=a.png onerror=go()>",
+        "<a href=\"x\"\n   onmouseover=\"go()\">x</a>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(
+            found.iter().any(|p| p.contains("inline handler")),
+            "{page}: {found:?}"
+        );
+    }
+    let found = problems(&[("icon.svg", "<svg><circle onload=\"x\"/></svg>")]);
+    assert!(
+        found
+            .iter()
+            .any(|p| p.contains("icon.svg") && p.contains("inline handler"))
+    );
+}
+
+#[test]
+fn javascript_urls_are_reported_in_every_text_file() {
+    for (name, content) in [
+        ("index.html", "<a href=\"JavaScript:go()\">x</a>"),
+        ("app.css", ".a { background: url(javascript:go()); }"),
+        ("main.js", "location.href = 'javascript:void 0';"),
+    ] {
+        let found = problems(&[(name, content)]);
+        assert!(
+            found
+                .iter()
+                .any(|p| p.contains(name) && p.contains("javascript:")),
+            "{name}: {found:?}"
+        );
+    }
+}
+
+#[test]
+fn network_sources_are_reported() {
+    let cases = [
+        (
+            "index.html",
+            "<script src=\"https://cdn.example/x.js\"></script>",
+        ),
+        ("index.html", "<script src=//cdn.example/x.js></script>"),
+        (
+            "index.html",
+            "<link rel=\"stylesheet\" href=\"HTTP://cdn.example/x.css\">",
+        ),
+        (
+            "index.html",
+            "<style>@import url(https://fonts.example/a.css);</style>",
+        ),
+        ("app.css", "@import \"https://fonts.example/a.css\";"),
+        ("app.css", "@import url( 'http://fonts.example/a.css' );"),
+        (
+            "app.css",
+            "@font-face { src: url(\"//fonts.example/a.woff2\"); }",
+        ),
+        (
+            "app.css",
+            ".a { background: URL(https://img.example/a.png); }",
+        ),
+        ("main.js", "import { x } from \"https://cdn.example/x.js\";"),
+        ("main.js", "import 'http://cdn.example/x.js';"),
+        ("main.js", "export * from '//cdn.example/x.js';"),
+        (
+            "main.js",
+            "const m = await import( \"https://cdn.example/x.js\" );",
+        ),
+    ];
+    for (name, content) in cases {
+        let found = problems(&[(name, content)]);
+        assert!(
+            found
+                .iter()
+                .any(|p| p.contains(name) && p.contains("network")),
+            "{content}: {found:?}"
+        );
+    }
+}
+
+#[test]
+fn the_budget_counts_every_file() {
+    let files = [("a.js", "12345"), ("b.png", "67890")];
+    assert_eq!(check(&files, 10), Ok(()));
+    let found = check(&files, 9).expect_err("over budget");
+    assert_eq!(found.len(), 1);
+    assert!(
+        found[0].contains("10") && found[0].contains('9'),
+        "{found:?}"
+    );
+}
+
+#[test]
+fn every_problem_is_reported() {
+    let files = [
+        (
+            "index.html",
+            "<script>x</script><a onclick=\"y\" href=\"javascript:z\">",
+        ),
+        ("main.js", "import 'https://cdn.example/x.js';"),
+    ];
+    let found = check(&files, 1).expect_err("problems");
+    assert_eq!(found.len(), 5, "{found:?}");
+}
+
+#[test]
+fn the_suite_assets_keep_the_page_rules() {
+    let assets = suite_assets();
+    let mut names: Vec<&str> = assets.iter().map(|(name, _)| name.as_str()).collect();
+    names.sort_unstable();
+    assert_eq!(
+        names,
+        ["api.js", "status.js", "suite.css", "texts.js", "tree.js"]
+    );
+    let files: Vec<(&str, &[u8])> = assets
+        .iter()
+        .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
+        .collect();
+    assert_eq!(check_page_rules(&files, 40 * 1024), Ok(()));
+}
+
+#[test]
+fn each_suite_script_says_where_it_comes_from() {
+    for (name, bytes) in suite_assets() {
+        let text = String::from_utf8(bytes).expect("utf-8");
+        let head: String = text.lines().take(3).collect::<Vec<_>>().join("\n");
+        assert!(head.contains("ADR 0030"), "{name}: {head}");
+        if name.ends_with(".js") {
+            assert!(text.starts_with("// "), "{name}");
+            assert!(text.contains("export "), "{name} is no ES module");
+            for banned in [
+                "innerHTML",
+                "outerHTML",
+                "eval(",
+                "new Function",
+                "document.write",
+            ] {
+                assert!(!text.contains(banned), "{name}: {banned}");
+            }
+        }
+    }
+}
+
+// --- Page rules, fix round 1 ---
+
+fn has(found: &[String], needle: &str) -> bool {
+    found.iter().any(|p| p.contains(needle))
+}
+
+#[test]
+fn every_way_to_end_a_comment_ends_it() {
+    for page in [
+        "<!--><script>x</script>",
+        "<!---><script>x</script>",
+        "<!-- a --!><script>x</script>",
+        "<!-- a --><script>x</script>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(has(&found, "inline script"), "{page}: {found:?}");
+    }
+    assert_eq!(
+        check(&[("index.html", "<!-- <script>x</script> -->")], 99),
+        Ok(())
+    );
+}
+
+#[test]
+fn javascript_urls_hidden_by_entities_or_white_space_are_reported() {
+    for page in [
+        "<a href=\"java&#x09;script:go()\">x</a>",
+        "<a href=\"jav&#97;script:go()\">x</a>",
+        "<a href=\"jav&#97script:go()\">x</a>",
+        "<a href=\"javascript&colon;go()\">x</a>",
+        "<a href=\"java\tscript:go()\">x</a>",
+        "<a href=\"java\r\nscript:go()\">x</a>",
+        "<a href=\"&#106;&#x61;vascript&#58;go()\">x</a>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(has(&found, "javascript:"), "{page:?}: {found:?}");
+    }
+}
+
+#[test]
+fn a_literal_javascript_url_is_reported_once_per_file() {
+    let found = problems(&[(
+        "index.html",
+        "<a href=\"javascript:a\">x</a><a href=\"javascript:b\">",
+    )]);
+    assert_eq!(found.len(), 1, "{found:?}");
+}
+
+#[test]
+fn network_urls_hidden_by_entities_are_reported() {
+    for page in [
+        "<script src=\"&sol;&sol;cdn.example/x.js\"></script>",
+        "<script src=\"&#47;/cdn.example/x.js\"></script>",
+        "<link rel=stylesheet href=\"https&colon;//cdn.example/x.css\">",
+        "<script src=\"ht\ttps://cdn.example/x.js\"></script>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(has(&found, "network"), "{page:?}: {found:?}");
+    }
+}
+
+#[test]
+fn base_frames_objects_refresh_and_odd_script_sources_are_reported() {
+    let cases = [
+        ("<base href=\"assets/\">", "<base>"),
+        ("<BASE>", "<base>"),
+        ("<iframe src=\"https://evil.example/\"></iframe>", "network"),
+        ("<frame src=//evil.example/>", "network"),
+        (
+            "<object data=\"http://evil.example/x.swf\"></object>",
+            "network",
+        ),
+        ("<embed src=\"https://evil.example/x\">", "network"),
+        (
+            "<meta http-equiv=\"Refresh\" content=\"0; url=x\">",
+            "refresh",
+        ),
+        ("<meta http-equiv=refresh content=0>", "refresh"),
+        (
+            "<script src=\"data:text/javascript,go()\"></script>",
+            "data:",
+        ),
+        (
+            "<script src=\" blob:http://127.0.0.1/x\"></script>",
+            "blob:",
+        ),
+    ];
+    for (page, needle) in cases {
+        let found = problems(&[("index.html", page)]);
+        assert!(has(&found, needle), "{page}: {found:?}");
+    }
+    let fine = "<iframe src=\"help.html\"></iframe><object data=\"a.svg\"></object>\
+                <meta http-equiv=\"content-type\" content=\"text/html\"><script src=\"a.js\"></script>";
+    assert_eq!(check(&[("index.html", fine)], usize::MAX), Ok(()));
+}
+
+#[test]
+fn a_multibyte_character_in_a_tag_does_not_end_the_scan() {
+    for page in [
+        "<a =\"x\"\u{e4} onclick=\"go()\">x</a>",
+        "<a ='\u{1f600}' onclick=go()>",
+        "<a title=\"\u{e4}\" =\u{e4} onclick=go()>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(has(&found, "inline handler"), "{page}: {found:?}");
+    }
+    let found = problems(&[("index.html", "<p =\"\u{e4}\">x</p><script>y</script>")]);
+    assert!(has(&found, "inline script"), "{found:?}");
+}

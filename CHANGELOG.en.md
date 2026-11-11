@@ -7,6 +7,10 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- freemapper-web: the suite page frame (decision 0030). `serve` serves five shared files below `/{token}/suite/`, behind the same checks and headers as the app's routes: `suite.css` with the tokens, light and dark (accent `#0b6bcb`, dark `#6cb0ff`), and the base elements, and the modules `api.js`, `texts.js`, `status.js` and `tree.js` from freemapper-courseplan's editor. Any other name below `suite/` gets 404. `revision` computes the revision of a file (FNV-1a 64, 16 hex digits), `REVISION_HEADER` is `x-freemapper-revision`. `stale` answers 409 with `{ "error", "revision" }`, `refused` 422 with one sentence as plain text. `texts_language` gives the page texts the fixed language, else `de` or `en` from `Accept-Language` by q-value, else English. With the feature `page-rules`, `check_page_rules` checks a page's files for inline scripts, inline handlers, `javascript:` URLs, sources from the network and size; `suite_assets` hands the suite's files to that check.
+
 ## [0.20.0] - 2026-11-11
 
 ### Added

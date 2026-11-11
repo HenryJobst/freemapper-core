@@ -88,3 +88,23 @@ agreed to the points below; their conditions are part of the decision.
 - courseplan loses its purple accent and renames its revision header.
 - The area page gets a dark mode and Fluent texts. Its save button stays, as a documented exception.
 - Changing a token name or the meaning of 409/422 becomes a core change that all three apps take together.
+
+## Addendum 2026-11-11 (implementation)
+Contracts fixed by the first core implementation (`freemapper-web`), as stable as the token names:
+- **409**: `stale(current, sentence)` answers `{ "error": sentence, "revision": current }` as JSON. The app
+  writes the sentence in the page's language; the page shows it in the banner and takes the revision.
+- **422**: `refused(sentence)` answers the sentence as plain text (`text/plain; charset=utf-8`).
+- **Reserved path**: `/{token}/suite/` belongs to core. `serve` adds the route itself; an app must not route
+  below it (axum refuses the overlap at start). A name outside the embedded list is 404.
+- **Class names and ids** in `suite.css` and the modules: `body.frame` with the grid areas `menu`, `main`,
+  `status` (`.frame > main`, `.frame > .menubar`, `.frame > .status`); `.menubar`, `.menu`, `.toolbar`,
+  `.status` with `.field` and `.name`, `.banner-box`, `.dialog-buttons`, `.notice`, `.hint`, `.field-error`,
+  `.tree` with `.item` and `.group`; the fixed ids `#status-message` (`role="status"`, `aria-live="polite"`)
+  and `#banner` (`role="alert"`).
+- **Texts**: the family `suite-*` holds the words of the shared modules, so far `suite-banner-dismiss`. Every
+  app's `api/texts` delivers it next to its own family. The page title comes from `<title data-text="…">`,
+  not from a fixed id.
+- **Language**: a fixed language other than `de` or `en` counts as unset; in `Accept-Language`, `*` names no
+  language.
+- **Page rules**: `check_page_rules` is text matching that backs up the CSP and does not replace it. Images
+  are not checked; the CSP names their hosts.

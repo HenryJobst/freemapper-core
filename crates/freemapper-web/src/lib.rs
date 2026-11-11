@@ -4,20 +4,60 @@
 //! needs: a random token as the first path segment, a `Host` allowlist against DNS rebinding, an `Origin`
 //! check, and fixed security headers. The app brings its own routes, handlers and assets; this crate knows
 //! nothing about maps, projects or tiles. See decision 0020.
+//!
+//! # The suite page frame
+//!
+//! The three pages of the suite look and work alike (decision 0030). [`serve`] serves the shared files below
+//! the token at `/{token}/suite/<file>`; an app needs no route for them and must not use that path itself:
+//!
+//! | File | What it holds |
+//! |---|---|
+//! | `suite.css` | the tokens `--bg --fg --line --bar --accent --sel --map-bg --pool --warn-bg --warn-fg --warn-line --sev-error --sev-warning --sev-hint`, light and dark; base elements, the frame (`body.frame`), `.menubar` with `.menu`, `.toolbar`, `.status` with `.field` and `.name`, `#banner` with `.banner-box`, `dialog` with `.dialog-buttons`, `.notice`, `.hint`, `.field-error`, `.tree`; the focus ring; no animation under `prefers-reduced-motion` |
+//! | `api.js` | `get`, `post`, `postBytes`, `getFile`, each answering `{ ok, status, data }`; `setReadOnly` (a write then answers 423 without a request); `REVISION_HEADER` |
+//! | `texts.js` | `loadTexts`, `apply`, `t(id, args)`, `tn(id, n, args)`, `language` |
+//! | `status.js` | `say(idOrText, raw)`, `showBanner(text)`, `clearBanner()` on `#status-message` and `#banner` |
+//! | `tree.js` | `buildTree(root, groups, onSelect)` with `role="tree"` and the keyboard rules |
+//!
+//! How an app uses it:
+//!
+//! 1. The page links the files relative to its own address, which ends in `/{token}/`:
+//!    `<link rel="stylesheet" href="suite/suite.css">` before the app's own CSS, and in the app's modules
+//!    `import { post } from "../suite/api.js"` (the path relative to the module). App-specific tokens such as
+//!    `--course` go in the app's CSS.
+//! 2. The app serves `GET {prefix}/api/texts` with `{ "lang": …, "texts": { id: text } }` from its Fluent
+//!    catalog, in the language of [`texts_language`] (its `--lang` and language variable first, then the
+//!    request's `Accept-Language`). The catalog holds the page's messages, `suite-banner-dismiss` among
+//!    them; a message with `{ $name }` is delivered unformatted, and `t` fills it in. `<title data-text="…">`
+//!    names the page title.
+//! 3. A route that changes a file reads the page's revision from [`REVISION_HEADER`], compares it with
+//!    [`revision`] of the file's bytes, and answers [`stale`] (409) when they differ and [`refused`] (422)
+//!    when the app refuses the change. A successful write answers the new revision.
+//! 4. A test of the app checks its own assets plus `suite_assets()` with `check_page_rules` (feature
+//!    `page-rules`, as a dev-dependency) against 300 KiB; vendored libraries count separately.
 #![forbid(unsafe_code)]
 
 use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::Router;
-use axum::extract::{DefaultBodyLimit, Request};
+use axum::extract::{DefaultBodyLimit, Path, Request};
 use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
+use axum::routing::get;
 use tokio::sync::Notify;
 
+mod language;
+#[cfg(any(test, feature = "page-rules"))]
+mod page_rules;
+mod revision;
 #[cfg(test)]
 mod tests;
+
+pub use language::texts_language;
+#[cfg(any(test, feature = "page-rules"))]
+pub use page_rules::check_page_rules;
+pub use revision::{REVISION_HEADER, refused, revision, stale};
 
 /// What can go wrong before the server runs.
 #[derive(Debug, thiserror::Error)]
@@ -112,9 +152,40 @@ struct Guard {
     strict_post: bool,
 }
 
+/// The suite assets of decision 0030: `suite.css`, `api.js`, `texts.js`, `status.js` and `tree.js`.
+#[derive(rust_embed::RustEmbed)]
+#[folder = "suite"]
+struct Suite;
+
+/// The suite assets as `(name, bytes)`, for an app's test that checks its page with
+/// [`check_page_rules`]: the app's own assets plus these stay within the size the suite allows (300 KiB per
+/// program, decision 0030). With the feature `page-rules`.
+#[cfg(any(test, feature = "page-rules"))]
+pub fn suite_assets() -> Vec<(String, Vec<u8>)> {
+    Suite::iter()
+        .filter_map(|name| {
+            let file = Suite::get(&name)?;
+            Some((name.into_owned(), file.data.into_owned()))
+        })
+        .collect()
+}
+
+/// A suite asset by its exact name, or 404. The name is compared with the list first: in a debug build
+/// rust-embed reads from the disk, and a case-insensitive file system would also find `SUITE.CSS`.
+fn suite_file(path: &str) -> Response {
+    if Suite::iter().any(|name| name == path) {
+        embedded::<Suite>(path)
+    } else {
+        StatusCode::NOT_FOUND.into_response()
+    }
+}
+
 /// Binds 127.0.0.1, calls `build` with the path prefix `/{token}` and the shutdown [`Notify`], and serves the
 /// routes it returns behind the guards. The `Notify` is the one [`LocalServer::shutdown`] returns and the
 /// graceful shutdown waits on, so a handler (for example `done`) can call `notify_one()` to stop the server.
+///
+/// Next to the app's routes it serves the suite assets at `/{token}/suite/<file>` (decision 0030), behind the
+/// same guards and headers. The app must not add routes below `/{token}/suite/`; axum panics on the overlap.
 pub async fn serve(
     build: impl FnOnce(&str, Arc<Notify>) -> Router,
     options: ServeOptions,
@@ -138,6 +209,10 @@ pub async fn serve(
     });
     let done = Arc::new(Notify::new());
     let app = build(&format!("/{token}"), Arc::clone(&done))
+        .route(
+            &format!("/{token}/suite/{{*path}}"),
+            get(|Path(path): Path<String>| async move { suite_file(&path) }),
+        )
         .layer(DefaultBodyLimit::max(options.max_body))
         .layer(middleware::from_fn(move |request: Request, next: Next| {
             let guard = Arc::clone(&guard);
