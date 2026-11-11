@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-11-11
+
 ### Added
 
 - freemapper-render: `PageSpec::page_mm` sets a page of any size from 10 mm to 5080 mm a side instead of A4 or A3 (decision 0029). A size outside that range is `BuildError::PageSize`; nothing is clamped. `BuildReport::source_objects` gives each object number a hit carries its position in the map, which differs from the number once an object is skipped.

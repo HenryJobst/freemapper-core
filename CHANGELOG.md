@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.20.0] - 2026-11-11
+
 ### Hinzugefügt
 
 - freemapper-render: `PageSpec::page_mm` setzt eine Seite beliebiger Größe von 10 mm bis 5080 mm je Seite statt A4 oder A3 (Entscheidung 0029). Eine Größe außerhalb dieses Bereichs ist `BuildError::PageSize`; es wird nichts begrenzt. `BuildReport::source_objects` gibt jeder Objektnummer, die ein Treffer trägt, ihre Position in der Karte; sie weicht von der Nummer ab, sobald ein Objekt übersprungen wird.
