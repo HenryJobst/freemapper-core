@@ -8,56 +8,24 @@
 //! The table, the north-line spacing and the proposed contour intervals come from the embedded base
 //! rule profile `iof-print` ([`crate::rules::base`], ADR 0031).
 
-use serde::{Deserialize, Serialize};
-
 use crate::rules;
 
-/// Kartenart: the kind of map, as defined by freemapper's glossary.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum MapKind {
-    Sprint,
-    Schoolyard,
-    Forest,
+/// Kartenart, the shared type of the contract crate (core ADR 0027).
+pub use freemapper_contract::MapKind;
+
+/// The contour interval (m) `init` proposes for a new project, for the user to confirm: 2 m for sprint maps
+/// (ISSprOM 2019-2 §3.2), 5 m for forest maps (ISOM 2017-2 §2.10), none for schoolyard maps.
+pub fn proposed_contour_interval_m(kind: MapKind) -> Option<f64> {
+    rules::base().proposed_contour_interval_m(kind)
 }
 
-impl MapKind {
-    /// Every map kind, in the order rule profiles list them.
-    pub const ALL: [MapKind; 3] = [MapKind::Sprint, MapKind::Schoolyard, MapKind::Forest];
-
-    /// The lower-case name used on the command line and in messages.
-    pub fn name(self) -> &'static str {
-        match self {
-            MapKind::Sprint => "sprint",
-            MapKind::Schoolyard => "schoolyard",
-            MapKind::Forest => "forest",
-        }
-    }
-
-    /// The scale (denominator) the standard draws this kind of map at: symbols at 100 %.
-    pub fn base_scale(self) -> u32 {
-        match self {
-            MapKind::Sprint => 4000,
-            MapKind::Schoolyard => 1000,
-            MapKind::Forest => 15000,
-        }
-    }
-
-    /// The contour interval (m) `init` proposes for a new project, for the user to confirm: 2 m
-    /// for sprint maps (ISSprOM 2019-2 §3.2), 5 m for forest maps (ISOM 2017-2 §2.10), none for
-    /// schoolyard maps.
-    pub fn proposed_contour_interval_m(self) -> Option<f64> {
-        rules::base().proposed_contour_interval_m(self)
-    }
-
-    /// The scales (denominators) a map of this kind may be printed at and drawn at, ascending.
-    pub fn allowed_scales(self) -> Vec<u32> {
-        rules::base()
-            .scale_entries(self)
-            .iter()
-            .map(|e| e.scale)
-            .collect()
-    }
+/// The scales (denominators) a map of `kind` may be printed at and drawn at, ascending.
+pub fn allowed_scales(kind: MapKind) -> Vec<u32> {
+    rules::base()
+        .scale_entries(kind)
+        .iter()
+        .map(|e| e.scale)
+        .collect()
 }
 
 fn join_scales(scales: &[u32]) -> String {
@@ -131,13 +99,13 @@ pub fn symbol_factor(kind: MapKind, map_scale: u32, print_scale: u32) -> Result<
         standard_enlargement(kind, map_scale).ok_or_else(|| ScaleError::MapScaleNotAllowed {
             kind,
             map_scale,
-            allowed: kind.allowed_scales(),
+            allowed: allowed_scales(kind),
         })?;
     let to = standard_enlargement(kind, print_scale).ok_or_else(|| {
         ScaleError::PrintScaleNotAllowed {
             kind,
             print_scale,
-            allowed: kind.allowed_scales(),
+            allowed: allowed_scales(kind),
         }
     })?;
     Ok(to / from)
@@ -177,11 +145,20 @@ mod tests {
     }
 
     #[test]
+    fn every_scale_freemapper_draws_is_in_the_table() {
+        for kind in MapKind::ALL {
+            for scale in kind.drawing_scales() {
+                assert!(allowed_scales(kind).contains(scale), "{kind} {scale}");
+            }
+        }
+    }
+
+    #[test]
     fn proposed_contour_intervals() {
         // ISSprOM 2019 and freemapper both use 2 m for sprint maps.
-        assert_eq!(MapKind::Sprint.proposed_contour_interval_m(), Some(2.0));
-        assert_eq!(MapKind::Forest.proposed_contour_interval_m(), Some(5.0));
-        assert_eq!(MapKind::Schoolyard.proposed_contour_interval_m(), None);
+        assert_eq!(proposed_contour_interval_m(MapKind::Sprint), Some(2.0));
+        assert_eq!(proposed_contour_interval_m(MapKind::Forest), Some(5.0));
+        assert_eq!(proposed_contour_interval_m(MapKind::Schoolyard), None);
     }
 
     #[test]
@@ -231,7 +208,7 @@ mod tests {
     #[test]
     fn table_rows_are_unique_and_allowed_scales_follow_it() {
         for kind in [MapKind::Sprint, MapKind::Schoolyard, MapKind::Forest] {
-            let scales = kind.allowed_scales();
+            let scales = allowed_scales(kind);
             assert!(
                 scales.windows(2).all(|w| w[0] < w[1]),
                 "{kind:?}: {scales:?}"
@@ -240,12 +217,12 @@ mod tests {
                 assert!(standard_enlargement(kind, s).is_some());
             }
         }
-        assert_eq!(MapKind::Sprint.allowed_scales(), [3000, 4000, 5000]);
+        assert_eq!(allowed_scales(MapKind::Sprint), [3000, 4000, 5000]);
         assert_eq!(
-            MapKind::Forest.allowed_scales(),
+            allowed_scales(MapKind::Forest),
             [5000, 7500, 10000, 15000, 20000]
         );
-        assert_eq!(MapKind::Schoolyard.allowed_scales(), [1000]);
+        assert_eq!(allowed_scales(MapKind::Schoolyard), [1000]);
         assert_eq!(standard_enlargement(MapKind::Schoolyard, 1000), Some(1.0));
         assert_eq!(standard_enlargement(MapKind::Forest, 4000), None);
     }

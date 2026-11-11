@@ -13,6 +13,7 @@ include = ["Cargo.toml", "README.md", "src/**/*.rs", "rules/*"]
 test-support = []
 
 [dependencies]
+freemapper-contract = { workspace = true, default-features = false }
 freemapper-course.workspace = true
 freemapper-render.workspace = true
 freemapper-rules.workspace = true
