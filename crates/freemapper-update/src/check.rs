@@ -9,14 +9,19 @@ use crate::version::Version;
 
 const MAX_SIGNATURE_BYTES: u64 = 64 * 1024;
 
-/// What a check found.
+/// What a check found. More cases may follow, so a match needs a wildcard arm.
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Outcome {
     /// Nothing to do.
     Current,
-    /// A release to install, with the asset for this platform.
+    /// A release to install, with what spec 3.5 step 3 shows before asking: version, release date,
+    /// notes link and (in the asset) the download size.
     Available {
         version: Version,
+        /// The release date as the manifest gives it (`YYYY-MM-DD`).
+        released: String,
+        /// Link to the release notes.
         notes: String,
         asset: Asset,
     },
@@ -53,6 +58,8 @@ pub fn check_for_update(
     if newer && manifest.min_self_update_from > app.current {
         return Err(UpdateError::TooOldToSelfUpdate {
             needed: manifest.min_self_update_from,
+            version: manifest.version,
+            notes: manifest.notes,
         });
     }
     let platform =
@@ -64,6 +71,7 @@ pub fn check_for_update(
         .ok_or_else(|| UpdateError::NoAssetForPlatform(platform.into()))?;
     Ok(Outcome::Available {
         version: manifest.version,
+        released: manifest.released,
         notes: manifest.notes,
         asset,
     })
@@ -158,6 +166,7 @@ mod tests {
         let outcome = check_for_update(&app("0.11.0", &KEYS), &source, None).unwrap();
         let Outcome::Available {
             version,
+            released,
             notes,
             asset,
         } = outcome
@@ -165,6 +174,7 @@ mod tests {
             panic!("expected Available");
         };
         assert_eq!(version, "0.12.0".parse().unwrap());
+        assert_eq!(released, "2026-11-20");
         assert!(notes.ends_with("v0.11.0"));
         assert!(asset.url.contains(current_platform().unwrap()));
     }
@@ -219,9 +229,19 @@ mod tests {
     fn check_too_old_to_self_update() {
         let source = serving("manifest-min12.json", "manifest-min12.json.minisig");
         let err = check_for_update(&app("0.10.0", &KEYS), &source, None).unwrap_err();
-        assert!(
-            matches!(err, UpdateError::TooOldToSelfUpdate { needed } if needed == "0.12.0".parse().unwrap())
-        );
+        let UpdateError::TooOldToSelfUpdate {
+            needed,
+            version,
+            notes,
+        } = &err
+        else {
+            panic!("expected TooOldToSelfUpdate, got {err:?}");
+        };
+        assert_eq!(*needed, "0.12.0".parse().unwrap());
+        assert_eq!(*version, "0.12.0".parse().unwrap());
+        assert!(notes.starts_with("https://github.com/"), "{notes}");
+        // The message links the release page for the manual step (spec 3.5 step 2).
+        assert!(err.to_string().contains(notes.as_str()), "{err}");
         // Current enough: fine.
         assert!(matches!(
             check_for_update(&app("0.12.0", &KEYS), &source, None).unwrap(),

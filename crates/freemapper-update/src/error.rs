@@ -4,8 +4,10 @@ use std::path::PathBuf;
 
 use crate::version::Version;
 
-/// Everything that can go wrong while checking for, downloading or installing an update.
+/// Everything that can go wrong while checking for, downloading or installing an update. More cases
+/// may follow, so a match needs a wildcard arm.
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum UpdateError {
     /// The manifest is malformed, too big, of another app or of an unknown format.
     #[error("update manifest: {0}")]
@@ -42,7 +44,15 @@ pub enum UpdateError {
     /// `install` was handed `Outcome::Current`.
     #[error("there is no update to install")]
     NothingToInstall,
-    /// The installed version predates the self-update path.
-    #[error("this version cannot update itself; install {needed} or newer by hand")]
-    TooOldToSelfUpdate { needed: Version },
+    /// Release `version` cannot be installed by this one's self-update: the running version is older
+    /// than `needed` (the manifest's `min_self_update_from`). `notes` links the release page that
+    /// describes the manual step (spec 3.5 step 2).
+    #[error(
+        "{version} cannot be installed from this version; install {needed} or newer by hand, see {notes}"
+    )]
+    TooOldToSelfUpdate {
+        needed: Version,
+        version: Version,
+        notes: String,
+    },
 }

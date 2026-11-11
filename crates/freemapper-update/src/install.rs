@@ -235,6 +235,7 @@ mod tests {
     fn available(version: &str, asset: Asset) -> Outcome {
         Outcome::Available {
             version: version.parse().unwrap(),
+            released: "2026-11-20".into(),
             notes: "https://github.com/HenryJobst/freemapper/releases/tag/v0.12.0".into(),
             asset,
         }
