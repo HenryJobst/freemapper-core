@@ -4,9 +4,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 
-use crate::class::{BASE_PART, ROLE_KEY, SHEET_PART, SOURCE_KEY, TAG_PREFIX, tag};
-use crate::sidecar::read_sidecar;
-use crate::{ContractError, read_map};
+use crate::class::tag;
+use crate::tags::{BASE_PART, ROLE_KEY, SHEET_PART, SOURCE_KEY, TAG_PREFIX};
+use crate::{ContractError, Sidecar, read_map};
 
 /// What a reader may meet in a file freemapper wrote: part names, the tags of the two reserved parts,
 /// the roles of sheet objects, the form of the CRS text, the symbol set and the contract keys of the
@@ -46,7 +46,9 @@ impl Vocabulary {
                 .map(|c| if c.is_ascii_digit() { 'N' } else { c })
                 .collect(),
             symbol_set: doc.symbol_set.name.clone(),
-            sidecar: read_sidecar(sidecar_toml)?.key_types,
+            sidecar: Sidecar::parse(sidecar_toml)
+                .map_err(ContractError::Sidecar)?
+                .key_types,
             ..Vocabulary::default()
         };
         for part in &doc.parts {

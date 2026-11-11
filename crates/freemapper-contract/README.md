@@ -18,6 +18,30 @@ drei Dinge ab:
 Karte und Begleitdatei gehen als Text hinein. Kein Typ von freemapper-omap steht in der Schnittstelle, deshalb
 kann jede Anwendung denselben Text mit dem Leser der core-Version lesen, die sie selbst einbindet.
 
+## Gemeinsame Typen
+
+Die Wörter des Vertrags gibt es einmal, hier (Entscheidung 0027). Die drei Anwendungen benutzen sie, statt sie
+selbst zu schreiben:
+
+- `MapKind`: die Kartenart (`sprint`, `schoolyard`, `forest`) mit `name`, `from_name`, `base_scale` und
+  `drawing_scales`, den Maßstäben, in denen freemapper sie schreibt. Druckmaßstäbe stehen in
+  freemapper-printrules.
+- `Sidecar::parse` liest die Vertragsschlüssel aus dem Text einer `freemapper.toml`, `Sidecar::next_to` die
+  Datei neben einer Karte. Eine unbekannte Kartenart ist `SidecarKind::Unknown` mit ihrem Namen und kein
+  Fehler; `Sidecar::title` gibt den Titel ohne Leerzeichen am Rand oder nichts.
+- `ObjectClass::of` bestimmt die Objektklasse aus den Tags eines Objekts, `is_map_content` sagt, ob sie zum
+  Karteninhalt zählt.
+- `tags`: `SOURCE_KEY`, `ROLE_KEY`, die reservierten Quellen, `SHEET_PART`, `BASE_PART`, `SIDECAR_FILE` und
+  die Vertragsschlüssel.
+
+Diese Typen brauchen keinen Kartenleser. Wer nur sie ins Programm einbindet, schaltet die Standard-Features ab;
+`census`, `Vocabulary` und `check` liegen hinter dem Feature `check`:
+
+```toml
+[dependencies]
+freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.18.0", default-features = false }
+```
+
 ## Fixtures
 
 Mit dem Feature `fixtures` enthält die Bibliothek zwei Karten, die freemapper 0.9.2 geschrieben hat:
@@ -64,6 +88,29 @@ that:
 
 Map and sidecar file go in as text. No type of freemapper-omap is part of the API, so each app can read the
 same text with the reader of the core version it pins.
+
+## Shared types
+
+The words of the contract exist once, here (decision 0027). The three apps use them instead of writing their
+own:
+
+- `MapKind`: the map kind (`sprint`, `schoolyard`, `forest`) with `name`, `from_name`, `base_scale` and
+  `drawing_scales`, the scales freemapper writes it at. Print scales are in freemapper-printrules.
+- `Sidecar::parse` reads the contract keys from the text of a `freemapper.toml`, `Sidecar::next_to` the file
+  beside a map. An unknown map kind is `SidecarKind::Unknown` with its name and no error; `Sidecar::title`
+  gives the title without blanks around it, or nothing.
+- `ObjectClass::of` derives the object class from the tags of an object; `is_map_content` tells whether it
+  counts as map content.
+- `tags`: `SOURCE_KEY`, `ROLE_KEY`, the reserved sources, `SHEET_PART`, `BASE_PART`, `SIDECAR_FILE` and the
+  contract keys.
+
+These types need no map reader. An app that links only them turns the default features off; `census`,
+`Vocabulary` and `check` sit behind the feature `check`:
+
+```toml
+[dependencies]
+freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.18.0", default-features = false }
+```
 
 ## Fixtures
 

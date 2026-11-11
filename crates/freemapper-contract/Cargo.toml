@@ -1,6 +1,6 @@
 [package]
 name = "freemapper-contract"
-description = "The contract between freemapper's map and sidecar and the programs that read them: object classes, census, vocabulary and rules"
+description = "The contract between freemapper's map and sidecar and the programs that read them: map kinds, the sidecar reader, object classes, census, vocabulary and rules"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,7 +10,8 @@ include = ["Cargo.toml", "README.md", "src/**/*.rs", "fixtures/**", "tests/**/*.
 
 [dependencies]
 # Private: no type of it appears in this crate's public API, so an app may pin another core tag for its own reader.
-freemapper-omap.workspace = true
+# Only the feature `check` reads maps.
+freemapper-omap = { workspace = true, optional = true }
 serde.workspace = true
 thiserror.workspace = true
 toml.workspace = true
@@ -19,8 +20,12 @@ toml.workspace = true
 tempfile.workspace = true
 
 [features]
+default = ["check"]
+# Census, vocabulary and the rules: everything that reads a map. Without it the crate holds the shared
+# types only (map kinds, the sidecar reader, object classes, the reserved words).
+check = ["dep:freemapper-omap"]
 # The fixtures, embedded: about 540 kB of map text. For the tests of the apps.
-fixtures = []
+fixtures = ["check"]
 
 [[test]]
 name = "fixtures"

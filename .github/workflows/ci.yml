@@ -30,3 +30,6 @@ jobs:
         run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
       - if: steps.crates.outputs.any == 'true'
         run: cargo test --locked --workspace --all-features
+      # The shared types of the contract crate must build and pass without the map reader.
+      - if: steps.crates.outputs.any == 'true'
+        run: cargo test --locked -p freemapper-contract --no-default-features

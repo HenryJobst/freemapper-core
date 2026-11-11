@@ -2,7 +2,9 @@
 
 use std::collections::BTreeSet;
 
-use freemapper_contract::{CONTRACT_VERSION, Vocabulary, census, check, fixture, fixtures};
+use freemapper_contract::{
+    CONTRACT_VERSION, ObjectClass, Sidecar, Vocabulary, census, check, fixture, fixtures,
+};
 
 #[test]
 fn the_fixtures_are_named_as_the_spec_says() {
@@ -150,4 +152,47 @@ fn no_fixture_has_a_carriage_return() {
             assert!(!text.contains('\r'), "{}", fixture.name);
         }
     }
+}
+
+/// The shared sidecar reader is a reader like those of the apps: it must arrive at the expected values.
+#[test]
+fn the_shared_sidecar_reader_derives_the_expected_values() {
+    for fixture in fixtures() {
+        let expected = fixture.expected();
+        let sidecar = Sidecar::parse(fixture.sidecar_toml).unwrap();
+        let kind = sidecar
+            .map_kind
+            .known()
+            .map_or("unknown", |kind| kind.name());
+        assert_eq!(kind, expected.map_kind, "{}", fixture.name);
+        assert_eq!(
+            sidecar.title(),
+            expected.title.as_deref(),
+            "{}",
+            fixture.name
+        );
+        assert_eq!(
+            sidecar.scale_denominator,
+            Some(expected.scale_denominator),
+            "{}",
+            fixture.name
+        );
+        assert_eq!(sidecar.crs, Some(expected.crs), "{}", fixture.name);
+    }
+}
+
+/// `Sidecar::next_to` finds the sidecar of a fixture laid out as a project folder.
+#[test]
+fn the_sidecar_of_a_written_fixture_is_found_next_to_its_map() {
+    let dir = tempfile::tempdir().unwrap();
+    let fixture = fixture("sprint-4000").unwrap();
+    let map = fixture.write_into(dir.path()).unwrap();
+    let sidecar = Sidecar::next_to(&map).unwrap().unwrap();
+    assert_eq!(sidecar.title(), fixture.expected().title.as_deref());
+}
+
+#[test]
+fn sheet_objects_and_the_base_area_are_no_map_content() {
+    assert!(!ObjectClass::Sheet.is_map_content());
+    assert!(!ObjectClass::Base.is_map_content());
 }
