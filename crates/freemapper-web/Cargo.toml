@@ -17,5 +17,9 @@ tokio = { workspace = true, features = ["net", "rt", "sync"] }
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "io-util", "time"] }
 
+[features]
+# check_page_rules and suite_assets, for the apps' tests (dev-dependency with this feature).
+page-rules = []
+
 [lints]
 workspace = true

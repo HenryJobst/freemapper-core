@@ -844,3 +844,203 @@ fn accept_language_wildcard_does_not_hide_a_listed_language() {
     assert_eq!(texts_language(None, Some("*, de;q=0.5")), "de");
     assert_eq!(texts_language(None, Some("fr, *;q=0.5")), "en");
 }
+
+// --- Page rules (ADR 0030) ---
+
+const CLEAN_PAGE: &str = r#"<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title data-text="page-title"></title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="suite/suite.css">
+  <script type="module" src="assets/main.js"></script>
+  <!-- <script>alert(1)</script> <a onclick="x"> -->
+</head>
+<body class="frame">
+  <p data-on="x" aria-controls="y">Click on = here, or onward.</p>
+  <img src="https://tiles.example/1.png" alt="">
+  <button type="button" data-text="page-run"></button>
+</body>
+</html>
+"#;
+const CLEAN_CSS: &str = "@import \"base.css\";\n.a { background: url(img/a.png); }\n.b { background: url('data:image/png;base64,AA'); }\n";
+const CLEAN_JS: &str = "import { get } from \"../suite/api.js\";\nimport './side.js';\nexport { t } from './texts.js';\nconst x = Array.from([1]);\nconst m = await import(\"./lazy.js\");\n";
+
+fn check(files: &[(&str, &str)], budget: usize) -> Result<(), Vec<String>> {
+    let files: Vec<(&str, &[u8])> = files.iter().map(|(n, c)| (*n, c.as_bytes())).collect();
+    check_page_rules(&files, budget)
+}
+
+fn problems(files: &[(&str, &str)]) -> Vec<String> {
+    check(files, usize::MAX).expect_err("problems")
+}
+
+#[test]
+fn a_clean_page_passes() {
+    let files = [
+        ("index.html", CLEAN_PAGE),
+        ("app.css", CLEAN_CSS),
+        ("main.js", CLEAN_JS),
+        ("pixel.png", "\u{89}PNG javascript"),
+    ];
+    assert_eq!(check(&files, usize::MAX), Ok(()));
+}
+
+#[test]
+fn inline_scripts_and_handlers_are_reported() {
+    for page in [
+        "<script>alert(1)</script>",
+        "<SCRIPT type=\"module\">import './a.js';</SCRIPT>",
+        "<script\ntype=module>x</script>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(
+            found.iter().any(|p| p.contains("inline script")),
+            "{page}: {found:?}"
+        );
+    }
+    for page in [
+        "<button onclick=\"go()\">x</button>",
+        "<body ONLOAD = 'go()'>",
+        "<img src=a.png onerror=go()>",
+        "<a href=\"x\"\n   onmouseover=\"go()\">x</a>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(
+            found.iter().any(|p| p.contains("inline handler")),
+            "{page}: {found:?}"
+        );
+    }
+    let found = problems(&[("icon.svg", "<svg><circle onload=\"x\"/></svg>")]);
+    assert!(
+        found
+            .iter()
+            .any(|p| p.contains("icon.svg") && p.contains("inline handler"))
+    );
+}
+
+#[test]
+fn javascript_urls_are_reported_in_every_text_file() {
+    for (name, content) in [
+        ("index.html", "<a href=\"JavaScript:go()\">x</a>"),
+        ("app.css", ".a { background: url(javascript:go()); }"),
+        ("main.js", "location.href = 'javascript:void 0';"),
+    ] {
+        let found = problems(&[(name, content)]);
+        assert!(
+            found
+                .iter()
+                .any(|p| p.contains(name) && p.contains("javascript:")),
+            "{name}: {found:?}"
+        );
+    }
+}
+
+#[test]
+fn network_sources_are_reported() {
+    let cases = [
+        (
+            "index.html",
+            "<script src=\"https://cdn.example/x.js\"></script>",
+        ),
+        ("index.html", "<script src=//cdn.example/x.js></script>"),
+        (
+            "index.html",
+            "<link rel=\"stylesheet\" href=\"HTTP://cdn.example/x.css\">",
+        ),
+        (
+            "index.html",
+            "<style>@import url(https://fonts.example/a.css);</style>",
+        ),
+        ("app.css", "@import \"https://fonts.example/a.css\";"),
+        ("app.css", "@import url( 'http://fonts.example/a.css' );"),
+        (
+            "app.css",
+            "@font-face { src: url(\"//fonts.example/a.woff2\"); }",
+        ),
+        (
+            "app.css",
+            ".a { background: URL(https://img.example/a.png); }",
+        ),
+        ("main.js", "import { x } from \"https://cdn.example/x.js\";"),
+        ("main.js", "import 'http://cdn.example/x.js';"),
+        ("main.js", "export * from '//cdn.example/x.js';"),
+        (
+            "main.js",
+            "const m = await import( \"https://cdn.example/x.js\" );",
+        ),
+    ];
+    for (name, content) in cases {
+        let found = problems(&[(name, content)]);
+        assert!(
+            found
+                .iter()
+                .any(|p| p.contains(name) && p.contains("network")),
+            "{content}: {found:?}"
+        );
+    }
+}
+
+#[test]
+fn the_budget_counts_every_file() {
+    let files = [("a.js", "12345"), ("b.png", "67890")];
+    assert_eq!(check(&files, 10), Ok(()));
+    let found = check(&files, 9).expect_err("over budget");
+    assert_eq!(found.len(), 1);
+    assert!(
+        found[0].contains("10") && found[0].contains('9'),
+        "{found:?}"
+    );
+}
+
+#[test]
+fn every_problem_is_reported() {
+    let files = [
+        (
+            "index.html",
+            "<script>x</script><a onclick=\"y\" href=\"javascript:z\">",
+        ),
+        ("main.js", "import 'https://cdn.example/x.js';"),
+    ];
+    let found = check(&files, 1).expect_err("problems");
+    assert_eq!(found.len(), 5, "{found:?}");
+}
+
+#[test]
+fn the_suite_assets_keep_the_page_rules() {
+    let assets = suite_assets();
+    let mut names: Vec<&str> = assets.iter().map(|(name, _)| name.as_str()).collect();
+    names.sort_unstable();
+    assert_eq!(
+        names,
+        ["api.js", "status.js", "suite.css", "texts.js", "tree.js"]
+    );
+    let files: Vec<(&str, &[u8])> = assets
+        .iter()
+        .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
+        .collect();
+    assert_eq!(check_page_rules(&files, 40 * 1024), Ok(()));
+}
+
+#[test]
+fn each_suite_script_says_where_it_comes_from() {
+    for (name, bytes) in suite_assets() {
+        let text = String::from_utf8(bytes).expect("utf-8");
+        let head: String = text.lines().take(3).collect::<Vec<_>>().join("\n");
+        assert!(head.contains("ADR 0030"), "{name}: {head}");
+        if name.ends_with(".js") {
+            assert!(text.starts_with("// "), "{name}");
+            assert!(text.contains("export "), "{name} is no ES module");
+            for banned in [
+                "innerHTML",
+                "outerHTML",
+                "eval(",
+                "new Function",
+                "document.write",
+            ] {
+                assert!(!text.contains(banned), "{name}: {banned}");
+            }
+        }
+    }
+}

@@ -18,11 +18,15 @@ use axum::routing::get;
 use tokio::sync::Notify;
 
 mod language;
+#[cfg(any(test, feature = "page-rules"))]
+mod page_rules;
 mod revision;
 #[cfg(test)]
 mod tests;
 
 pub use language::texts_language;
+#[cfg(any(test, feature = "page-rules"))]
+pub use page_rules::check_page_rules;
 pub use revision::{REVISION_HEADER, refused, revision, stale};
 
 /// What can go wrong before the server runs.
@@ -122,6 +126,19 @@ struct Guard {
 #[derive(rust_embed::RustEmbed)]
 #[folder = "suite"]
 struct Suite;
+
+/// The suite assets as `(name, bytes)`, for an app's test that checks its page with
+/// [`check_page_rules`]: the app's own assets plus these stay within the size the suite allows (300 KiB per
+/// program, decision 0030). With the feature `page-rules`.
+#[cfg(any(test, feature = "page-rules"))]
+pub fn suite_assets() -> Vec<(String, Vec<u8>)> {
+    Suite::iter()
+        .filter_map(|name| {
+            let file = Suite::get(&name)?;
+            Some((name.into_owned(), file.data.into_owned()))
+        })
+        .collect()
+}
 
 /// A suite asset by its exact name, or 404. The name is compared with the list first: in a debug build
 /// rust-embed reads from the disk, and a case-insensitive file system would also find `SUITE.CSS`.
