@@ -316,7 +316,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-update"
-version = "0.14.1"
+version = "0.15.0"
 dependencies = [
  "freemapper-fs",
  "minisign-verify",
