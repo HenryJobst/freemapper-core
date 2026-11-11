@@ -44,6 +44,8 @@ axum = { version = "=0.8.9", default-features = false }
 getrandom = "=0.4.3"
 rust-embed = { version = "=8.13.0", default-features = false }
 tokio = { version = "=1.54.1", default-features = false }
+# Pinned to the version in freemapper's Cargo.lock. The update manifest.
+serde_json = "=1.0.154"
 # Test only: temporary folders.
 tempfile = "3.27.0"
 
