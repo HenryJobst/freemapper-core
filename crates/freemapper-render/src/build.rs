@@ -54,6 +54,12 @@ pub const BASE_TAG: (&str, &str) = ("freemapper:source", "base");
 /// The map part freemapper puts the base area in. A layout cannot hide it (freemapper-print ADR 0044).
 pub const BASE_PART: &str = "base";
 
+/// The shortest side (mm) of a free page ([`PageSpec::page_mm`]).
+pub const MIN_PAGE_MM: f64 = 10.0;
+
+/// The longest side (mm) of a free page: the largest page a PDF viewer opens (14 400 pt, 5080 mm).
+pub const MAX_PAGE_MM: f64 = 5080.0;
+
 /// Micrometres (OOM map units) per millimetre.
 const UM_PER_MM: f64 = 1000.0;
 
@@ -92,6 +98,10 @@ pub struct PageSpec {
     /// Every coordinate is multiplied by it: the map scale divided by the print scale, 1 at the map scale.
     pub geometry_factor: f64,
     pub paper: Paper,
+    /// A page of this size (width and height in portrait, mm) instead of `paper`, for a map that fits
+    /// neither A4 nor A3. Each side must be finite and within [`MIN_PAGE_MM`] and [`MAX_PAGE_MM`], or
+    /// [`build_page`] returns [`BuildError::PageSize`]. The orientation applies to it as to a paper.
+    pub page_mm: Option<(f64, f64)>,
     pub orientation: Orientation,
     /// The map point (in the file's map coordinates) that lands at the centre of the page; `None`
     /// takes the centre of the box everything drawn paints in, the base area of a sprint map left
@@ -119,6 +129,7 @@ impl PageSpec {
             symbol_factor,
             geometry_factor,
             paper,
+            page_mm: None,
             orientation: Orientation::Auto,
             centre: None,
             frame_margin_mm: None,
@@ -156,12 +167,21 @@ pub struct BuildReport {
     /// Characters of drawn texts that the embedded font has no glyph for. [`build_page`] leaves it empty;
     /// an app fills it in from what [`crate::pdf::write_pdf`] reports.
     pub missing_glyphs: Vec<char>,
+    /// For each object a page's primitives name (`Primitive::object`, the number a hit carries), the position
+    /// of that object in the map: parts in file order, objects in each part in order. Objects left out
+    /// (hidden, unknown symbol, sheet objects not shown) are not in the list, so the two numbers differ as soon
+    /// as one is skipped.
+    pub source_objects: Vec<usize>,
 }
 
 #[derive(Debug, thiserror::Error)]
 pub enum BuildError {
     #[error("could not resize the map symbols for the print scale")]
     Symbols(#[from] OmapError),
+    #[error(
+        "a page of {width_mm} x {height_mm} mm is not possible; each side must be between {MIN_PAGE_MM} and {MAX_PAGE_MM} mm"
+    )]
+    PageSize { width_mm: f64, height_mm: f64 },
 }
 
 /// The page for `map` as `spec` sets it, in page millimetres, ready for any backend.
@@ -185,11 +205,25 @@ pub fn build_page_within(
 ) -> Result<(RenderedPage, BuildReport), BuildError> {
     let symbol_factor = spec.symbol_factor;
     let geometry_factor = spec.geometry_factor;
+    let portrait = match spec.page_mm {
+        None => spec.paper.size_mm(),
+        Some((w, h)) => {
+            let ok = |side: f64| (MIN_PAGE_MM..=MAX_PAGE_MM).contains(&side);
+            if !ok(w) || !ok(h) {
+                return Err(BuildError::PageSize {
+                    width_mm: w,
+                    height_mm: h,
+                });
+            }
+            (w, h)
+        }
+    };
     let symbols = render_symbols(&map.symbol_set, symbol_factor)?;
 
     let mut skipped_objects = 0;
     let mut objects = Vec::new();
-    for object in map.parts.iter().flat_map(|p| &p.objects) {
+    let mut source_objects = Vec::new();
+    for (position, object) in map.parts.iter().flat_map(|p| &p.objects).enumerate() {
         if is_sheet_object(object)
             && !spec.show_sheet_objects
             && !is_north_line(&map.symbol_set, object)
@@ -203,6 +237,7 @@ pub fn build_page_within(
             continue;
         }
         objects.push(scaled(object, geometry_factor));
+        source_objects.push(position);
     }
 
     // Draw everything in print-scale millimetres of the map, then place it on the page.
@@ -255,7 +290,7 @@ pub fn build_page_within(
         (None, None) => (0.0, 0.0),
     };
     let margin = spec.frame_margin_mm.unwrap_or(PAGE_MARGIN_MM);
-    let page_mm = page_size(spec.paper, spec.orientation, bounds, centre, margin);
+    let page_mm = page_size(portrait, spec.orientation, bounds, centre, margin);
     let frame = frame_box(page_mm, margin);
     // The centre of the frame is the centre of the page: the margin is the same on every side.
     let offset = (page_mm.0 / 2.0 - centre.0, page_mm.1 / 2.0 - centre.1);
@@ -287,6 +322,7 @@ pub fn build_page_within(
         dropped_pattern_objects,
         substituted_fonts: fonts.into_iter().collect(),
         missing_glyphs: Vec::new(),
+        source_objects,
     };
     Ok((page, report))
 }
@@ -401,13 +437,12 @@ fn overflow((min, max): Bounds, offset: Pt, frame: PaperBox) -> Overflow {
 /// the frame (the page minus `margin_mm`) is smaller, then the one with the smaller overflow
 /// lengths (a map of a single straight line has almost no area), and portrait on a tie.
 fn page_size(
-    paper: Paper,
+    portrait: (f64, f64),
     orientation: Orientation,
     bounds: Option<Bounds>,
     centre: Pt,
     margin_mm: f64,
 ) -> (f64, f64) {
-    let portrait = paper.size_mm();
     let landscape = (portrait.1, portrait.0);
     match (orientation, bounds) {
         (Orientation::Portrait, _) | (Orientation::Auto, None) => portrait,
