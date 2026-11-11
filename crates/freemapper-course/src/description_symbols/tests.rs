@@ -1,7 +1,7 @@
 use super::db::{MAX_DEPTH, MAX_POINTS_PER_SYMBOL, Pt, SYMBOLS_XML, db, parse, seg_dist};
 use super::iof_2024::{BEND_2024, DIRECTIONS, Mapped, iof_2024};
 use super::ppen::{ColumnNote, Inverse, Refusal, ppen_columns, ppen_symbol};
-use super::{FLATNESS, Standard, TextLang, exists, symbol, symbol_kind, symbol_text};
+use super::{FLATNESS, Standard, TextLang, exists, ids, symbol, symbol_kind, symbol_text};
 
 fn close(a: Pt, b: Pt) -> bool {
     (a.0 - b.0).abs() < 1e-9 && (a.1 - b.1).abs() < 1e-9
@@ -604,4 +604,23 @@ fn plain_id_wins_over_variants() {
     assert_eq!(id("15.5"), "13.5");
     assert_eq!(id("12.14"), "11.15");
     assert_eq!(id("9.1"), "9.1high");
+}
+
+#[test]
+fn ids_lists_every_symbol_of_a_standard_once() {
+    for standard in [Standard::Iof2004, Standard::Iof2018, Standard::Iof2024] {
+        let ids: Vec<&str> = ids(standard).collect();
+        assert!(!ids.is_empty());
+        let unique: std::collections::BTreeSet<&str> = ids.iter().copied().collect();
+        assert_eq!(unique.len(), ids.len(), "an id comes twice in {standard:?}");
+        for id in &ids {
+            assert!(
+                exists(id, standard),
+                "{id} listed but not defined in {standard:?}"
+            );
+            assert!(symbol_kind(id, standard).is_some());
+        }
+    }
+    assert!(ids(Standard::Iof2018).any(|id| id == "5.11"));
+    assert!(ids(Standard::Iof2004).count() != ids(Standard::Iof2018).count());
 }

@@ -7,6 +7,10 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- freemapper-course: `description_symbols::ids(standard)` lists every symbol id of a description standard in file order, each once. `symbol_kind` gives the column for each.
+
 ## [0.13.0] - 2026-11-11
 
 ### Added
