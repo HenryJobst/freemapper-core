@@ -1,11 +1,12 @@
 //! The pure parts of a self-update for the freemapper suite's apps: versions, platform names, the signed
-//! update manifest, the host rule, the check record and the binary swap.
+//! update manifest, the host rule, the check record, the binary swap and the install.
 //!
 //! The crate has no network code (core ADR 0007). Apps bring the network through the `UpdateSource` trait.
 
 mod atomic;
 pub mod check;
 pub mod error;
+pub mod install;
 pub mod manifest;
 pub mod platform;
 pub mod record;
@@ -17,6 +18,7 @@ pub mod version;
 
 pub use check::{Outcome, check_for_update};
 pub use error::UpdateError;
+pub use install::{MAX_EXE_BYTES, install};
 pub use manifest::{Asset, Manifest, parse_manifest};
 pub use platform::current_platform;
 pub use record::{CheckRecord, RecordResult, due, load_record, save_record};

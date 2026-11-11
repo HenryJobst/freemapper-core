@@ -50,6 +50,10 @@ serde_json = "=1.0.154"
 # Version 0.3.0 was released 2026-09-25, 47 days before 2026-11-11, so the two-week rule of ADR 0012 holds.
 # The minisign check of the update manifest; no dependencies of its own.
 minisign-verify = "=0.3.0"
+# Pinned to the versions in freemapper's Cargo.lock. The update install: SHA-256 of the download and the
+# executable, and unpacking the `.gz`.
+sha2 = "=0.11.1"
+flate2 = "=1.1.11"
 # Test only: temporary folders.
 tempfile = "3.27.0"
 

@@ -153,7 +153,7 @@ pub(crate) fn resolve_exe(path: &Path) -> io::Result<PathBuf> {
 
 /// The executable's file name split into a base and the `.exe` extension if it has one:
 /// `freemapper.exe` gives `freemapper` and `.exe`, `freemapper` gives `freemapper` and nothing.
-fn split_name(exe: &Path) -> (OsString, OsString) {
+pub(crate) fn split_name(exe: &Path) -> (OsString, OsString) {
     let name = exe.file_name().unwrap_or_default();
     match (exe.file_stem(), exe.extension()) {
         (Some(stem), Some(ext)) if ext.eq_ignore_ascii_case("exe") => {
@@ -166,7 +166,7 @@ fn split_name(exe: &Path) -> (OsString, OsString) {
 }
 
 /// `<base><middle><suffix>` next to `exe`.
-fn sibling(exe: &Path, middle: &str) -> PathBuf {
+pub(crate) fn sibling(exe: &Path, middle: &str) -> PathBuf {
     let (mut name, suffix) = split_name(exe);
     name.push(middle);
     name.push(suffix);
@@ -226,7 +226,7 @@ fn folder_of(exe: &Path) -> &Path {
 
 /// Creates and removes `<base>.update-probe` in the executable's folder. A folder the user cannot
 /// write (`/usr/local/bin`, `C:\Program Files`) gives `NotWritable` before anything is renamed.
-fn ensure_writable(exe: &Path) -> Result<(), UpdateError> {
+pub(crate) fn ensure_writable(exe: &Path) -> Result<(), UpdateError> {
     let folder = folder_of(exe);
     let (mut probe, _) = split_name(exe);
     probe.push(".update-probe");
@@ -274,7 +274,8 @@ fn restore(
 
 /// Puts `new_file` in the place of `exe` and keeps the old one as [`previous_path`] (spec 3.5 step 7).
 ///
-/// `new_file` must be in `exe`'s folder, so every step is a rename on one file system. An existing
+/// `new_file` must be a plain file (not a link) in `exe`'s folder, so every step is a rename on one
+/// file system and nothing outside the folder takes the program's place. An existing
 /// previous is first renamed to a stale name (that works while an old version still runs from it). If
 /// the new file cannot take `exe`'s place, the old executable is moved back. A folder that cannot be
 /// written gives [`UpdateError::NotWritable`] and nothing changes.
@@ -294,6 +295,16 @@ pub(crate) fn swap_in_with(
                 "the new executable {} is not in the folder of {}",
                 new_file.display(),
                 exe.display()
+            ),
+        )
+        .into());
+    }
+    if !std::fs::symlink_metadata(new_file)?.is_file() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "the new executable {} is not a plain file",
+                new_file.display()
             ),
         )
         .into());
@@ -696,6 +707,27 @@ mod tests {
         let elsewhere = other.path().join("freemapper.update-new");
         fs::write(&elsewhere, "new").unwrap();
         assert!(swap_in(&exe, &elsewhere).is_err());
+        assert_eq!(read(&exe), "old");
+        assert!(!previous_path(&exe).exists());
+    }
+
+    /// The new file must be a plain file: a link would put whatever it points to in the program's place.
+    #[cfg(unix)]
+    #[test]
+    fn new_file_that_is_a_link_or_folder_is_refused() {
+        let dir = tempfile::tempdir().unwrap();
+        let other = tempfile::tempdir().unwrap();
+        let (exe, new_file) = setup(dir.path(), "old", "new");
+        fs::remove_file(&new_file).unwrap();
+        let target = other.path().join("program");
+        fs::write(&target, "elsewhere").unwrap();
+        std::os::unix::fs::symlink(&target, &new_file).unwrap();
+        let error = swap_in(&exe, &new_file).unwrap_err();
+        assert!(error.to_string().contains("not a plain file"), "{error}");
+        fs::remove_file(&new_file).unwrap();
+        fs::create_dir(&new_file).unwrap();
+        let error = swap_in(&exe, &new_file).unwrap_err();
+        assert!(error.to_string().contains("not a plain file"), "{error}");
         assert_eq!(read(&exe), "old");
         assert!(!previous_path(&exe).exists());
     }

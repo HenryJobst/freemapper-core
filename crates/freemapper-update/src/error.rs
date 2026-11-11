@@ -36,6 +36,9 @@ pub enum UpdateError {
     /// The release has no asset for this platform.
     #[error("no release asset for platform {0}")]
     NoAssetForPlatform(String),
+    /// `install` was handed `Outcome::Current`.
+    #[error("there is no update to install")]
+    NothingToInstall,
     /// The installed version predates the self-update path.
     #[error("this version cannot update itself; install {needed} or newer by hand")]
     TooOldToSelfUpdate { needed: Version },

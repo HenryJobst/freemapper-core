@@ -318,10 +318,12 @@ dependencies = [
 name = "freemapper-update"
 version = "0.15.0"
 dependencies = [
+ "flate2",
  "freemapper-fs",
  "minisign-verify",
  "serde",
  "serde_json",
+ "sha2",
  "tempfile",
  "thiserror",
  "toml",
