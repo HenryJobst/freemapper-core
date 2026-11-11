@@ -33,3 +33,4 @@ status to `Superseded by NNNN`.
 | [0022](0022-svg-backend-and-hit-test.md) | SVG backend and hit test |
 | [0023](0023-page-builder-in-core.md) | The page builder moves to core |
 | [0024](0024-course-layer-in-render.md) | The course overprint moves to the render crate |
+| [0025](0025-print-rules-in-core.md) | The print rules move to core |

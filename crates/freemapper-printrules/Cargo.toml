@@ -1,0 +1,23 @@
+[package]
+name = "freemapper-printrules"
+description = "Print rules for orienteering maps as data profiles: map kinds, symbol size table by print scale, north-line spacing, course symbol sizes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+include = ["Cargo.toml", "README.md", "src/**/*.rs", "rules/*"]
+
+[features]
+# rules::load_for_tests and rules::embedded_text, for the tests of an app.
+test-support = []
+
+[dependencies]
+freemapper-course.workspace = true
+freemapper-render.workspace = true
+freemapper-rules.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

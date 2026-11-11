@@ -239,7 +239,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-contract"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "freemapper-omap",
  "serde",
@@ -250,7 +250,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-course"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "freemapper-georef",
  "freemapper-omap",
@@ -262,7 +262,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-fs"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "same-file",
  "tempfile",
@@ -270,11 +270,11 @@ dependencies = [
 
 [[package]]
 name = "freemapper-georef"
-version = "0.15.0"
+version = "0.16.0"
 
 [[package]]
 name = "freemapper-omap"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "quick-xml",
  "tempfile",
@@ -282,8 +282,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "freemapper-printrules"
+version = "0.16.0"
+dependencies = [
+ "freemapper-course",
+ "freemapper-render",
+ "freemapper-rules",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "freemapper-render"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "freemapper-course",
  "freemapper-omap",
@@ -299,7 +310,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-rules"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "thiserror",
  "toml",
@@ -307,7 +318,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-text"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "fluent-bundle",
  "fluent-syntax",
@@ -316,7 +327,7 @@ dependencies = [
 
 [[package]]
 name = "freemapper-web"
-version = "0.15.0"
+version = "0.16.0"
 dependencies = [
  "axum",
  "getrandom",

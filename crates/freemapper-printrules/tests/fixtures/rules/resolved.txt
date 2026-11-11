@@ -1,0 +1,753 @@
+base.base = "iof-print"
+base.overlays = []
+base.rule[0] = iofprint.scale.sprint from iof-print key scale_table severity error enabled true map_kinds = ["sprint"] print_scales = [] values { rows = [{ scale = 3000, size_factor = 1.3333333333333333 }, { scale = 4000, size_factor = 1.0 }, { scale = 5000, size_factor = 1.0, standard = false }] } source "ISSprOM" "3.1 (base scale 1:4000, 1:3000 for the youngest age groups), 4.7 (133 % at 1:3000)" note Some({"de": "1:5000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:5000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+base.rule[1] = iofprint.scale.schoolyard from iof-print key scale_table severity error enabled true map_kinds = ["schoolyard"] print_scales = [] values { rows = [{ scale = 1000, size_factor = 1.0 }] } source "IOF-SCHOOL" "base scale 1:1000" note None
+base.rule[2] = iofprint.scale.forest from iof-print key scale_table severity error enabled true map_kinds = ["forest"] print_scales = [] values { rows = [{ scale = 5000, size_factor = 3.0 }, { scale = 7500, size_factor = 2.0 }, { scale = 10000, size_factor = 1.5 }, { scale = 15000, size_factor = 1.0 }, { scale = 20000, size_factor = 1.0, standard = false }] } source "ISOM" "2.9.1 and 3.7 (base scale 1:15000; 150 % at 1:10000, 300 % at 1:5000, so 200 % at 1:7500)" note Some({"de": "1:20000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:20000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+base.rule[3] = iofprint.north_lines.sprint from iof-print key north_lines severity hint enabled true map_kinds = ["sprint"] print_scales = [] values { spacing_metres = 120.0 } source "ISSprOM" "4.6, symbol 601 (30 mm at 1:4000)" note None
+base.rule[4] = iofprint.north_lines.schoolyard from iof-print key north_lines severity hint enabled true map_kinds = ["schoolyard"] print_scales = [] values { spacing_metres = 37.5 } source "fmp" "ADR 0027" note Some({"de": "Arbeitswert des Projektinhabers (37,5 mm bei 1:1000), nicht am IOF-Schulsymbolsatz geprüft.", "en": "Working value from the project owner (37.5 mm at 1:1000), not checked against the IOF school symbol set."})
+base.rule[5] = iofprint.north_lines.forest from iof-print key north_lines severity hint enabled true map_kinds = ["forest"] print_scales = [] values { spacing_metres = 300.0 } source "ISOM" "3.6, symbol 601 (20 mm at 1:15000)" note None
+base.rule[6] = iofprint.contour.sprint from iof-print key contour_interval severity hint enabled true map_kinds = ["sprint"] print_scales = [] values { proposed_metres = 2.0 } source "ISSprOM" "3.2 (2 m or 2.5 m)" note None
+base.rule[7] = iofprint.contour.forest from iof-print key contour_interval severity hint enabled true map_kinds = ["forest"] print_scales = [] values { proposed_metres = 5.0 } source "ISOM" "2.10 (5 m, 2.5 m in flat terrain)" note None
+base.rule[8] = iofprint.course.start_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { start_side_mm = 7.0 } source "ISSprOM" "4.7, symbol 701 Start" note None
+base.rule[9] = iofprint.course.control_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { circle_diameter_mm = 6.0 } source "ISSprOM" "4.7, symbol 703 Control point" note None
+base.rule[10] = iofprint.course.number_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { number_height_mm = 4.0 } source "ISSprOM" "4.7, symbol 704 Control number" note None
+base.rule[11] = iofprint.course.line_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { line_width_mm = 0.35 } source "ISSprOM" "4.7, symbol 705 Course line" note None
+base.rule[12] = iofprint.course.finish_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { finish_inner_mm = 5.0, finish_outer_mm = 7.0 } source "ISSprOM" "4.7, symbol 706 Finish" note None
+base.rule[13] = iofprint.course.marked_route_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISSprOM" "4.7, symbol 707 Marked route" note None
+base.rule[14] = iofprint.course.out_of_bounds_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_line_mm = 1.0 } source "ISSprOM" "4.7, symbol 708 Out-of-bounds boundary" note None
+base.rule[15] = iofprint.course.crossing_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISSprOM" "4.7, symbol 710.1 Crossing point (3.0 mm outside measure)" note None
+base.rule[16] = iofprint.course.out_of_bounds_area_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISSprOM" "4.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; changed from 0.8 mm and 0.25 mm on 2022-01-02); Purple Pen 201417f OOBCourseObj agrees" note None
+base.rule[17] = iofprint.course.first_aid_refreshment_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "fmp" "ADR 0034 (ISSprOM 2019-2 has no symbols 712 and 713; the ISOM 2017-2 section 3.7 sizes on paper)" note Some({"de": "Annahme: ISSprOM 2019-2 kennt weder Erste Hilfe noch Getränkeposten; die Größen auf dem Papier kommen aus ISOM 2017-2 §3.7.", "en": "Assumption: ISSprOM 2019-2 has no first aid or refreshment symbol; the sizes on paper come from ISOM 2017-2 section 3.7."})
+base.rule[18] = iofprint.course.schoolyard from iof-print key course_symbol severity warning enabled true map_kinds = ["schoolyard"] print_scales = [] values { circle_diameter_mm = 6.0, crossing_point_mm = 3.0, finish_inner_mm = 5.0, finish_outer_mm = 7.0, first_aid_bar_mm = 1.33, first_aid_mm = 4.0, line_width_mm = 0.35, marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5, number_height_mm = 4.0, out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2, out_of_bounds_line_mm = 1.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5, start_side_mm = 7.0 } source "fmp" "ADR 0031 (the ISSprOM 2019-2 values of section 4.7, symbols 701 to 710.1, assumed at 1:1000)" note Some({"de": "Annahme: Schulhofkarten übernehmen die Sprintwerte aus ISSprOM 2019-2 §4.7 bei 1:1000. Der IOF-Schulsymbolsatz ist dafür nicht geprüft.", "en": "Assumption: schoolyard maps take the sprint values of ISSprOM 2019-2 section 4.7 at 1:1000. Not checked against the IOF school symbol set."})
+base.rule[19] = iofprint.course.start_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { start_side_mm = 6.0 } source "ISOM" "3.7, symbol 701 Start" note None
+base.rule[20] = iofprint.course.control_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { circle_diameter_mm = 5.0 } source "ISOM" "3.7, symbol 703 Control point" note None
+base.rule[21] = iofprint.course.number_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { number_height_mm = 4.0 } source "ISOM" "3.7, symbol 704 Control number" note None
+base.rule[22] = iofprint.course.line_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { line_width_mm = 0.35 } source "ISOM" "3.7, symbol 705 Course line" note None
+base.rule[23] = iofprint.course.finish_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { finish_inner_mm = 4.0, finish_outer_mm = 6.0 } source "ISOM" "3.7, symbol 706 Finish" note None
+base.rule[24] = iofprint.course.marked_route_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISOM" "3.7, symbol 707 Marked route" note None
+base.rule[25] = iofprint.course.out_of_bounds_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_line_mm = 0.7 } source "ISOM" "3.7, symbol 708 Out-of-bounds boundary" note None
+base.rule[26] = iofprint.course.crossing_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISOM" "3.7, symbol 710 Crossing point (drawn 3.0 mm long; the lines follow the length of the crossing)" note None
+base.rule[27] = iofprint.course.out_of_bounds_area_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISOM" "3.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; ISOM 2000 had vertical stripes); Purple Pen 201417f OOBCourseObj agrees" note None
+base.rule[28] = iofprint.course.first_aid_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0 } source "ISOM" "3.7, symbol 712 First aid post (4.0 mm, bars 1.33 mm)" note None
+base.rule[29] = iofprint.course.refreshment_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "ISOM" "3.7, symbol 713 Refreshment point (3.5 mm wide and high outside measure, 0.4 mm line)" note None
+base.rule[30] = iofprint.description.cell from iof-print key description_box severity hint enabled true map_kinds = [] print_scales = [] values { cell_mm = 6.0 } source "IOF-CD" "Control description sheet format (square boxes, 5 mm to 7 mm)" note Some({"de": "6 mm ist die Mitte des Bereichs, den die Norm erlaubt; eine Wahl von freemapper-print.", "en": "6 mm is the middle of the range the standard allows; a choice of freemapper-print."})
+base.rule[31] = iofprint.colour.purple from iof-print key course_colour severity warning enabled true map_kinds = [] print_scales = [] values { black_percent = 0, cyan_percent = 35, magenta_percent = 85, yellow_percent = 0 } source "IOF-PCD" "6. Colour order (upper and lower purple for course overprint)" note None
+base.rule[32] = iofprint.placement.weights from iof-print key placement_weights severity hint enabled true map_kinds = [] print_scales = [] values { black_factor = 10.0, blue_factor = 4.0, brown_factor = 4.0, other_factor = 1.0 } source "fmp" "ADR 0031" note Some({"de": "Eigene Wahl: Eine Nummer über schwarzen Kartendetails stört am meisten, über braunen und blauen weniger, über den übrigen Farben am wenigsten.", "en": "Our own choice: a number over black map detail hurts legibility most, over brown and blue less, over the other colours least."})
+base.rule[33] = iofprint.number.gap from iof-print key number_gap severity warning enabled true map_kinds = [] print_scales = [] values { max_gap_mm = 5.0, min_gap_mm = 0.5 } source "fmp" "ADR 0038" note Some({"de": "Entscheidung des Nutzers vom 2026-11-09, gemeinsam mit freemapper-courseplan (dessen ADR 0032): Zwischen Postenkreis und Nummer liegen mindestens 0,5 und höchstens 5 mm.", "en": "User decision 2026-11-09, shared with freemapper-courseplan ADR 0032: at least 0.5 and at most 5 mm between control circle and number."})
+base.source.iof-print.IOF-CD = "International Specification for Control Descriptions 2024" url None
+base.source.iof-print.IOF-PCD = "IOF Map Specifications: Printing and Colour Definitions, Revision 4 (September 2024)" url None
+base.source.iof-print.IOF-SCHOOL = "IOF school symbol set 2019, as cited in ADR 0018" url None
+base.source.iof-print.ISOM = "ISOM 2017-2, International Specification for Orienteering Maps (errata up to February 2022)" url None
+base.source.iof-print.ISSprOM = "ISSprOM 2019-2, International Specification for Sprint Orienteering Maps (updated version, January 2022)" url None
+base.source.iof-print.fmp = "freemapper-print decisions (docs/adr)" url Some("https://github.com/HenryJobst/freemapper-print/tree/main/docs/adr")
+base.sprint.scale.3000 = size_factor 1.3333333333333333 standard true course_factor 1.3333333333333333 is_standard true
+base.sprint.scale.4000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+base.sprint.scale.5000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+base.sprint.scale_table = [(3000, 1.3333333333333333), (4000, 1.0), (5000, 1.0)]
+base.sprint.scale.12345 = None course_factor 1.0 is_standard false
+base.sprint.north_line_spacing_m = 120.0
+base.sprint.proposed_contour_interval_m = Some(2.0)
+base.sprint.description_cell_mm = 6.0
+base.sprint.course.circle_diameter_mm = 6.0
+base.sprint.course.line_width_mm = 0.35
+base.sprint.course.start_side_mm = 7.0
+base.sprint.course.finish_inner_mm = 5.0
+base.sprint.course.finish_outer_mm = 7.0
+base.sprint.course.number_height_mm = 4.0
+base.sprint.course.marked_route_dash_mm = 2.0
+base.sprint.course.marked_route_gap_mm = 0.5
+base.sprint.course.out_of_bounds_line_mm = 1.0
+base.sprint.course.crossing_point_mm = 3.0
+base.sprint.course.out_of_bounds_hatch_angle_degrees = 45.0
+base.sprint.course.out_of_bounds_hatch_spacing_mm = 1.2
+base.sprint.course.out_of_bounds_hatch_line_mm = 0.2
+base.sprint.course.first_aid_mm = 4.0
+base.sprint.course.first_aid_bar_mm = 1.33
+base.sprint.course.refreshment_mm = 3.5
+base.sprint.course.refreshment_line_mm = 0.4
+base.sprint.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+base.schoolyard.scale.1000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+base.schoolyard.scale_table = [(1000, 1.0)]
+base.schoolyard.scale.12345 = None course_factor 1.0 is_standard false
+base.schoolyard.north_line_spacing_m = 37.5
+base.schoolyard.proposed_contour_interval_m = None
+base.schoolyard.description_cell_mm = 6.0
+base.schoolyard.course.circle_diameter_mm = 6.0
+base.schoolyard.course.line_width_mm = 0.35
+base.schoolyard.course.start_side_mm = 7.0
+base.schoolyard.course.finish_inner_mm = 5.0
+base.schoolyard.course.finish_outer_mm = 7.0
+base.schoolyard.course.number_height_mm = 4.0
+base.schoolyard.course.marked_route_dash_mm = 2.0
+base.schoolyard.course.marked_route_gap_mm = 0.5
+base.schoolyard.course.out_of_bounds_line_mm = 1.0
+base.schoolyard.course.crossing_point_mm = 3.0
+base.schoolyard.course.out_of_bounds_hatch_angle_degrees = 45.0
+base.schoolyard.course.out_of_bounds_hatch_spacing_mm = 1.2
+base.schoolyard.course.out_of_bounds_hatch_line_mm = 0.2
+base.schoolyard.course.first_aid_mm = 4.0
+base.schoolyard.course.first_aid_bar_mm = 1.33
+base.schoolyard.course.refreshment_mm = 3.5
+base.schoolyard.course.refreshment_line_mm = 0.4
+base.schoolyard.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+base.forest.scale.5000 = size_factor 3.0 standard true course_factor 3.0 is_standard true
+base.forest.scale.7500 = size_factor 2.0 standard true course_factor 2.0 is_standard true
+base.forest.scale.10000 = size_factor 1.5 standard true course_factor 1.5 is_standard true
+base.forest.scale.15000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+base.forest.scale.20000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+base.forest.scale_table = [(5000, 3.0), (7500, 2.0), (10000, 1.5), (15000, 1.0), (20000, 1.0)]
+base.forest.scale.12345 = None course_factor 1.0 is_standard false
+base.forest.north_line_spacing_m = 300.0
+base.forest.proposed_contour_interval_m = Some(5.0)
+base.forest.description_cell_mm = 6.0
+base.forest.course.circle_diameter_mm = 5.0
+base.forest.course.line_width_mm = 0.35
+base.forest.course.start_side_mm = 6.0
+base.forest.course.finish_inner_mm = 4.0
+base.forest.course.finish_outer_mm = 6.0
+base.forest.course.number_height_mm = 4.0
+base.forest.course.marked_route_dash_mm = 2.0
+base.forest.course.marked_route_gap_mm = 0.5
+base.forest.course.out_of_bounds_line_mm = 0.7
+base.forest.course.crossing_point_mm = 3.0
+base.forest.course.out_of_bounds_hatch_angle_degrees = 45.0
+base.forest.course.out_of_bounds_hatch_spacing_mm = 1.2
+base.forest.course.out_of_bounds_hatch_line_mm = 0.2
+base.forest.course.first_aid_mm = 4.0
+base.forest.course.first_aid_bar_mm = 1.33
+base.forest.course.refreshment_mm = 3.5
+base.forest.course.refreshment_line_mm = 0.4
+base.forest.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+base.purple_cmyk = [0.35, 0.85, 0.0, 0.0]
+base.placement_weights = black 10.0 brown 4.0 blue 4.0 other 1.0
+base.number_gap = Some((0.5, 5.0))
+base.number_gap_allowed = Some((0.5, 5.0))
+replace.base = "iof-print"
+replace.overlays = ["test-replace"]
+replace.rule[0] = iofprint.scale.sprint from iof-print key scale_table severity error enabled true map_kinds = ["sprint"] print_scales = [] values { rows = [{ scale = 3000, size_factor = 1.3333333333333333 }, { scale = 4000, size_factor = 1.0 }, { scale = 5000, size_factor = 1.0, standard = false }] } source "ISSprOM" "3.1 (base scale 1:4000, 1:3000 for the youngest age groups), 4.7 (133 % at 1:3000)" note Some({"de": "1:5000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:5000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+replace.rule[1] = iofprint.scale.schoolyard from iof-print key scale_table severity error enabled true map_kinds = ["schoolyard"] print_scales = [] values { rows = [{ scale = 1000, size_factor = 1.0 }] } source "IOF-SCHOOL" "base scale 1:1000" note None
+replace.rule[2] = iofprint.scale.forest from iof-print key scale_table severity error enabled true map_kinds = ["forest"] print_scales = [] values { rows = [{ scale = 5000, size_factor = 3.0 }, { scale = 7500, size_factor = 2.0 }, { scale = 10000, size_factor = 1.5 }, { scale = 15000, size_factor = 1.0 }, { scale = 20000, size_factor = 1.0, standard = false }] } source "ISOM" "2.9.1 and 3.7 (base scale 1:15000; 150 % at 1:10000, 300 % at 1:5000, so 200 % at 1:7500)" note Some({"de": "1:20000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:20000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+replace.rule[3] = iofprint.north_lines.sprint from test-replace key north_lines severity hint enabled true map_kinds = ["sprint"] print_scales = [] values { spacing_metres = 100.0 } source "REG" "§ 4" note None
+replace.rule[4] = iofprint.north_lines.schoolyard from iof-print key north_lines severity hint enabled true map_kinds = ["schoolyard"] print_scales = [] values { spacing_metres = 37.5 } source "fmp" "ADR 0027" note Some({"de": "Arbeitswert des Projektinhabers (37,5 mm bei 1:1000), nicht am IOF-Schulsymbolsatz geprüft.", "en": "Working value from the project owner (37.5 mm at 1:1000), not checked against the IOF school symbol set."})
+replace.rule[5] = iofprint.north_lines.forest from iof-print key north_lines severity hint enabled true map_kinds = ["forest"] print_scales = [] values { spacing_metres = 300.0 } source "ISOM" "3.6, symbol 601 (20 mm at 1:15000)" note None
+replace.rule[6] = iofprint.contour.sprint from iof-print key contour_interval severity hint enabled true map_kinds = ["sprint"] print_scales = [] values { proposed_metres = 2.0 } source "ISSprOM" "3.2 (2 m or 2.5 m)" note None
+replace.rule[7] = iofprint.contour.forest from iof-print key contour_interval severity hint enabled true map_kinds = ["forest"] print_scales = [] values { proposed_metres = 5.0 } source "ISOM" "2.10 (5 m, 2.5 m in flat terrain)" note None
+replace.rule[8] = iofprint.course.start_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { start_side_mm = 7.0 } source "ISSprOM" "4.7, symbol 701 Start" note None
+replace.rule[9] = iofprint.course.control_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { circle_diameter_mm = 6.0 } source "ISSprOM" "4.7, symbol 703 Control point" note None
+replace.rule[10] = iofprint.course.number_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { number_height_mm = 4.0 } source "ISSprOM" "4.7, symbol 704 Control number" note None
+replace.rule[11] = iofprint.course.line_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { line_width_mm = 0.35 } source "ISSprOM" "4.7, symbol 705 Course line" note None
+replace.rule[12] = iofprint.course.finish_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { finish_inner_mm = 5.0, finish_outer_mm = 7.0 } source "ISSprOM" "4.7, symbol 706 Finish" note None
+replace.rule[13] = iofprint.course.marked_route_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISSprOM" "4.7, symbol 707 Marked route" note None
+replace.rule[14] = iofprint.course.out_of_bounds_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_line_mm = 1.0 } source "ISSprOM" "4.7, symbol 708 Out-of-bounds boundary" note None
+replace.rule[15] = iofprint.course.crossing_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISSprOM" "4.7, symbol 710.1 Crossing point (3.0 mm outside measure)" note None
+replace.rule[16] = iofprint.course.out_of_bounds_area_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISSprOM" "4.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; changed from 0.8 mm and 0.25 mm on 2022-01-02); Purple Pen 201417f OOBCourseObj agrees" note None
+replace.rule[17] = iofprint.course.first_aid_refreshment_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "fmp" "ADR 0034 (ISSprOM 2019-2 has no symbols 712 and 713; the ISOM 2017-2 section 3.7 sizes on paper)" note Some({"de": "Annahme: ISSprOM 2019-2 kennt weder Erste Hilfe noch Getränkeposten; die Größen auf dem Papier kommen aus ISOM 2017-2 §3.7.", "en": "Assumption: ISSprOM 2019-2 has no first aid or refreshment symbol; the sizes on paper come from ISOM 2017-2 section 3.7."})
+replace.rule[18] = iofprint.course.schoolyard from iof-print key course_symbol severity warning enabled true map_kinds = ["schoolyard"] print_scales = [] values { circle_diameter_mm = 6.0, crossing_point_mm = 3.0, finish_inner_mm = 5.0, finish_outer_mm = 7.0, first_aid_bar_mm = 1.33, first_aid_mm = 4.0, line_width_mm = 0.35, marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5, number_height_mm = 4.0, out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2, out_of_bounds_line_mm = 1.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5, start_side_mm = 7.0 } source "fmp" "ADR 0031 (the ISSprOM 2019-2 values of section 4.7, symbols 701 to 710.1, assumed at 1:1000)" note Some({"de": "Annahme: Schulhofkarten übernehmen die Sprintwerte aus ISSprOM 2019-2 §4.7 bei 1:1000. Der IOF-Schulsymbolsatz ist dafür nicht geprüft.", "en": "Assumption: schoolyard maps take the sprint values of ISSprOM 2019-2 section 4.7 at 1:1000. Not checked against the IOF school symbol set."})
+replace.rule[19] = iofprint.course.start_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { start_side_mm = 6.0 } source "ISOM" "3.7, symbol 701 Start" note None
+replace.rule[20] = iofprint.course.control_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { circle_diameter_mm = 5.0 } source "ISOM" "3.7, symbol 703 Control point" note None
+replace.rule[21] = iofprint.course.number_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { number_height_mm = 4.0 } source "ISOM" "3.7, symbol 704 Control number" note None
+replace.rule[22] = iofprint.course.line_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { line_width_mm = 0.35 } source "ISOM" "3.7, symbol 705 Course line" note None
+replace.rule[23] = iofprint.course.finish_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { finish_inner_mm = 4.0, finish_outer_mm = 6.0 } source "ISOM" "3.7, symbol 706 Finish" note None
+replace.rule[24] = iofprint.course.marked_route_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISOM" "3.7, symbol 707 Marked route" note None
+replace.rule[25] = iofprint.course.out_of_bounds_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_line_mm = 0.7 } source "ISOM" "3.7, symbol 708 Out-of-bounds boundary" note None
+replace.rule[26] = iofprint.course.crossing_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISOM" "3.7, symbol 710 Crossing point (drawn 3.0 mm long; the lines follow the length of the crossing)" note None
+replace.rule[27] = iofprint.course.out_of_bounds_area_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISOM" "3.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; ISOM 2000 had vertical stripes); Purple Pen 201417f OOBCourseObj agrees" note None
+replace.rule[28] = iofprint.course.first_aid_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0 } source "ISOM" "3.7, symbol 712 First aid post (4.0 mm, bars 1.33 mm)" note None
+replace.rule[29] = iofprint.course.refreshment_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "ISOM" "3.7, symbol 713 Refreshment point (3.5 mm wide and high outside measure, 0.4 mm line)" note None
+replace.rule[30] = iofprint.description.cell from iof-print key description_box severity hint enabled true map_kinds = [] print_scales = [] values { cell_mm = 6.0 } source "IOF-CD" "Control description sheet format (square boxes, 5 mm to 7 mm)" note Some({"de": "6 mm ist die Mitte des Bereichs, den die Norm erlaubt; eine Wahl von freemapper-print.", "en": "6 mm is the middle of the range the standard allows; a choice of freemapper-print."})
+replace.rule[31] = iofprint.colour.purple from iof-print key course_colour severity warning enabled true map_kinds = [] print_scales = [] values { black_percent = 0, cyan_percent = 35, magenta_percent = 85, yellow_percent = 0 } source "IOF-PCD" "6. Colour order (upper and lower purple for course overprint)" note None
+replace.rule[32] = iofprint.placement.weights from iof-print key placement_weights severity hint enabled true map_kinds = [] print_scales = [] values { black_factor = 10.0, blue_factor = 4.0, brown_factor = 4.0, other_factor = 1.0 } source "fmp" "ADR 0031" note Some({"de": "Eigene Wahl: Eine Nummer über schwarzen Kartendetails stört am meisten, über braunen und blauen weniger, über den übrigen Farben am wenigsten.", "en": "Our own choice: a number over black map detail hurts legibility most, over brown and blue less, over the other colours least."})
+replace.rule[33] = iofprint.number.gap from iof-print key number_gap severity warning enabled true map_kinds = [] print_scales = [] values { max_gap_mm = 5.0, min_gap_mm = 0.5 } source "fmp" "ADR 0038" note Some({"de": "Entscheidung des Nutzers vom 2026-11-09, gemeinsam mit freemapper-courseplan (dessen ADR 0032): Zwischen Postenkreis und Nummer liegen mindestens 0,5 und höchstens 5 mm.", "en": "User decision 2026-11-09, shared with freemapper-courseplan ADR 0032: at least 0.5 and at most 5 mm between control circle and number."})
+replace.source.iof-print.IOF-CD = "International Specification for Control Descriptions 2024" url None
+replace.source.iof-print.IOF-PCD = "IOF Map Specifications: Printing and Colour Definitions, Revision 4 (September 2024)" url None
+replace.source.iof-print.IOF-SCHOOL = "IOF school symbol set 2019, as cited in ADR 0018" url None
+replace.source.iof-print.ISOM = "ISOM 2017-2, International Specification for Orienteering Maps (errata up to February 2022)" url None
+replace.source.iof-print.ISSprOM = "ISSprOM 2019-2, International Specification for Sprint Orienteering Maps (updated version, January 2022)" url None
+replace.source.iof-print.fmp = "freemapper-print decisions (docs/adr)" url Some("https://github.com/HenryJobst/freemapper-print/tree/main/docs/adr")
+replace.source.test-replace.REG = "Regional print rules" url None
+replace.sprint.scale.3000 = size_factor 1.3333333333333333 standard true course_factor 1.3333333333333333 is_standard true
+replace.sprint.scale.4000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+replace.sprint.scale.5000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+replace.sprint.scale_table = [(3000, 1.3333333333333333), (4000, 1.0), (5000, 1.0)]
+replace.sprint.scale.12345 = None course_factor 1.0 is_standard false
+replace.sprint.north_line_spacing_m = 100.0
+replace.sprint.proposed_contour_interval_m = Some(2.0)
+replace.sprint.description_cell_mm = 6.0
+replace.sprint.course.circle_diameter_mm = 6.0
+replace.sprint.course.line_width_mm = 0.35
+replace.sprint.course.start_side_mm = 7.0
+replace.sprint.course.finish_inner_mm = 5.0
+replace.sprint.course.finish_outer_mm = 7.0
+replace.sprint.course.number_height_mm = 4.0
+replace.sprint.course.marked_route_dash_mm = 2.0
+replace.sprint.course.marked_route_gap_mm = 0.5
+replace.sprint.course.out_of_bounds_line_mm = 1.0
+replace.sprint.course.crossing_point_mm = 3.0
+replace.sprint.course.out_of_bounds_hatch_angle_degrees = 45.0
+replace.sprint.course.out_of_bounds_hatch_spacing_mm = 1.2
+replace.sprint.course.out_of_bounds_hatch_line_mm = 0.2
+replace.sprint.course.first_aid_mm = 4.0
+replace.sprint.course.first_aid_bar_mm = 1.33
+replace.sprint.course.refreshment_mm = 3.5
+replace.sprint.course.refreshment_line_mm = 0.4
+replace.sprint.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+replace.schoolyard.scale.1000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+replace.schoolyard.scale_table = [(1000, 1.0)]
+replace.schoolyard.scale.12345 = None course_factor 1.0 is_standard false
+replace.schoolyard.north_line_spacing_m = 37.5
+replace.schoolyard.proposed_contour_interval_m = None
+replace.schoolyard.description_cell_mm = 6.0
+replace.schoolyard.course.circle_diameter_mm = 6.0
+replace.schoolyard.course.line_width_mm = 0.35
+replace.schoolyard.course.start_side_mm = 7.0
+replace.schoolyard.course.finish_inner_mm = 5.0
+replace.schoolyard.course.finish_outer_mm = 7.0
+replace.schoolyard.course.number_height_mm = 4.0
+replace.schoolyard.course.marked_route_dash_mm = 2.0
+replace.schoolyard.course.marked_route_gap_mm = 0.5
+replace.schoolyard.course.out_of_bounds_line_mm = 1.0
+replace.schoolyard.course.crossing_point_mm = 3.0
+replace.schoolyard.course.out_of_bounds_hatch_angle_degrees = 45.0
+replace.schoolyard.course.out_of_bounds_hatch_spacing_mm = 1.2
+replace.schoolyard.course.out_of_bounds_hatch_line_mm = 0.2
+replace.schoolyard.course.first_aid_mm = 4.0
+replace.schoolyard.course.first_aid_bar_mm = 1.33
+replace.schoolyard.course.refreshment_mm = 3.5
+replace.schoolyard.course.refreshment_line_mm = 0.4
+replace.schoolyard.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+replace.forest.scale.5000 = size_factor 3.0 standard true course_factor 3.0 is_standard true
+replace.forest.scale.7500 = size_factor 2.0 standard true course_factor 2.0 is_standard true
+replace.forest.scale.10000 = size_factor 1.5 standard true course_factor 1.5 is_standard true
+replace.forest.scale.15000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+replace.forest.scale.20000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+replace.forest.scale_table = [(5000, 3.0), (7500, 2.0), (10000, 1.5), (15000, 1.0), (20000, 1.0)]
+replace.forest.scale.12345 = None course_factor 1.0 is_standard false
+replace.forest.north_line_spacing_m = 300.0
+replace.forest.proposed_contour_interval_m = Some(5.0)
+replace.forest.description_cell_mm = 6.0
+replace.forest.course.circle_diameter_mm = 5.0
+replace.forest.course.line_width_mm = 0.35
+replace.forest.course.start_side_mm = 6.0
+replace.forest.course.finish_inner_mm = 4.0
+replace.forest.course.finish_outer_mm = 6.0
+replace.forest.course.number_height_mm = 4.0
+replace.forest.course.marked_route_dash_mm = 2.0
+replace.forest.course.marked_route_gap_mm = 0.5
+replace.forest.course.out_of_bounds_line_mm = 0.7
+replace.forest.course.crossing_point_mm = 3.0
+replace.forest.course.out_of_bounds_hatch_angle_degrees = 45.0
+replace.forest.course.out_of_bounds_hatch_spacing_mm = 1.2
+replace.forest.course.out_of_bounds_hatch_line_mm = 0.2
+replace.forest.course.first_aid_mm = 4.0
+replace.forest.course.first_aid_bar_mm = 1.33
+replace.forest.course.refreshment_mm = 3.5
+replace.forest.course.refreshment_line_mm = 0.4
+replace.forest.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+replace.purple_cmyk = [0.35, 0.85, 0.0, 0.0]
+replace.placement_weights = black 10.0 brown 4.0 blue 4.0 other 1.0
+replace.number_gap = Some((0.5, 5.0))
+replace.number_gap_allowed = Some((0.5, 5.0))
+off.base = "iof-print"
+off.overlays = ["test-off"]
+off.rule[0] = iofprint.scale.sprint from iof-print key scale_table severity error enabled true map_kinds = ["sprint"] print_scales = [] values { rows = [{ scale = 3000, size_factor = 1.3333333333333333 }, { scale = 4000, size_factor = 1.0 }, { scale = 5000, size_factor = 1.0, standard = false }] } source "ISSprOM" "3.1 (base scale 1:4000, 1:3000 for the youngest age groups), 4.7 (133 % at 1:3000)" note Some({"de": "1:5000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:5000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+off.rule[1] = iofprint.scale.schoolyard from iof-print key scale_table severity error enabled true map_kinds = ["schoolyard"] print_scales = [] values { rows = [{ scale = 1000, size_factor = 1.0 }] } source "IOF-SCHOOL" "base scale 1:1000" note None
+off.rule[2] = iofprint.scale.forest from iof-print key scale_table severity error enabled true map_kinds = ["forest"] print_scales = [] values { rows = [{ scale = 5000, size_factor = 3.0 }, { scale = 7500, size_factor = 2.0 }, { scale = 10000, size_factor = 1.5 }, { scale = 15000, size_factor = 1.0 }, { scale = 20000, size_factor = 1.0, standard = false }] } source "ISOM" "2.9.1 and 3.7 (base scale 1:15000; 150 % at 1:10000, 300 % at 1:5000, so 200 % at 1:7500)" note Some({"de": "1:20000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:20000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+off.rule[3] = iofprint.north_lines.sprint from iof-print key north_lines severity hint enabled true map_kinds = ["sprint"] print_scales = [] values { spacing_metres = 120.0 } source "ISSprOM" "4.6, symbol 601 (30 mm at 1:4000)" note None
+off.rule[4] = iofprint.north_lines.schoolyard from iof-print key north_lines severity hint enabled true map_kinds = ["schoolyard"] print_scales = [] values { spacing_metres = 37.5 } source "fmp" "ADR 0027" note Some({"de": "Arbeitswert des Projektinhabers (37,5 mm bei 1:1000), nicht am IOF-Schulsymbolsatz geprüft.", "en": "Working value from the project owner (37.5 mm at 1:1000), not checked against the IOF school symbol set."})
+off.rule[5] = iofprint.north_lines.forest from iof-print key north_lines severity hint enabled true map_kinds = ["forest"] print_scales = [] values { spacing_metres = 300.0 } source "ISOM" "3.6, symbol 601 (20 mm at 1:15000)" note None
+off.rule[6] = iofprint.contour.sprint from iof-print key contour_interval severity hint enabled true map_kinds = ["sprint"] print_scales = [] values { proposed_metres = 2.0 } source "ISSprOM" "3.2 (2 m or 2.5 m)" note None
+off.rule[7] = iofprint.contour.forest from iof-print key contour_interval severity hint enabled true map_kinds = ["forest"] print_scales = [] values { proposed_metres = 5.0 } source "ISOM" "2.10 (5 m, 2.5 m in flat terrain)" note None
+off.rule[8] = iofprint.course.start_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { start_side_mm = 7.0 } source "ISSprOM" "4.7, symbol 701 Start" note None
+off.rule[9] = iofprint.course.number_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { number_height_mm = 4.0 } source "ISSprOM" "4.7, symbol 704 Control number" note None
+off.rule[10] = iofprint.course.line_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { line_width_mm = 0.35 } source "ISSprOM" "4.7, symbol 705 Course line" note None
+off.rule[11] = iofprint.course.finish_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { finish_inner_mm = 5.0, finish_outer_mm = 7.0 } source "ISSprOM" "4.7, symbol 706 Finish" note None
+off.rule[12] = iofprint.course.marked_route_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISSprOM" "4.7, symbol 707 Marked route" note None
+off.rule[13] = iofprint.course.out_of_bounds_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_line_mm = 1.0 } source "ISSprOM" "4.7, symbol 708 Out-of-bounds boundary" note None
+off.rule[14] = iofprint.course.crossing_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISSprOM" "4.7, symbol 710.1 Crossing point (3.0 mm outside measure)" note None
+off.rule[15] = iofprint.course.out_of_bounds_area_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISSprOM" "4.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; changed from 0.8 mm and 0.25 mm on 2022-01-02); Purple Pen 201417f OOBCourseObj agrees" note None
+off.rule[16] = iofprint.course.first_aid_refreshment_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "fmp" "ADR 0034 (ISSprOM 2019-2 has no symbols 712 and 713; the ISOM 2017-2 section 3.7 sizes on paper)" note Some({"de": "Annahme: ISSprOM 2019-2 kennt weder Erste Hilfe noch Getränkeposten; die Größen auf dem Papier kommen aus ISOM 2017-2 §3.7.", "en": "Assumption: ISSprOM 2019-2 has no first aid or refreshment symbol; the sizes on paper come from ISOM 2017-2 section 3.7."})
+off.rule[17] = iofprint.course.schoolyard from iof-print key course_symbol severity warning enabled true map_kinds = ["schoolyard"] print_scales = [] values { circle_diameter_mm = 6.0, crossing_point_mm = 3.0, finish_inner_mm = 5.0, finish_outer_mm = 7.0, first_aid_bar_mm = 1.33, first_aid_mm = 4.0, line_width_mm = 0.35, marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5, number_height_mm = 4.0, out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2, out_of_bounds_line_mm = 1.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5, start_side_mm = 7.0 } source "fmp" "ADR 0031 (the ISSprOM 2019-2 values of section 4.7, symbols 701 to 710.1, assumed at 1:1000)" note Some({"de": "Annahme: Schulhofkarten übernehmen die Sprintwerte aus ISSprOM 2019-2 §4.7 bei 1:1000. Der IOF-Schulsymbolsatz ist dafür nicht geprüft.", "en": "Assumption: schoolyard maps take the sprint values of ISSprOM 2019-2 section 4.7 at 1:1000. Not checked against the IOF school symbol set."})
+off.rule[18] = iofprint.course.start_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { start_side_mm = 6.0 } source "ISOM" "3.7, symbol 701 Start" note None
+off.rule[19] = iofprint.course.control_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { circle_diameter_mm = 5.0 } source "ISOM" "3.7, symbol 703 Control point" note None
+off.rule[20] = iofprint.course.number_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { number_height_mm = 4.0 } source "ISOM" "3.7, symbol 704 Control number" note None
+off.rule[21] = iofprint.course.line_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { line_width_mm = 0.35 } source "ISOM" "3.7, symbol 705 Course line" note None
+off.rule[22] = iofprint.course.finish_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { finish_inner_mm = 4.0, finish_outer_mm = 6.0 } source "ISOM" "3.7, symbol 706 Finish" note None
+off.rule[23] = iofprint.course.marked_route_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISOM" "3.7, symbol 707 Marked route" note None
+off.rule[24] = iofprint.course.out_of_bounds_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_line_mm = 0.7 } source "ISOM" "3.7, symbol 708 Out-of-bounds boundary" note None
+off.rule[25] = iofprint.course.crossing_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISOM" "3.7, symbol 710 Crossing point (drawn 3.0 mm long; the lines follow the length of the crossing)" note None
+off.rule[26] = iofprint.course.out_of_bounds_area_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISOM" "3.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; ISOM 2000 had vertical stripes); Purple Pen 201417f OOBCourseObj agrees" note None
+off.rule[27] = iofprint.course.first_aid_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0 } source "ISOM" "3.7, symbol 712 First aid post (4.0 mm, bars 1.33 mm)" note None
+off.rule[28] = iofprint.course.refreshment_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "ISOM" "3.7, symbol 713 Refreshment point (3.5 mm wide and high outside measure, 0.4 mm line)" note None
+off.rule[29] = iofprint.description.cell from iof-print key description_box severity hint enabled true map_kinds = [] print_scales = [] values { cell_mm = 6.0 } source "IOF-CD" "Control description sheet format (square boxes, 5 mm to 7 mm)" note Some({"de": "6 mm ist die Mitte des Bereichs, den die Norm erlaubt; eine Wahl von freemapper-print.", "en": "6 mm is the middle of the range the standard allows; a choice of freemapper-print."})
+off.rule[30] = iofprint.colour.purple from iof-print key course_colour severity warning enabled true map_kinds = [] print_scales = [] values { black_percent = 0, cyan_percent = 35, magenta_percent = 85, yellow_percent = 0 } source "IOF-PCD" "6. Colour order (upper and lower purple for course overprint)" note None
+off.rule[31] = iofprint.placement.weights from iof-print key placement_weights severity hint enabled true map_kinds = [] print_scales = [] values { black_factor = 10.0, blue_factor = 4.0, brown_factor = 4.0, other_factor = 1.0 } source "fmp" "ADR 0031" note Some({"de": "Eigene Wahl: Eine Nummer über schwarzen Kartendetails stört am meisten, über braunen und blauen weniger, über den übrigen Farben am wenigsten.", "en": "Our own choice: a number over black map detail hurts legibility most, over brown and blue less, over the other colours least."})
+off.rule[32] = iofprint.number.gap from iof-print key number_gap severity warning enabled true map_kinds = [] print_scales = [] values { max_gap_mm = 5.0, min_gap_mm = 0.5 } source "fmp" "ADR 0038" note Some({"de": "Entscheidung des Nutzers vom 2026-11-09, gemeinsam mit freemapper-courseplan (dessen ADR 0032): Zwischen Postenkreis und Nummer liegen mindestens 0,5 und höchstens 5 mm.", "en": "User decision 2026-11-09, shared with freemapper-courseplan ADR 0032: at least 0.5 and at most 5 mm between control circle and number."})
+off.rule[33] = testoff.course.control_sprint from test-off key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { circle_diameter_mm = 5.5 } source "REG" "§ 6" note None
+off.switched_off[0] = iofprint.course.control_sprint from iof-print by test-off
+off.source.iof-print.IOF-CD = "International Specification for Control Descriptions 2024" url None
+off.source.iof-print.IOF-PCD = "IOF Map Specifications: Printing and Colour Definitions, Revision 4 (September 2024)" url None
+off.source.iof-print.IOF-SCHOOL = "IOF school symbol set 2019, as cited in ADR 0018" url None
+off.source.iof-print.ISOM = "ISOM 2017-2, International Specification for Orienteering Maps (errata up to February 2022)" url None
+off.source.iof-print.ISSprOM = "ISSprOM 2019-2, International Specification for Sprint Orienteering Maps (updated version, January 2022)" url None
+off.source.iof-print.fmp = "freemapper-print decisions (docs/adr)" url Some("https://github.com/HenryJobst/freemapper-print/tree/main/docs/adr")
+off.source.test-off.REG = "Regional print rules" url None
+off.sprint.scale.3000 = size_factor 1.3333333333333333 standard true course_factor 1.3333333333333333 is_standard true
+off.sprint.scale.4000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+off.sprint.scale.5000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+off.sprint.scale_table = [(3000, 1.3333333333333333), (4000, 1.0), (5000, 1.0)]
+off.sprint.scale.12345 = None course_factor 1.0 is_standard false
+off.sprint.north_line_spacing_m = 120.0
+off.sprint.proposed_contour_interval_m = Some(2.0)
+off.sprint.description_cell_mm = 6.0
+off.sprint.course.circle_diameter_mm = 5.5
+off.sprint.course.line_width_mm = 0.35
+off.sprint.course.start_side_mm = 7.0
+off.sprint.course.finish_inner_mm = 5.0
+off.sprint.course.finish_outer_mm = 7.0
+off.sprint.course.number_height_mm = 4.0
+off.sprint.course.marked_route_dash_mm = 2.0
+off.sprint.course.marked_route_gap_mm = 0.5
+off.sprint.course.out_of_bounds_line_mm = 1.0
+off.sprint.course.crossing_point_mm = 3.0
+off.sprint.course.out_of_bounds_hatch_angle_degrees = 45.0
+off.sprint.course.out_of_bounds_hatch_spacing_mm = 1.2
+off.sprint.course.out_of_bounds_hatch_line_mm = 0.2
+off.sprint.course.first_aid_mm = 4.0
+off.sprint.course.first_aid_bar_mm = 1.33
+off.sprint.course.refreshment_mm = 3.5
+off.sprint.course.refreshment_line_mm = 0.4
+off.sprint.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+off.schoolyard.scale.1000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+off.schoolyard.scale_table = [(1000, 1.0)]
+off.schoolyard.scale.12345 = None course_factor 1.0 is_standard false
+off.schoolyard.north_line_spacing_m = 37.5
+off.schoolyard.proposed_contour_interval_m = None
+off.schoolyard.description_cell_mm = 6.0
+off.schoolyard.course.circle_diameter_mm = 6.0
+off.schoolyard.course.line_width_mm = 0.35
+off.schoolyard.course.start_side_mm = 7.0
+off.schoolyard.course.finish_inner_mm = 5.0
+off.schoolyard.course.finish_outer_mm = 7.0
+off.schoolyard.course.number_height_mm = 4.0
+off.schoolyard.course.marked_route_dash_mm = 2.0
+off.schoolyard.course.marked_route_gap_mm = 0.5
+off.schoolyard.course.out_of_bounds_line_mm = 1.0
+off.schoolyard.course.crossing_point_mm = 3.0
+off.schoolyard.course.out_of_bounds_hatch_angle_degrees = 45.0
+off.schoolyard.course.out_of_bounds_hatch_spacing_mm = 1.2
+off.schoolyard.course.out_of_bounds_hatch_line_mm = 0.2
+off.schoolyard.course.first_aid_mm = 4.0
+off.schoolyard.course.first_aid_bar_mm = 1.33
+off.schoolyard.course.refreshment_mm = 3.5
+off.schoolyard.course.refreshment_line_mm = 0.4
+off.schoolyard.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+off.forest.scale.5000 = size_factor 3.0 standard true course_factor 3.0 is_standard true
+off.forest.scale.7500 = size_factor 2.0 standard true course_factor 2.0 is_standard true
+off.forest.scale.10000 = size_factor 1.5 standard true course_factor 1.5 is_standard true
+off.forest.scale.15000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+off.forest.scale.20000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+off.forest.scale_table = [(5000, 3.0), (7500, 2.0), (10000, 1.5), (15000, 1.0), (20000, 1.0)]
+off.forest.scale.12345 = None course_factor 1.0 is_standard false
+off.forest.north_line_spacing_m = 300.0
+off.forest.proposed_contour_interval_m = Some(5.0)
+off.forest.description_cell_mm = 6.0
+off.forest.course.circle_diameter_mm = 5.0
+off.forest.course.line_width_mm = 0.35
+off.forest.course.start_side_mm = 6.0
+off.forest.course.finish_inner_mm = 4.0
+off.forest.course.finish_outer_mm = 6.0
+off.forest.course.number_height_mm = 4.0
+off.forest.course.marked_route_dash_mm = 2.0
+off.forest.course.marked_route_gap_mm = 0.5
+off.forest.course.out_of_bounds_line_mm = 0.7
+off.forest.course.crossing_point_mm = 3.0
+off.forest.course.out_of_bounds_hatch_angle_degrees = 45.0
+off.forest.course.out_of_bounds_hatch_spacing_mm = 1.2
+off.forest.course.out_of_bounds_hatch_line_mm = 0.2
+off.forest.course.first_aid_mm = 4.0
+off.forest.course.first_aid_bar_mm = 1.33
+off.forest.course.refreshment_mm = 3.5
+off.forest.course.refreshment_line_mm = 0.4
+off.forest.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+off.purple_cmyk = [0.35, 0.85, 0.0, 0.0]
+off.placement_weights = black 10.0 brown 4.0 blue 4.0 other 1.0
+off.number_gap = Some((0.5, 5.0))
+off.number_gap_allowed = Some((0.5, 5.0))
+replace_off.base = "iof-print"
+replace_off.overlays = ["test-replace", "test-off"]
+replace_off.rule[0] = iofprint.scale.sprint from iof-print key scale_table severity error enabled true map_kinds = ["sprint"] print_scales = [] values { rows = [{ scale = 3000, size_factor = 1.3333333333333333 }, { scale = 4000, size_factor = 1.0 }, { scale = 5000, size_factor = 1.0, standard = false }] } source "ISSprOM" "3.1 (base scale 1:4000, 1:3000 for the youngest age groups), 4.7 (133 % at 1:3000)" note Some({"de": "1:5000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:5000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+replace_off.rule[1] = iofprint.scale.schoolyard from iof-print key scale_table severity error enabled true map_kinds = ["schoolyard"] print_scales = [] values { rows = [{ scale = 1000, size_factor = 1.0 }] } source "IOF-SCHOOL" "base scale 1:1000" note None
+replace_off.rule[2] = iofprint.scale.forest from iof-print key scale_table severity error enabled true map_kinds = ["forest"] print_scales = [] values { rows = [{ scale = 5000, size_factor = 3.0 }, { scale = 7500, size_factor = 2.0 }, { scale = 10000, size_factor = 1.5 }, { scale = 15000, size_factor = 1.0 }, { scale = 20000, size_factor = 1.0, standard = false }] } source "ISOM" "2.9.1 and 3.7 (base scale 1:15000; 150 % at 1:10000, 300 % at 1:5000, so 200 % at 1:7500)" note Some({"de": "1:20000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:20000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+replace_off.rule[3] = iofprint.north_lines.sprint from test-replace key north_lines severity hint enabled true map_kinds = ["sprint"] print_scales = [] values { spacing_metres = 100.0 } source "REG" "§ 4" note None
+replace_off.rule[4] = iofprint.north_lines.schoolyard from iof-print key north_lines severity hint enabled true map_kinds = ["schoolyard"] print_scales = [] values { spacing_metres = 37.5 } source "fmp" "ADR 0027" note Some({"de": "Arbeitswert des Projektinhabers (37,5 mm bei 1:1000), nicht am IOF-Schulsymbolsatz geprüft.", "en": "Working value from the project owner (37.5 mm at 1:1000), not checked against the IOF school symbol set."})
+replace_off.rule[5] = iofprint.north_lines.forest from iof-print key north_lines severity hint enabled true map_kinds = ["forest"] print_scales = [] values { spacing_metres = 300.0 } source "ISOM" "3.6, symbol 601 (20 mm at 1:15000)" note None
+replace_off.rule[6] = iofprint.contour.sprint from iof-print key contour_interval severity hint enabled true map_kinds = ["sprint"] print_scales = [] values { proposed_metres = 2.0 } source "ISSprOM" "3.2 (2 m or 2.5 m)" note None
+replace_off.rule[7] = iofprint.contour.forest from iof-print key contour_interval severity hint enabled true map_kinds = ["forest"] print_scales = [] values { proposed_metres = 5.0 } source "ISOM" "2.10 (5 m, 2.5 m in flat terrain)" note None
+replace_off.rule[8] = iofprint.course.start_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { start_side_mm = 7.0 } source "ISSprOM" "4.7, symbol 701 Start" note None
+replace_off.rule[9] = iofprint.course.number_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { number_height_mm = 4.0 } source "ISSprOM" "4.7, symbol 704 Control number" note None
+replace_off.rule[10] = iofprint.course.line_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { line_width_mm = 0.35 } source "ISSprOM" "4.7, symbol 705 Course line" note None
+replace_off.rule[11] = iofprint.course.finish_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { finish_inner_mm = 5.0, finish_outer_mm = 7.0 } source "ISSprOM" "4.7, symbol 706 Finish" note None
+replace_off.rule[12] = iofprint.course.marked_route_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISSprOM" "4.7, symbol 707 Marked route" note None
+replace_off.rule[13] = iofprint.course.out_of_bounds_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_line_mm = 1.0 } source "ISSprOM" "4.7, symbol 708 Out-of-bounds boundary" note None
+replace_off.rule[14] = iofprint.course.crossing_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISSprOM" "4.7, symbol 710.1 Crossing point (3.0 mm outside measure)" note None
+replace_off.rule[15] = iofprint.course.out_of_bounds_area_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISSprOM" "4.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; changed from 0.8 mm and 0.25 mm on 2022-01-02); Purple Pen 201417f OOBCourseObj agrees" note None
+replace_off.rule[16] = iofprint.course.first_aid_refreshment_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "fmp" "ADR 0034 (ISSprOM 2019-2 has no symbols 712 and 713; the ISOM 2017-2 section 3.7 sizes on paper)" note Some({"de": "Annahme: ISSprOM 2019-2 kennt weder Erste Hilfe noch Getränkeposten; die Größen auf dem Papier kommen aus ISOM 2017-2 §3.7.", "en": "Assumption: ISSprOM 2019-2 has no first aid or refreshment symbol; the sizes on paper come from ISOM 2017-2 section 3.7."})
+replace_off.rule[17] = iofprint.course.schoolyard from iof-print key course_symbol severity warning enabled true map_kinds = ["schoolyard"] print_scales = [] values { circle_diameter_mm = 6.0, crossing_point_mm = 3.0, finish_inner_mm = 5.0, finish_outer_mm = 7.0, first_aid_bar_mm = 1.33, first_aid_mm = 4.0, line_width_mm = 0.35, marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5, number_height_mm = 4.0, out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2, out_of_bounds_line_mm = 1.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5, start_side_mm = 7.0 } source "fmp" "ADR 0031 (the ISSprOM 2019-2 values of section 4.7, symbols 701 to 710.1, assumed at 1:1000)" note Some({"de": "Annahme: Schulhofkarten übernehmen die Sprintwerte aus ISSprOM 2019-2 §4.7 bei 1:1000. Der IOF-Schulsymbolsatz ist dafür nicht geprüft.", "en": "Assumption: schoolyard maps take the sprint values of ISSprOM 2019-2 section 4.7 at 1:1000. Not checked against the IOF school symbol set."})
+replace_off.rule[18] = iofprint.course.start_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { start_side_mm = 6.0 } source "ISOM" "3.7, symbol 701 Start" note None
+replace_off.rule[19] = iofprint.course.control_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { circle_diameter_mm = 5.0 } source "ISOM" "3.7, symbol 703 Control point" note None
+replace_off.rule[20] = iofprint.course.number_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { number_height_mm = 4.0 } source "ISOM" "3.7, symbol 704 Control number" note None
+replace_off.rule[21] = iofprint.course.line_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { line_width_mm = 0.35 } source "ISOM" "3.7, symbol 705 Course line" note None
+replace_off.rule[22] = iofprint.course.finish_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { finish_inner_mm = 4.0, finish_outer_mm = 6.0 } source "ISOM" "3.7, symbol 706 Finish" note None
+replace_off.rule[23] = iofprint.course.marked_route_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISOM" "3.7, symbol 707 Marked route" note None
+replace_off.rule[24] = iofprint.course.out_of_bounds_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_line_mm = 0.7 } source "ISOM" "3.7, symbol 708 Out-of-bounds boundary" note None
+replace_off.rule[25] = iofprint.course.crossing_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISOM" "3.7, symbol 710 Crossing point (drawn 3.0 mm long; the lines follow the length of the crossing)" note None
+replace_off.rule[26] = iofprint.course.out_of_bounds_area_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISOM" "3.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; ISOM 2000 had vertical stripes); Purple Pen 201417f OOBCourseObj agrees" note None
+replace_off.rule[27] = iofprint.course.first_aid_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0 } source "ISOM" "3.7, symbol 712 First aid post (4.0 mm, bars 1.33 mm)" note None
+replace_off.rule[28] = iofprint.course.refreshment_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "ISOM" "3.7, symbol 713 Refreshment point (3.5 mm wide and high outside measure, 0.4 mm line)" note None
+replace_off.rule[29] = iofprint.description.cell from iof-print key description_box severity hint enabled true map_kinds = [] print_scales = [] values { cell_mm = 6.0 } source "IOF-CD" "Control description sheet format (square boxes, 5 mm to 7 mm)" note Some({"de": "6 mm ist die Mitte des Bereichs, den die Norm erlaubt; eine Wahl von freemapper-print.", "en": "6 mm is the middle of the range the standard allows; a choice of freemapper-print."})
+replace_off.rule[30] = iofprint.colour.purple from iof-print key course_colour severity warning enabled true map_kinds = [] print_scales = [] values { black_percent = 0, cyan_percent = 35, magenta_percent = 85, yellow_percent = 0 } source "IOF-PCD" "6. Colour order (upper and lower purple for course overprint)" note None
+replace_off.rule[31] = iofprint.placement.weights from iof-print key placement_weights severity hint enabled true map_kinds = [] print_scales = [] values { black_factor = 10.0, blue_factor = 4.0, brown_factor = 4.0, other_factor = 1.0 } source "fmp" "ADR 0031" note Some({"de": "Eigene Wahl: Eine Nummer über schwarzen Kartendetails stört am meisten, über braunen und blauen weniger, über den übrigen Farben am wenigsten.", "en": "Our own choice: a number over black map detail hurts legibility most, over brown and blue less, over the other colours least."})
+replace_off.rule[32] = iofprint.number.gap from iof-print key number_gap severity warning enabled true map_kinds = [] print_scales = [] values { max_gap_mm = 5.0, min_gap_mm = 0.5 } source "fmp" "ADR 0038" note Some({"de": "Entscheidung des Nutzers vom 2026-11-09, gemeinsam mit freemapper-courseplan (dessen ADR 0032): Zwischen Postenkreis und Nummer liegen mindestens 0,5 und höchstens 5 mm.", "en": "User decision 2026-11-09, shared with freemapper-courseplan ADR 0032: at least 0.5 and at most 5 mm between control circle and number."})
+replace_off.rule[33] = testoff.course.control_sprint from test-off key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { circle_diameter_mm = 5.5 } source "REG" "§ 6" note None
+replace_off.switched_off[0] = iofprint.course.control_sprint from iof-print by test-off
+replace_off.source.iof-print.IOF-CD = "International Specification for Control Descriptions 2024" url None
+replace_off.source.iof-print.IOF-PCD = "IOF Map Specifications: Printing and Colour Definitions, Revision 4 (September 2024)" url None
+replace_off.source.iof-print.IOF-SCHOOL = "IOF school symbol set 2019, as cited in ADR 0018" url None
+replace_off.source.iof-print.ISOM = "ISOM 2017-2, International Specification for Orienteering Maps (errata up to February 2022)" url None
+replace_off.source.iof-print.ISSprOM = "ISSprOM 2019-2, International Specification for Sprint Orienteering Maps (updated version, January 2022)" url None
+replace_off.source.iof-print.fmp = "freemapper-print decisions (docs/adr)" url Some("https://github.com/HenryJobst/freemapper-print/tree/main/docs/adr")
+replace_off.source.test-off.REG = "Regional print rules" url None
+replace_off.source.test-replace.REG = "Regional print rules" url None
+replace_off.sprint.scale.3000 = size_factor 1.3333333333333333 standard true course_factor 1.3333333333333333 is_standard true
+replace_off.sprint.scale.4000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+replace_off.sprint.scale.5000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+replace_off.sprint.scale_table = [(3000, 1.3333333333333333), (4000, 1.0), (5000, 1.0)]
+replace_off.sprint.scale.12345 = None course_factor 1.0 is_standard false
+replace_off.sprint.north_line_spacing_m = 100.0
+replace_off.sprint.proposed_contour_interval_m = Some(2.0)
+replace_off.sprint.description_cell_mm = 6.0
+replace_off.sprint.course.circle_diameter_mm = 5.5
+replace_off.sprint.course.line_width_mm = 0.35
+replace_off.sprint.course.start_side_mm = 7.0
+replace_off.sprint.course.finish_inner_mm = 5.0
+replace_off.sprint.course.finish_outer_mm = 7.0
+replace_off.sprint.course.number_height_mm = 4.0
+replace_off.sprint.course.marked_route_dash_mm = 2.0
+replace_off.sprint.course.marked_route_gap_mm = 0.5
+replace_off.sprint.course.out_of_bounds_line_mm = 1.0
+replace_off.sprint.course.crossing_point_mm = 3.0
+replace_off.sprint.course.out_of_bounds_hatch_angle_degrees = 45.0
+replace_off.sprint.course.out_of_bounds_hatch_spacing_mm = 1.2
+replace_off.sprint.course.out_of_bounds_hatch_line_mm = 0.2
+replace_off.sprint.course.first_aid_mm = 4.0
+replace_off.sprint.course.first_aid_bar_mm = 1.33
+replace_off.sprint.course.refreshment_mm = 3.5
+replace_off.sprint.course.refreshment_line_mm = 0.4
+replace_off.sprint.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+replace_off.schoolyard.scale.1000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+replace_off.schoolyard.scale_table = [(1000, 1.0)]
+replace_off.schoolyard.scale.12345 = None course_factor 1.0 is_standard false
+replace_off.schoolyard.north_line_spacing_m = 37.5
+replace_off.schoolyard.proposed_contour_interval_m = None
+replace_off.schoolyard.description_cell_mm = 6.0
+replace_off.schoolyard.course.circle_diameter_mm = 6.0
+replace_off.schoolyard.course.line_width_mm = 0.35
+replace_off.schoolyard.course.start_side_mm = 7.0
+replace_off.schoolyard.course.finish_inner_mm = 5.0
+replace_off.schoolyard.course.finish_outer_mm = 7.0
+replace_off.schoolyard.course.number_height_mm = 4.0
+replace_off.schoolyard.course.marked_route_dash_mm = 2.0
+replace_off.schoolyard.course.marked_route_gap_mm = 0.5
+replace_off.schoolyard.course.out_of_bounds_line_mm = 1.0
+replace_off.schoolyard.course.crossing_point_mm = 3.0
+replace_off.schoolyard.course.out_of_bounds_hatch_angle_degrees = 45.0
+replace_off.schoolyard.course.out_of_bounds_hatch_spacing_mm = 1.2
+replace_off.schoolyard.course.out_of_bounds_hatch_line_mm = 0.2
+replace_off.schoolyard.course.first_aid_mm = 4.0
+replace_off.schoolyard.course.first_aid_bar_mm = 1.33
+replace_off.schoolyard.course.refreshment_mm = 3.5
+replace_off.schoolyard.course.refreshment_line_mm = 0.4
+replace_off.schoolyard.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+replace_off.forest.scale.5000 = size_factor 3.0 standard true course_factor 3.0 is_standard true
+replace_off.forest.scale.7500 = size_factor 2.0 standard true course_factor 2.0 is_standard true
+replace_off.forest.scale.10000 = size_factor 1.5 standard true course_factor 1.5 is_standard true
+replace_off.forest.scale.15000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+replace_off.forest.scale.20000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+replace_off.forest.scale_table = [(5000, 3.0), (7500, 2.0), (10000, 1.5), (15000, 1.0), (20000, 1.0)]
+replace_off.forest.scale.12345 = None course_factor 1.0 is_standard false
+replace_off.forest.north_line_spacing_m = 300.0
+replace_off.forest.proposed_contour_interval_m = Some(5.0)
+replace_off.forest.description_cell_mm = 6.0
+replace_off.forest.course.circle_diameter_mm = 5.0
+replace_off.forest.course.line_width_mm = 0.35
+replace_off.forest.course.start_side_mm = 6.0
+replace_off.forest.course.finish_inner_mm = 4.0
+replace_off.forest.course.finish_outer_mm = 6.0
+replace_off.forest.course.number_height_mm = 4.0
+replace_off.forest.course.marked_route_dash_mm = 2.0
+replace_off.forest.course.marked_route_gap_mm = 0.5
+replace_off.forest.course.out_of_bounds_line_mm = 0.7
+replace_off.forest.course.crossing_point_mm = 3.0
+replace_off.forest.course.out_of_bounds_hatch_angle_degrees = 45.0
+replace_off.forest.course.out_of_bounds_hatch_spacing_mm = 1.2
+replace_off.forest.course.out_of_bounds_hatch_line_mm = 0.2
+replace_off.forest.course.first_aid_mm = 4.0
+replace_off.forest.course.first_aid_bar_mm = 1.33
+replace_off.forest.course.refreshment_mm = 3.5
+replace_off.forest.course.refreshment_line_mm = 0.4
+replace_off.forest.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+replace_off.purple_cmyk = [0.35, 0.85, 0.0, 0.0]
+replace_off.placement_weights = black 10.0 brown 4.0 blue 4.0 other 1.0
+replace_off.number_gap = Some((0.5, 5.0))
+replace_off.number_gap_allowed = Some((0.5, 5.0))
+gaps.base = "iof-print"
+gaps.overlays = ["test-gaps"]
+gaps.rule[0] = iofprint.scale.sprint from iof-print key scale_table severity error enabled true map_kinds = ["sprint"] print_scales = [] values { rows = [{ scale = 3000, size_factor = 1.3333333333333333 }, { scale = 4000, size_factor = 1.0 }, { scale = 5000, size_factor = 1.0, standard = false }] } source "ISSprOM" "3.1 (base scale 1:4000, 1:3000 for the youngest age groups), 4.7 (133 % at 1:3000)" note Some({"de": "1:5000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:5000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+gaps.rule[1] = iofprint.scale.schoolyard from iof-print key scale_table severity error enabled true map_kinds = ["schoolyard"] print_scales = [] values { rows = [{ scale = 1000, size_factor = 1.0 }] } source "IOF-SCHOOL" "base scale 1:1000" note None
+gaps.rule[2] = iofprint.scale.forest from iof-print key scale_table severity error enabled true map_kinds = ["forest"] print_scales = [] values { rows = [{ scale = 5000, size_factor = 3.0 }, { scale = 7500, size_factor = 2.0 }, { scale = 10000, size_factor = 1.5 }, { scale = 15000, size_factor = 1.0 }, { scale = 20000, size_factor = 1.0, standard = false }] } source "ISOM" "2.9.1 and 3.7 (base scale 1:15000; 150 % at 1:10000, 300 % at 1:5000, so 200 % at 1:7500)" note Some({"de": "1:20000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:20000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+gaps.rule[3] = iofprint.north_lines.sprint from iof-print key north_lines severity hint enabled true map_kinds = ["sprint"] print_scales = [] values { spacing_metres = 120.0 } source "ISSprOM" "4.6, symbol 601 (30 mm at 1:4000)" note None
+gaps.rule[4] = iofprint.north_lines.schoolyard from iof-print key north_lines severity hint enabled true map_kinds = ["schoolyard"] print_scales = [] values { spacing_metres = 37.5 } source "fmp" "ADR 0027" note Some({"de": "Arbeitswert des Projektinhabers (37,5 mm bei 1:1000), nicht am IOF-Schulsymbolsatz geprüft.", "en": "Working value from the project owner (37.5 mm at 1:1000), not checked against the IOF school symbol set."})
+gaps.rule[5] = iofprint.north_lines.forest from iof-print key north_lines severity hint enabled true map_kinds = ["forest"] print_scales = [] values { spacing_metres = 300.0 } source "ISOM" "3.6, symbol 601 (20 mm at 1:15000)" note None
+gaps.rule[6] = iofprint.contour.sprint from iof-print key contour_interval severity hint enabled true map_kinds = ["sprint"] print_scales = [] values { proposed_metres = 2.0 } source "ISSprOM" "3.2 (2 m or 2.5 m)" note None
+gaps.rule[7] = iofprint.contour.forest from iof-print key contour_interval severity hint enabled true map_kinds = ["forest"] print_scales = [] values { proposed_metres = 5.0 } source "ISOM" "2.10 (5 m, 2.5 m in flat terrain)" note None
+gaps.rule[8] = iofprint.course.start_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { start_side_mm = 7.0 } source "ISSprOM" "4.7, symbol 701 Start" note None
+gaps.rule[9] = iofprint.course.control_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { circle_diameter_mm = 6.0 } source "ISSprOM" "4.7, symbol 703 Control point" note None
+gaps.rule[10] = iofprint.course.number_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { number_height_mm = 4.0 } source "ISSprOM" "4.7, symbol 704 Control number" note None
+gaps.rule[11] = iofprint.course.line_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { line_width_mm = 0.35 } source "ISSprOM" "4.7, symbol 705 Course line" note None
+gaps.rule[12] = iofprint.course.finish_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { finish_inner_mm = 5.0, finish_outer_mm = 7.0 } source "ISSprOM" "4.7, symbol 706 Finish" note None
+gaps.rule[13] = iofprint.course.marked_route_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISSprOM" "4.7, symbol 707 Marked route" note None
+gaps.rule[14] = iofprint.course.out_of_bounds_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_line_mm = 1.0 } source "ISSprOM" "4.7, symbol 708 Out-of-bounds boundary" note None
+gaps.rule[15] = iofprint.course.crossing_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISSprOM" "4.7, symbol 710.1 Crossing point (3.0 mm outside measure)" note None
+gaps.rule[16] = iofprint.course.out_of_bounds_area_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISSprOM" "4.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; changed from 0.8 mm and 0.25 mm on 2022-01-02); Purple Pen 201417f OOBCourseObj agrees" note None
+gaps.rule[17] = iofprint.course.first_aid_refreshment_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "fmp" "ADR 0034 (ISSprOM 2019-2 has no symbols 712 and 713; the ISOM 2017-2 section 3.7 sizes on paper)" note Some({"de": "Annahme: ISSprOM 2019-2 kennt weder Erste Hilfe noch Getränkeposten; die Größen auf dem Papier kommen aus ISOM 2017-2 §3.7.", "en": "Assumption: ISSprOM 2019-2 has no first aid or refreshment symbol; the sizes on paper come from ISOM 2017-2 section 3.7."})
+gaps.rule[18] = iofprint.course.schoolyard from iof-print key course_symbol severity warning enabled true map_kinds = ["schoolyard"] print_scales = [] values { circle_diameter_mm = 6.0, crossing_point_mm = 3.0, finish_inner_mm = 5.0, finish_outer_mm = 7.0, first_aid_bar_mm = 1.33, first_aid_mm = 4.0, line_width_mm = 0.35, marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5, number_height_mm = 4.0, out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2, out_of_bounds_line_mm = 1.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5, start_side_mm = 7.0 } source "fmp" "ADR 0031 (the ISSprOM 2019-2 values of section 4.7, symbols 701 to 710.1, assumed at 1:1000)" note Some({"de": "Annahme: Schulhofkarten übernehmen die Sprintwerte aus ISSprOM 2019-2 §4.7 bei 1:1000. Der IOF-Schulsymbolsatz ist dafür nicht geprüft.", "en": "Assumption: schoolyard maps take the sprint values of ISSprOM 2019-2 section 4.7 at 1:1000. Not checked against the IOF school symbol set."})
+gaps.rule[19] = iofprint.course.start_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { start_side_mm = 6.0 } source "ISOM" "3.7, symbol 701 Start" note None
+gaps.rule[20] = iofprint.course.control_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { circle_diameter_mm = 5.0 } source "ISOM" "3.7, symbol 703 Control point" note None
+gaps.rule[21] = iofprint.course.number_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { number_height_mm = 4.0 } source "ISOM" "3.7, symbol 704 Control number" note None
+gaps.rule[22] = iofprint.course.line_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { line_width_mm = 0.35 } source "ISOM" "3.7, symbol 705 Course line" note None
+gaps.rule[23] = iofprint.course.finish_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { finish_inner_mm = 4.0, finish_outer_mm = 6.0 } source "ISOM" "3.7, symbol 706 Finish" note None
+gaps.rule[24] = iofprint.course.marked_route_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISOM" "3.7, symbol 707 Marked route" note None
+gaps.rule[25] = iofprint.course.out_of_bounds_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_line_mm = 0.7 } source "ISOM" "3.7, symbol 708 Out-of-bounds boundary" note None
+gaps.rule[26] = iofprint.course.crossing_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISOM" "3.7, symbol 710 Crossing point (drawn 3.0 mm long; the lines follow the length of the crossing)" note None
+gaps.rule[27] = iofprint.course.out_of_bounds_area_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISOM" "3.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; ISOM 2000 had vertical stripes); Purple Pen 201417f OOBCourseObj agrees" note None
+gaps.rule[28] = iofprint.course.first_aid_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0 } source "ISOM" "3.7, symbol 712 First aid post (4.0 mm, bars 1.33 mm)" note None
+gaps.rule[29] = iofprint.course.refreshment_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "ISOM" "3.7, symbol 713 Refreshment point (3.5 mm wide and high outside measure, 0.4 mm line)" note None
+gaps.rule[30] = iofprint.description.cell from iof-print key description_box severity hint enabled true map_kinds = [] print_scales = [] values { cell_mm = 6.0 } source "IOF-CD" "Control description sheet format (square boxes, 5 mm to 7 mm)" note Some({"de": "6 mm ist die Mitte des Bereichs, den die Norm erlaubt; eine Wahl von freemapper-print.", "en": "6 mm is the middle of the range the standard allows; a choice of freemapper-print."})
+gaps.rule[31] = iofprint.colour.purple from iof-print key course_colour severity warning enabled true map_kinds = [] print_scales = [] values { black_percent = 0, cyan_percent = 35, magenta_percent = 85, yellow_percent = 0 } source "IOF-PCD" "6. Colour order (upper and lower purple for course overprint)" note None
+gaps.rule[32] = iofprint.placement.weights from iof-print key placement_weights severity hint enabled true map_kinds = [] print_scales = [] values { black_factor = 10.0, blue_factor = 4.0, brown_factor = 4.0, other_factor = 1.0 } source "fmp" "ADR 0031" note Some({"de": "Eigene Wahl: Eine Nummer über schwarzen Kartendetails stört am meisten, über braunen und blauen weniger, über den übrigen Farben am wenigsten.", "en": "Our own choice: a number over black map detail hurts legibility most, over brown and blue less, over the other colours least."})
+gaps.rule[33] = iofprint.number.gap from iof-print key number_gap severity warning enabled true map_kinds = [] print_scales = [] values { max_gap_mm = 5.0, min_gap_mm = 0.5 } source "fmp" "ADR 0038" note Some({"de": "Entscheidung des Nutzers vom 2026-11-09, gemeinsam mit freemapper-courseplan (dessen ADR 0032): Zwischen Postenkreis und Nummer liegen mindestens 0,5 und höchstens 5 mm.", "en": "User decision 2026-11-09, shared with freemapper-courseplan ADR 0032: at least 0.5 and at most 5 mm between control circle and number."})
+gaps.rule[34] = reg.number.gap from test-gaps key number_gap severity warning enabled true map_kinds = [] print_scales = [] values { max_gap_mm = 8.0, min_gap_mm = 0.8 } source "REG" "§ 9" note None
+gaps.source.iof-print.IOF-CD = "International Specification for Control Descriptions 2024" url None
+gaps.source.iof-print.IOF-PCD = "IOF Map Specifications: Printing and Colour Definitions, Revision 4 (September 2024)" url None
+gaps.source.iof-print.IOF-SCHOOL = "IOF school symbol set 2019, as cited in ADR 0018" url None
+gaps.source.iof-print.ISOM = "ISOM 2017-2, International Specification for Orienteering Maps (errata up to February 2022)" url None
+gaps.source.iof-print.ISSprOM = "ISSprOM 2019-2, International Specification for Sprint Orienteering Maps (updated version, January 2022)" url None
+gaps.source.iof-print.fmp = "freemapper-print decisions (docs/adr)" url Some("https://github.com/HenryJobst/freemapper-print/tree/main/docs/adr")
+gaps.source.test-gaps.REG = "Regional print rules" url None
+gaps.sprint.scale.3000 = size_factor 1.3333333333333333 standard true course_factor 1.3333333333333333 is_standard true
+gaps.sprint.scale.4000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+gaps.sprint.scale.5000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+gaps.sprint.scale_table = [(3000, 1.3333333333333333), (4000, 1.0), (5000, 1.0)]
+gaps.sprint.scale.12345 = None course_factor 1.0 is_standard false
+gaps.sprint.north_line_spacing_m = 120.0
+gaps.sprint.proposed_contour_interval_m = Some(2.0)
+gaps.sprint.description_cell_mm = 6.0
+gaps.sprint.course.circle_diameter_mm = 6.0
+gaps.sprint.course.line_width_mm = 0.35
+gaps.sprint.course.start_side_mm = 7.0
+gaps.sprint.course.finish_inner_mm = 5.0
+gaps.sprint.course.finish_outer_mm = 7.0
+gaps.sprint.course.number_height_mm = 4.0
+gaps.sprint.course.marked_route_dash_mm = 2.0
+gaps.sprint.course.marked_route_gap_mm = 0.5
+gaps.sprint.course.out_of_bounds_line_mm = 1.0
+gaps.sprint.course.crossing_point_mm = 3.0
+gaps.sprint.course.out_of_bounds_hatch_angle_degrees = 45.0
+gaps.sprint.course.out_of_bounds_hatch_spacing_mm = 1.2
+gaps.sprint.course.out_of_bounds_hatch_line_mm = 0.2
+gaps.sprint.course.first_aid_mm = 4.0
+gaps.sprint.course.first_aid_bar_mm = 1.33
+gaps.sprint.course.refreshment_mm = 3.5
+gaps.sprint.course.refreshment_line_mm = 0.4
+gaps.sprint.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+gaps.schoolyard.scale.1000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+gaps.schoolyard.scale_table = [(1000, 1.0)]
+gaps.schoolyard.scale.12345 = None course_factor 1.0 is_standard false
+gaps.schoolyard.north_line_spacing_m = 37.5
+gaps.schoolyard.proposed_contour_interval_m = None
+gaps.schoolyard.description_cell_mm = 6.0
+gaps.schoolyard.course.circle_diameter_mm = 6.0
+gaps.schoolyard.course.line_width_mm = 0.35
+gaps.schoolyard.course.start_side_mm = 7.0
+gaps.schoolyard.course.finish_inner_mm = 5.0
+gaps.schoolyard.course.finish_outer_mm = 7.0
+gaps.schoolyard.course.number_height_mm = 4.0
+gaps.schoolyard.course.marked_route_dash_mm = 2.0
+gaps.schoolyard.course.marked_route_gap_mm = 0.5
+gaps.schoolyard.course.out_of_bounds_line_mm = 1.0
+gaps.schoolyard.course.crossing_point_mm = 3.0
+gaps.schoolyard.course.out_of_bounds_hatch_angle_degrees = 45.0
+gaps.schoolyard.course.out_of_bounds_hatch_spacing_mm = 1.2
+gaps.schoolyard.course.out_of_bounds_hatch_line_mm = 0.2
+gaps.schoolyard.course.first_aid_mm = 4.0
+gaps.schoolyard.course.first_aid_bar_mm = 1.33
+gaps.schoolyard.course.refreshment_mm = 3.5
+gaps.schoolyard.course.refreshment_line_mm = 0.4
+gaps.schoolyard.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+gaps.forest.scale.5000 = size_factor 3.0 standard true course_factor 3.0 is_standard true
+gaps.forest.scale.7500 = size_factor 2.0 standard true course_factor 2.0 is_standard true
+gaps.forest.scale.10000 = size_factor 1.5 standard true course_factor 1.5 is_standard true
+gaps.forest.scale.15000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+gaps.forest.scale.20000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+gaps.forest.scale_table = [(5000, 3.0), (7500, 2.0), (10000, 1.5), (15000, 1.0), (20000, 1.0)]
+gaps.forest.scale.12345 = None course_factor 1.0 is_standard false
+gaps.forest.north_line_spacing_m = 300.0
+gaps.forest.proposed_contour_interval_m = Some(5.0)
+gaps.forest.description_cell_mm = 6.0
+gaps.forest.course.circle_diameter_mm = 5.0
+gaps.forest.course.line_width_mm = 0.35
+gaps.forest.course.start_side_mm = 6.0
+gaps.forest.course.finish_inner_mm = 4.0
+gaps.forest.course.finish_outer_mm = 6.0
+gaps.forest.course.number_height_mm = 4.0
+gaps.forest.course.marked_route_dash_mm = 2.0
+gaps.forest.course.marked_route_gap_mm = 0.5
+gaps.forest.course.out_of_bounds_line_mm = 0.7
+gaps.forest.course.crossing_point_mm = 3.0
+gaps.forest.course.out_of_bounds_hatch_angle_degrees = 45.0
+gaps.forest.course.out_of_bounds_hatch_spacing_mm = 1.2
+gaps.forest.course.out_of_bounds_hatch_line_mm = 0.2
+gaps.forest.course.first_aid_mm = 4.0
+gaps.forest.course.first_aid_bar_mm = 1.33
+gaps.forest.course.refreshment_mm = 3.5
+gaps.forest.course.refreshment_line_mm = 0.4
+gaps.forest.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+gaps.purple_cmyk = [0.35, 0.85, 0.0, 0.0]
+gaps.placement_weights = black 10.0 brown 4.0 blue 4.0 other 1.0
+gaps.number_gap = Some((0.8, 5.0))
+gaps.number_gap_allowed = Some((0.8, 5.0))
+replace_at_4000.base = "iof-print"
+replace_at_4000.overlays = ["test-replace"]
+replace_at_4000.rule[0] = iofprint.scale.sprint from iof-print key scale_table severity error enabled true map_kinds = ["sprint"] print_scales = [] values { rows = [{ scale = 3000, size_factor = 1.3333333333333333 }, { scale = 4000, size_factor = 1.0 }, { scale = 5000, size_factor = 1.0, standard = false }] } source "ISSprOM" "3.1 (base scale 1:4000, 1:3000 for the youngest age groups), 4.7 (133 % at 1:3000)" note Some({"de": "1:5000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:5000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+replace_at_4000.rule[1] = iofprint.scale.schoolyard from iof-print key scale_table severity error enabled true map_kinds = ["schoolyard"] print_scales = [] values { rows = [{ scale = 1000, size_factor = 1.0 }] } source "IOF-SCHOOL" "base scale 1:1000" note None
+replace_at_4000.rule[2] = iofprint.scale.forest from iof-print key scale_table severity error enabled true map_kinds = ["forest"] print_scales = [] values { rows = [{ scale = 5000, size_factor = 3.0 }, { scale = 7500, size_factor = 2.0 }, { scale = 10000, size_factor = 1.5 }, { scale = 15000, size_factor = 1.0 }, { scale = 20000, size_factor = 1.0, standard = false }] } source "ISOM" "2.9.1 and 3.7 (base scale 1:15000; 150 % at 1:10000, 300 % at 1:5000, so 200 % at 1:7500)" note Some({"de": "1:20000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", "en": "1:20000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)."})
+replace_at_4000.rule[3] = iofprint.north_lines.sprint from test-replace key north_lines severity hint enabled true map_kinds = ["sprint"] print_scales = [4000] values { spacing_metres = 100.0 } source "REG" "§ 4" note None
+replace_at_4000.rule[4] = iofprint.north_lines.schoolyard from iof-print key north_lines severity hint enabled true map_kinds = ["schoolyard"] print_scales = [] values { spacing_metres = 37.5 } source "fmp" "ADR 0027" note Some({"de": "Arbeitswert des Projektinhabers (37,5 mm bei 1:1000), nicht am IOF-Schulsymbolsatz geprüft.", "en": "Working value from the project owner (37.5 mm at 1:1000), not checked against the IOF school symbol set."})
+replace_at_4000.rule[5] = iofprint.north_lines.forest from iof-print key north_lines severity hint enabled true map_kinds = ["forest"] print_scales = [] values { spacing_metres = 300.0 } source "ISOM" "3.6, symbol 601 (20 mm at 1:15000)" note None
+replace_at_4000.rule[6] = iofprint.contour.sprint from iof-print key contour_interval severity hint enabled true map_kinds = ["sprint"] print_scales = [] values { proposed_metres = 2.0 } source "ISSprOM" "3.2 (2 m or 2.5 m)" note None
+replace_at_4000.rule[7] = iofprint.contour.forest from iof-print key contour_interval severity hint enabled true map_kinds = ["forest"] print_scales = [] values { proposed_metres = 5.0 } source "ISOM" "2.10 (5 m, 2.5 m in flat terrain)" note None
+replace_at_4000.rule[8] = iofprint.course.start_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { start_side_mm = 7.0 } source "ISSprOM" "4.7, symbol 701 Start" note None
+replace_at_4000.rule[9] = iofprint.course.control_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { circle_diameter_mm = 6.0 } source "ISSprOM" "4.7, symbol 703 Control point" note None
+replace_at_4000.rule[10] = iofprint.course.number_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { number_height_mm = 4.0 } source "ISSprOM" "4.7, symbol 704 Control number" note None
+replace_at_4000.rule[11] = iofprint.course.line_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { line_width_mm = 0.35 } source "ISSprOM" "4.7, symbol 705 Course line" note None
+replace_at_4000.rule[12] = iofprint.course.finish_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { finish_inner_mm = 5.0, finish_outer_mm = 7.0 } source "ISSprOM" "4.7, symbol 706 Finish" note None
+replace_at_4000.rule[13] = iofprint.course.marked_route_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISSprOM" "4.7, symbol 707 Marked route" note None
+replace_at_4000.rule[14] = iofprint.course.out_of_bounds_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_line_mm = 1.0 } source "ISSprOM" "4.7, symbol 708 Out-of-bounds boundary" note None
+replace_at_4000.rule[15] = iofprint.course.crossing_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISSprOM" "4.7, symbol 710.1 Crossing point (3.0 mm outside measure)" note None
+replace_at_4000.rule[16] = iofprint.course.out_of_bounds_area_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISSprOM" "4.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; changed from 0.8 mm and 0.25 mm on 2022-01-02); Purple Pen 201417f OOBCourseObj agrees" note None
+replace_at_4000.rule[17] = iofprint.course.first_aid_refreshment_sprint from iof-print key course_symbol severity warning enabled true map_kinds = ["sprint"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "fmp" "ADR 0034 (ISSprOM 2019-2 has no symbols 712 and 713; the ISOM 2017-2 section 3.7 sizes on paper)" note Some({"de": "Annahme: ISSprOM 2019-2 kennt weder Erste Hilfe noch Getränkeposten; die Größen auf dem Papier kommen aus ISOM 2017-2 §3.7.", "en": "Assumption: ISSprOM 2019-2 has no first aid or refreshment symbol; the sizes on paper come from ISOM 2017-2 section 3.7."})
+replace_at_4000.rule[18] = iofprint.course.schoolyard from iof-print key course_symbol severity warning enabled true map_kinds = ["schoolyard"] print_scales = [] values { circle_diameter_mm = 6.0, crossing_point_mm = 3.0, finish_inner_mm = 5.0, finish_outer_mm = 7.0, first_aid_bar_mm = 1.33, first_aid_mm = 4.0, line_width_mm = 0.35, marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5, number_height_mm = 4.0, out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2, out_of_bounds_line_mm = 1.0, refreshment_line_mm = 0.4, refreshment_mm = 3.5, start_side_mm = 7.0 } source "fmp" "ADR 0031 (the ISSprOM 2019-2 values of section 4.7, symbols 701 to 710.1, assumed at 1:1000)" note Some({"de": "Annahme: Schulhofkarten übernehmen die Sprintwerte aus ISSprOM 2019-2 §4.7 bei 1:1000. Der IOF-Schulsymbolsatz ist dafür nicht geprüft.", "en": "Assumption: schoolyard maps take the sprint values of ISSprOM 2019-2 section 4.7 at 1:1000. Not checked against the IOF school symbol set."})
+replace_at_4000.rule[19] = iofprint.course.start_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { start_side_mm = 6.0 } source "ISOM" "3.7, symbol 701 Start" note None
+replace_at_4000.rule[20] = iofprint.course.control_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { circle_diameter_mm = 5.0 } source "ISOM" "3.7, symbol 703 Control point" note None
+replace_at_4000.rule[21] = iofprint.course.number_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { number_height_mm = 4.0 } source "ISOM" "3.7, symbol 704 Control number" note None
+replace_at_4000.rule[22] = iofprint.course.line_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { line_width_mm = 0.35 } source "ISOM" "3.7, symbol 705 Course line" note None
+replace_at_4000.rule[23] = iofprint.course.finish_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { finish_inner_mm = 4.0, finish_outer_mm = 6.0 } source "ISOM" "3.7, symbol 706 Finish" note None
+replace_at_4000.rule[24] = iofprint.course.marked_route_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 } source "ISOM" "3.7, symbol 707 Marked route" note None
+replace_at_4000.rule[25] = iofprint.course.out_of_bounds_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_line_mm = 0.7 } source "ISOM" "3.7, symbol 708 Out-of-bounds boundary" note None
+replace_at_4000.rule[26] = iofprint.course.crossing_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { crossing_point_mm = 3.0 } source "ISOM" "3.7, symbol 710 Crossing point (drawn 3.0 mm long; the lines follow the length of the crossing)" note None
+replace_at_4000.rule[27] = iofprint.course.out_of_bounds_area_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_line_mm = 0.2, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2 } source "ISOM" "3.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; ISOM 2000 had vertical stripes); Purple Pen 201417f OOBCourseObj agrees" note None
+replace_at_4000.rule[28] = iofprint.course.first_aid_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { first_aid_bar_mm = 1.33, first_aid_mm = 4.0 } source "ISOM" "3.7, symbol 712 First aid post (4.0 mm, bars 1.33 mm)" note None
+replace_at_4000.rule[29] = iofprint.course.refreshment_forest from iof-print key course_symbol severity warning enabled true map_kinds = ["forest"] print_scales = [] values { refreshment_line_mm = 0.4, refreshment_mm = 3.5 } source "ISOM" "3.7, symbol 713 Refreshment point (3.5 mm wide and high outside measure, 0.4 mm line)" note None
+replace_at_4000.rule[30] = iofprint.description.cell from iof-print key description_box severity hint enabled true map_kinds = [] print_scales = [] values { cell_mm = 6.0 } source "IOF-CD" "Control description sheet format (square boxes, 5 mm to 7 mm)" note Some({"de": "6 mm ist die Mitte des Bereichs, den die Norm erlaubt; eine Wahl von freemapper-print.", "en": "6 mm is the middle of the range the standard allows; a choice of freemapper-print."})
+replace_at_4000.rule[31] = iofprint.colour.purple from iof-print key course_colour severity warning enabled true map_kinds = [] print_scales = [] values { black_percent = 0, cyan_percent = 35, magenta_percent = 85, yellow_percent = 0 } source "IOF-PCD" "6. Colour order (upper and lower purple for course overprint)" note None
+replace_at_4000.rule[32] = iofprint.placement.weights from iof-print key placement_weights severity hint enabled true map_kinds = [] print_scales = [] values { black_factor = 10.0, blue_factor = 4.0, brown_factor = 4.0, other_factor = 1.0 } source "fmp" "ADR 0031" note Some({"de": "Eigene Wahl: Eine Nummer über schwarzen Kartendetails stört am meisten, über braunen und blauen weniger, über den übrigen Farben am wenigsten.", "en": "Our own choice: a number over black map detail hurts legibility most, over brown and blue less, over the other colours least."})
+replace_at_4000.rule[33] = iofprint.number.gap from iof-print key number_gap severity warning enabled true map_kinds = [] print_scales = [] values { max_gap_mm = 5.0, min_gap_mm = 0.5 } source "fmp" "ADR 0038" note Some({"de": "Entscheidung des Nutzers vom 2026-11-09, gemeinsam mit freemapper-courseplan (dessen ADR 0032): Zwischen Postenkreis und Nummer liegen mindestens 0,5 und höchstens 5 mm.", "en": "User decision 2026-11-09, shared with freemapper-courseplan ADR 0032: at least 0.5 and at most 5 mm between control circle and number."})
+replace_at_4000.source.iof-print.IOF-CD = "International Specification for Control Descriptions 2024" url None
+replace_at_4000.source.iof-print.IOF-PCD = "IOF Map Specifications: Printing and Colour Definitions, Revision 4 (September 2024)" url None
+replace_at_4000.source.iof-print.IOF-SCHOOL = "IOF school symbol set 2019, as cited in ADR 0018" url None
+replace_at_4000.source.iof-print.ISOM = "ISOM 2017-2, International Specification for Orienteering Maps (errata up to February 2022)" url None
+replace_at_4000.source.iof-print.ISSprOM = "ISSprOM 2019-2, International Specification for Sprint Orienteering Maps (updated version, January 2022)" url None
+replace_at_4000.source.iof-print.fmp = "freemapper-print decisions (docs/adr)" url Some("https://github.com/HenryJobst/freemapper-print/tree/main/docs/adr")
+replace_at_4000.source.test-replace.REG = "Regional print rules" url None
+replace_at_4000.sprint.scale.3000 = size_factor 1.3333333333333333 standard true course_factor 1.3333333333333333 is_standard true
+replace_at_4000.sprint.scale.4000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+replace_at_4000.sprint.scale.5000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+replace_at_4000.sprint.scale_table = [(3000, 1.3333333333333333), (4000, 1.0), (5000, 1.0)]
+replace_at_4000.sprint.scale.12345 = None course_factor 1.0 is_standard false
+replace_at_4000.sprint.north_line_spacing_m = 100.0
+replace_at_4000.sprint.proposed_contour_interval_m = Some(2.0)
+replace_at_4000.sprint.description_cell_mm = 6.0
+replace_at_4000.sprint.course.circle_diameter_mm = 6.0
+replace_at_4000.sprint.course.line_width_mm = 0.35
+replace_at_4000.sprint.course.start_side_mm = 7.0
+replace_at_4000.sprint.course.finish_inner_mm = 5.0
+replace_at_4000.sprint.course.finish_outer_mm = 7.0
+replace_at_4000.sprint.course.number_height_mm = 4.0
+replace_at_4000.sprint.course.marked_route_dash_mm = 2.0
+replace_at_4000.sprint.course.marked_route_gap_mm = 0.5
+replace_at_4000.sprint.course.out_of_bounds_line_mm = 1.0
+replace_at_4000.sprint.course.crossing_point_mm = 3.0
+replace_at_4000.sprint.course.out_of_bounds_hatch_angle_degrees = 45.0
+replace_at_4000.sprint.course.out_of_bounds_hatch_spacing_mm = 1.2
+replace_at_4000.sprint.course.out_of_bounds_hatch_line_mm = 0.2
+replace_at_4000.sprint.course.first_aid_mm = 4.0
+replace_at_4000.sprint.course.first_aid_bar_mm = 1.33
+replace_at_4000.sprint.course.refreshment_mm = 3.5
+replace_at_4000.sprint.course.refreshment_line_mm = 0.4
+replace_at_4000.sprint.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+replace_at_4000.schoolyard.scale.1000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+replace_at_4000.schoolyard.scale_table = [(1000, 1.0)]
+replace_at_4000.schoolyard.scale.12345 = None course_factor 1.0 is_standard false
+replace_at_4000.schoolyard.north_line_spacing_m = 37.5
+replace_at_4000.schoolyard.proposed_contour_interval_m = None
+replace_at_4000.schoolyard.description_cell_mm = 6.0
+replace_at_4000.schoolyard.course.circle_diameter_mm = 6.0
+replace_at_4000.schoolyard.course.line_width_mm = 0.35
+replace_at_4000.schoolyard.course.start_side_mm = 7.0
+replace_at_4000.schoolyard.course.finish_inner_mm = 5.0
+replace_at_4000.schoolyard.course.finish_outer_mm = 7.0
+replace_at_4000.schoolyard.course.number_height_mm = 4.0
+replace_at_4000.schoolyard.course.marked_route_dash_mm = 2.0
+replace_at_4000.schoolyard.course.marked_route_gap_mm = 0.5
+replace_at_4000.schoolyard.course.out_of_bounds_line_mm = 1.0
+replace_at_4000.schoolyard.course.crossing_point_mm = 3.0
+replace_at_4000.schoolyard.course.out_of_bounds_hatch_angle_degrees = 45.0
+replace_at_4000.schoolyard.course.out_of_bounds_hatch_spacing_mm = 1.2
+replace_at_4000.schoolyard.course.out_of_bounds_hatch_line_mm = 0.2
+replace_at_4000.schoolyard.course.first_aid_mm = 4.0
+replace_at_4000.schoolyard.course.first_aid_bar_mm = 1.33
+replace_at_4000.schoolyard.course.refreshment_mm = 3.5
+replace_at_4000.schoolyard.course.refreshment_line_mm = 0.4
+replace_at_4000.schoolyard.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+replace_at_4000.forest.scale.5000 = size_factor 3.0 standard true course_factor 3.0 is_standard true
+replace_at_4000.forest.scale.7500 = size_factor 2.0 standard true course_factor 2.0 is_standard true
+replace_at_4000.forest.scale.10000 = size_factor 1.5 standard true course_factor 1.5 is_standard true
+replace_at_4000.forest.scale.15000 = size_factor 1.0 standard true course_factor 1.0 is_standard true
+replace_at_4000.forest.scale.20000 = size_factor 1.0 standard false course_factor 1.0 is_standard false
+replace_at_4000.forest.scale_table = [(5000, 3.0), (7500, 2.0), (10000, 1.5), (15000, 1.0), (20000, 1.0)]
+replace_at_4000.forest.scale.12345 = None course_factor 1.0 is_standard false
+replace_at_4000.forest.north_line_spacing_m = 300.0
+replace_at_4000.forest.proposed_contour_interval_m = Some(5.0)
+replace_at_4000.forest.description_cell_mm = 6.0
+replace_at_4000.forest.course.circle_diameter_mm = 5.0
+replace_at_4000.forest.course.line_width_mm = 0.35
+replace_at_4000.forest.course.start_side_mm = 6.0
+replace_at_4000.forest.course.finish_inner_mm = 4.0
+replace_at_4000.forest.course.finish_outer_mm = 6.0
+replace_at_4000.forest.course.number_height_mm = 4.0
+replace_at_4000.forest.course.marked_route_dash_mm = 2.0
+replace_at_4000.forest.course.marked_route_gap_mm = 0.5
+replace_at_4000.forest.course.out_of_bounds_line_mm = 0.7
+replace_at_4000.forest.course.crossing_point_mm = 3.0
+replace_at_4000.forest.course.out_of_bounds_hatch_angle_degrees = 45.0
+replace_at_4000.forest.course.out_of_bounds_hatch_spacing_mm = 1.2
+replace_at_4000.forest.course.out_of_bounds_hatch_line_mm = 0.2
+replace_at_4000.forest.course.first_aid_mm = 4.0
+replace_at_4000.forest.course.first_aid_bar_mm = 1.33
+replace_at_4000.forest.course.refreshment_mm = 3.5
+replace_at_4000.forest.course.refreshment_line_mm = 0.4
+replace_at_4000.forest.course.out_of_bounds_hatch_second_angle_degrees = Some(135.0)
+replace_at_4000.purple_cmyk = [0.35, 0.85, 0.0, 0.0]
+replace_at_4000.placement_weights = black 10.0 brown 4.0 blue 4.0 other 1.0
+replace_at_4000.number_gap = Some((0.5, 5.0))
+replace_at_4000.number_gap_allowed = Some((0.5, 5.0))

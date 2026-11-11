@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.15.0"
+version = "0.16.0"
 edition = "2024"
 license = "GPL-3.0-or-later"
 repository = "https://github.com/HenryJobst/freemapper-core"
@@ -12,6 +12,7 @@ rust-version = "1.88"
 [workspace.dependencies]
 freemapper-text = { path = "crates/freemapper-text" }
 freemapper-rules = { path = "crates/freemapper-rules" }
+freemapper-printrules = { path = "crates/freemapper-printrules" }
 freemapper-omap = { path = "crates/freemapper-omap" }
 freemapper-course = { path = "crates/freemapper-course" }
 freemapper-georef = { path = "crates/freemapper-georef" }
