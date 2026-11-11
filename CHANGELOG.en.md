@@ -5,7 +5,12 @@
 This file lists all notable changes to freemapper-core, newest first, each with the library it affects. The
 format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+
+## [0.16.0] - 2026-11-11
+
+### Added
+
+- freemapper-printrules: the print rules from freemapper-print, unchanged in behaviour (decision 0025): the profile `iof-print`, the rule set, the map kinds and the symbol size table by print scale. `scale::course_symbols(kind, print_scale)` gives the course symbol sizes and the course factor for `freemapper_render::overprint::overprint`. With the feature `test-support`, `rules::load_for_tests` and `rules::embedded_text` are public.
 
 ## [0.15.0] - 2026-11-11
 
