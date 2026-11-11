@@ -2,6 +2,10 @@
 //! update manifest, the host rule, the check record, the binary swap and the install.
 //!
 //! The crate has no network code (core ADR 0007). Apps bring the network through the `UpdateSource` trait.
+//!
+//! An app's tests against a local stub server still put `https://github.com/...` asset URLs into their
+//! manifests, because [`parse_manifest`] checks every asset URL against the host rule; the app's stub
+//! `UpdateSource` rewrites them to the stub's address.
 
 mod atomic;
 pub mod check;
@@ -22,7 +26,7 @@ pub use install::{MAX_EXE_BYTES, install};
 pub use manifest::{Asset, Manifest, parse_manifest};
 pub use platform::current_platform;
 pub use record::{CheckRecord, RecordResult, due, load_record, save_record};
-pub use settings::{Mode, load_mode, save_mode};
+pub use settings::{Mode, ParseModeError, load_mode, save_mode};
 pub use signature::verify;
 pub use source::{ALLOWED_HOSTS, App, UpdateSource, check_url, manifest_url};
 pub use swap::{

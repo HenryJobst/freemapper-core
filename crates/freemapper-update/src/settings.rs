@@ -1,7 +1,9 @@
 //! The update mode: `off`, `notify` or `install`, from an environment value or `settings.toml`.
 
+use std::fmt;
 use std::io;
 use std::path::Path;
+use std::str::FromStr;
 
 use crate::atomic::write_atomic;
 
@@ -18,16 +20,26 @@ pub enum Mode {
     Install,
 }
 
-impl Mode {
-    fn parse(text: &str) -> Option<Mode> {
+/// A text that is none of `off`, `notify`, `install`.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("unknown update mode {0:?}, expected off, notify or install")]
+pub struct ParseModeError(pub String);
+
+/// `off`, `notify` or `install`, ignoring case and surrounding white space.
+impl FromStr for Mode {
+    type Err = ParseModeError;
+
+    fn from_str(text: &str) -> Result<Mode, ParseModeError> {
         match text.trim().to_ascii_lowercase().as_str() {
-            "off" => Some(Mode::Off),
-            "notify" => Some(Mode::Notify),
-            "install" => Some(Mode::Install),
-            _ => None,
+            "off" => Ok(Mode::Off),
+            "notify" => Ok(Mode::Notify),
+            "install" => Ok(Mode::Install),
+            _ => Err(ParseModeError(text.to_string())),
         }
     }
+}
 
+impl Mode {
     fn as_str(self) -> &'static str {
         match self {
             Mode::Off => "off",
@@ -37,10 +49,17 @@ impl Mode {
     }
 }
 
+/// `off`, `notify` or `install`, as stored in `settings.toml`.
+impl fmt::Display for Mode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 /// The mode: a valid `env` value wins, then `[update] mode` in `<config_dir>/settings.toml`, else
 /// [`Mode::Notify`]. Unknown values and an unreadable file also give `Notify`.
 pub fn load_mode(config_dir: &Path, env: Option<&str>) -> Mode {
-    if let Some(mode) = env.and_then(Mode::parse) {
+    if let Some(mode) = env.and_then(|text| text.parse().ok()) {
         return mode;
     }
     std::fs::read_to_string(config_dir.join(FILE))
@@ -51,8 +70,9 @@ pub fn load_mode(config_dir: &Path, env: Option<&str>) -> Mode {
                 .get("update")?
                 .as_table()?
                 .get("mode")?
-                .as_str()
-                .and_then(Mode::parse)
+                .as_str()?
+                .parse()
+                .ok()
         })
         .unwrap_or(Mode::Notify)
 }
@@ -95,6 +115,21 @@ mod tests {
         assert_eq!(load_mode(dir.path(), Some("OFF")), Mode::Off);
         assert_eq!(load_mode(dir.path(), Some("Notify")), Mode::Notify);
         assert_eq!(load_mode(dir.path(), Some("bogus")), Mode::Install);
+    }
+
+    #[test]
+    fn mode_parses_and_prints() {
+        for (text, mode) in [
+            ("off", Mode::Off),
+            ("notify", Mode::Notify),
+            ("install", Mode::Install),
+        ] {
+            assert_eq!(text.parse::<Mode>(), Ok(mode));
+            assert_eq!(mode.to_string(), text);
+        }
+        assert_eq!(" Install ".parse::<Mode>(), Ok(Mode::Install));
+        let error = "sometimes".parse::<Mode>().unwrap_err();
+        assert!(error.to_string().contains("sometimes"), "{error}");
     }
 
     #[test]

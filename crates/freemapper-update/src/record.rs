@@ -11,9 +11,9 @@ use crate::version::Version;
 /// A check is due again after this many seconds.
 const INTERVAL_SECS: i64 = 24 * 60 * 60;
 
-/// The outcome of the last attempt.
+/// The outcome of the last attempt, stored as `"result": {"outcome": "available", …}`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "result", rename_all = "snake_case")]
+#[serde(tag = "outcome", rename_all = "snake_case")]
 pub enum RecordResult {
     Current,
     Available {
@@ -50,7 +50,7 @@ pub fn save_record(path: &Path, record: &CheckRecord) -> io::Result<()> {
 /// Whether a check is due at `now` (Unix seconds): no record, older than 24 h, or from the future
 /// (the clock went backwards).
 pub fn due(record: Option<&CheckRecord>, now: i64) -> bool {
-    record.is_none_or(|r| r.at > now || now - r.at > INTERVAL_SECS)
+    record.is_none_or(|r| r.at > now || now.saturating_sub(r.at) > INTERVAL_SECS)
 }
 
 #[cfg(test)]
@@ -111,6 +111,35 @@ mod tests {
         assert_eq!(loaded, failed);
         assert!(!due(Some(&loaded), 5_000 + 3600));
         assert!(due(Some(&loaded), 5_000 + 24 * 3600 + 1));
+    }
+
+    #[test]
+    fn record_stores_the_outcome_tag() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("update-check.json");
+        save_record(&path, &record(1, RecordResult::Current)).unwrap();
+        let stored: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        assert_eq!(stored["result"]["outcome"], "current");
+        // The older layout with the tag `result` is not read; it only makes the next check due.
+        std::fs::write(
+            &path,
+            r#"{"at": 1, "by": "0.10.0", "result": {"result": "current"}}"#,
+        )
+        .unwrap();
+        assert_eq!(load_record(&path), None);
+    }
+
+    #[test]
+    fn due_does_not_overflow() {
+        assert!(due(
+            Some(&record(i64::MIN, RecordResult::Current)),
+            i64::MAX
+        ));
+        assert!(!due(
+            Some(&record(i64::MAX, RecordResult::Current)),
+            i64::MAX
+        ));
     }
 
     #[test]
