@@ -17,10 +17,12 @@ use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use tokio::sync::Notify;
 
+mod language;
 mod revision;
 #[cfg(test)]
 mod tests;
 
+pub use language::texts_language;
 pub use revision::{REVISION_HEADER, refused, revision, stale};
 
 /// What can go wrong before the server runs.

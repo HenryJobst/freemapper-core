@@ -771,3 +771,76 @@ async fn refused_is_422_with_the_sentence_as_plain_text() {
     assert_eq!(content_type, "text/plain; charset=utf-8");
     assert_eq!(body, "Ein Posten liegt außerhalb der Karte.");
 }
+
+// --- Language of the page texts (ADR 0030) ---
+
+#[test]
+fn a_fixed_language_wins() {
+    assert_eq!(texts_language(Some("de"), Some("en-US,en")), "de");
+    assert_eq!(texts_language(Some("en"), Some("de-DE,de")), "en");
+    assert_eq!(texts_language(Some("DE"), None), "de");
+    assert_eq!(texts_language(Some("de-AT"), Some("en")), "de");
+}
+
+#[test]
+fn a_fixed_language_other_than_de_or_en_is_ignored() {
+    assert_eq!(texts_language(Some("fr"), Some("de")), "de");
+    assert_eq!(texts_language(Some(""), Some("de")), "de");
+    assert_eq!(texts_language(Some("fr"), None), "en");
+}
+
+#[test]
+fn accept_language_picks_de_or_en_by_q_value() {
+    let cases = [
+        ("de-DE,de;q=0.9,en;q=0.8", "de"),
+        ("en-US,en;q=0.9,de;q=0.8", "en"),
+        ("fr-FR, de;q=0.5, en;q=0.7", "en"),
+        ("fr, en;q=0.2, de;q=0.9", "de"),
+        // Equal q: the first in the header.
+        ("fr, de;q=0.5, en;q=0.5", "de"),
+        ("en;q=0.5, de;q=0.5", "en"),
+        ("de-DE", "de"),
+        ("DE-de", "de"),
+        ("de_DE", "de"),
+        ("  de-DE ; q=0.9 , fr", "de"),
+        ("de;q=1.0", "de"),
+        ("de;Q=0.4,en;q=0.3", "de"),
+        ("nl, de-CH;q=0.3", "de"),
+        // q=0 means "not wanted".
+        ("de;q=0, en;q=0.1", "en"),
+        ("de;q=0.000", "en"),
+    ];
+    for (header, want) in cases {
+        assert_eq!(texts_language(None, Some(header)), want, "{header}");
+    }
+}
+
+#[test]
+fn accept_language_wildcard_garbage_and_empty_give_english() {
+    for header in [
+        "*",
+        "",
+        " ",
+        ",,,",
+        ";;;",
+        "!!!",
+        "fr-FR,fr;q=0.9",
+        "deu",
+        "english",
+        "de;q=abc",
+        "de;q=2",
+        "de;q=-1",
+        "de;q=NaN",
+        "de;q=",
+        "\u{e4}\u{f6}",
+    ] {
+        assert_eq!(texts_language(None, Some(header)), "en", "{header:?}");
+    }
+    assert_eq!(texts_language(None, None), "en");
+}
+
+#[test]
+fn accept_language_wildcard_does_not_hide_a_listed_language() {
+    assert_eq!(texts_language(None, Some("*, de;q=0.5")), "de");
+    assert_eq!(texts_language(None, Some("fr, *;q=0.5")), "en");
+}
