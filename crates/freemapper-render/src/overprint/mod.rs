@@ -649,3 +649,21 @@ fn special_shapes(
         _ => {}
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The shared placement cases of freemapper-course assume this width per digit and height.
+    #[test]
+    fn number_size_is_digits_times_the_shared_digit_width() {
+        for (text, digits) in [("1", 1.0), ("10", 2.0), ("100", 3.0)] {
+            let (w, h) = number_size(text, 4.0);
+            assert!(
+                (w - 0.808_374_733_853_797_1 * 4.0 * digits).abs() < 1e-9,
+                "{text}: {w}"
+            );
+            assert_eq!(h, 4.0);
+        }
+    }
+}

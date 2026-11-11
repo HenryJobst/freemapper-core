@@ -101,6 +101,10 @@ fn expand(case: &Case) -> Vec<Stop> {
     stops
 }
 
+/// The width of one digit as a multiple of the number height: the Arimo advance the renderer draws with
+/// (`freemapper_render::overprint::number_size`, checked there by a test).
+const DIGIT_WIDTH_PER_HEIGHT: f64 = 0.808_374_733_853_797_1;
+
 /// Print sizes of a map kind: circle diameter, line width, number height, base scale.
 fn sizes(kind: &str) -> (f64, f64, f64, f64) {
     match kind {
@@ -146,7 +150,7 @@ fn run(case: &Case) -> Vec<Option<Placement>> {
             let size = (!s.crossing).then(|| {
                 number += 1;
                 (
-                    0.6 * height * f64::from(digits(number)) * factor,
+                    DIGIT_WIDTH_PER_HEIGHT * height * f64::from(digits(number)) * factor,
                     height * factor,
                 )
             });
