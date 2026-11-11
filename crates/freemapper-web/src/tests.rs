@@ -678,3 +678,96 @@ async fn suite_files_refuse_a_post() {
     let reply = request(port, "POST", &path, &headers, "{}").await;
     assert_eq!(reply.status, 405);
 }
+
+// --- Revision, stale and refused (ADR 0030) ---
+
+/// freemapper-courseplan's `sync::base::fnv1a64`, copied as the cross-check.
+fn courseplan_fnv1a64(bytes: &[u8]) -> String {
+    let mut hash: u64 = 0xcbf2_9ce4_8422_2325;
+    for &b in bytes {
+        hash ^= u64::from(b);
+        hash = hash.wrapping_mul(0x0100_0000_01b3);
+    }
+    format!("{hash:016x}")
+}
+
+#[test]
+fn revision_matches_the_published_fnv1a64_values() {
+    assert_eq!(revision(b""), "cbf29ce484222325");
+    assert_eq!(revision(b"a"), "af63dc4c8601ec8c");
+    assert_eq!(revision(b"foobar"), "85944171f73967e8");
+}
+
+#[test]
+fn revision_is_courseplans_fnv1a64() {
+    let long: Vec<u8> = (0..=255u8).cycle().take(10_000).collect();
+    for bytes in [
+        &b""[..],
+        b"\0",
+        b"[event]\nname = \"x\"\n",
+        "Größe".as_bytes(),
+        &long,
+    ] {
+        let ours = revision(bytes);
+        assert_eq!(ours, courseplan_fnv1a64(bytes));
+        assert_eq!(ours.len(), 16);
+        assert!(
+            ours.chars().all(|c| matches!(c, '0'..='9' | 'a'..='f')),
+            "{ours}"
+        );
+    }
+}
+
+#[test]
+fn revision_header_is_lower_case() {
+    assert_eq!(REVISION_HEADER, "x-freemapper-revision");
+    assert!(axum::http::HeaderName::from_static(REVISION_HEADER) == "X-Freemapper-Revision");
+}
+
+async fn parts(response: Response) -> (u16, String, String) {
+    let status = response.status().as_u16();
+    let content_type = response
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
+    let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("body");
+    (
+        status,
+        content_type,
+        String::from_utf8(bytes.to_vec()).expect("utf-8"),
+    )
+}
+
+#[tokio::test]
+async fn stale_is_409_with_the_sentence_and_the_current_revision() {
+    let (status, content_type, body) =
+        parts(stale("af63dc4c8601ec8c", "The file changed meanwhile.")).await;
+    assert_eq!(status, 409);
+    assert_eq!(content_type, "application/json");
+    assert_eq!(
+        body,
+        r#"{"error":"The file changed meanwhile.","revision":"af63dc4c8601ec8c"}"#
+    );
+}
+
+#[tokio::test]
+async fn stale_escapes_its_json_strings() {
+    let (_, _, body) = parts(stale("a\"b", "Zeile 1\nZeile \\2\t\u{1}ß")).await;
+    assert_eq!(
+        body,
+        r#"{"error":"Zeile 1\nZeile \\2\t\u0001ß","revision":"a\"b"}"#
+    );
+}
+
+#[tokio::test]
+async fn refused_is_422_with_the_sentence_as_plain_text() {
+    let (status, content_type, body) =
+        parts(refused("Ein Posten liegt außerhalb der Karte.")).await;
+    assert_eq!(status, 422);
+    assert_eq!(content_type, "text/plain; charset=utf-8");
+    assert_eq!(body, "Ein Posten liegt außerhalb der Karte.");
+}
