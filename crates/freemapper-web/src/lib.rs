@@ -4,6 +4,36 @@
 //! needs: a random token as the first path segment, a `Host` allowlist against DNS rebinding, an `Origin`
 //! check, and fixed security headers. The app brings its own routes, handlers and assets; this crate knows
 //! nothing about maps, projects or tiles. See decision 0020.
+//!
+//! # The suite page frame
+//!
+//! The three pages of the suite look and work alike (decision 0030). [`serve`] serves the shared files below
+//! the token at `/{token}/suite/<file>`; an app needs no route for them and must not use that path itself:
+//!
+//! | File | What it holds |
+//! |---|---|
+//! | `suite.css` | the tokens `--bg --fg --line --bar --accent --sel --map-bg --pool --warn-bg --warn-fg --warn-line --sev-error --sev-warning --sev-hint`, light and dark; base elements, the frame (`body.frame`), `.menubar` with `.menu`, `.toolbar`, `.status` with `.field` and `.name`, `#banner` with `.banner-box`, `dialog` with `.dialog-buttons`, `.notice`, `.hint`, `.field-error`, `.tree`; the focus ring; no animation under `prefers-reduced-motion` |
+//! | `api.js` | `get`, `post`, `postBytes`, `getFile`, each answering `{ ok, status, data }`; `setReadOnly` (a write then answers 423 without a request); `REVISION_HEADER` |
+//! | `texts.js` | `loadTexts`, `apply`, `t(id, args)`, `tn(id, n, args)`, `language` |
+//! | `status.js` | `say(idOrText, raw)`, `showBanner(text)`, `clearBanner()` on `#status-message` and `#banner` |
+//! | `tree.js` | `buildTree(root, groups, onSelect)` with `role="tree"` and the keyboard rules |
+//!
+//! How an app uses it:
+//!
+//! 1. The page links the files relative to its own address, which ends in `/{token}/`:
+//!    `<link rel="stylesheet" href="suite/suite.css">` before the app's own CSS, and in the app's modules
+//!    `import { post } from "../suite/api.js"` (the path relative to the module). App-specific tokens such as
+//!    `--course` go in the app's CSS.
+//! 2. The app serves `GET {prefix}/api/texts` with `{ "lang": …, "texts": { id: text } }` from its Fluent
+//!    catalog, in the language of [`texts_language`] (its `--lang` and language variable first, then the
+//!    request's `Accept-Language`). The catalog holds the page's messages, `suite-banner-dismiss` among
+//!    them; a message with `{ $name }` is delivered unformatted, and `t` fills it in. `<title data-text="…">`
+//!    names the page title.
+//! 3. A route that changes a file reads the page's revision from [`REVISION_HEADER`], compares it with
+//!    [`revision`] of the file's bytes, and answers [`stale`] (409) when they differ and [`refused`] (422)
+//!    when the app refuses the change. A successful write answers the new revision.
+//! 4. A test of the app checks its own assets plus `suite_assets()` with `check_page_rules` (feature
+//!    `page-rules`, as a dev-dependency) against 300 KiB; vendored libraries count separately.
 #![forbid(unsafe_code)]
 
 use std::net::SocketAddr;

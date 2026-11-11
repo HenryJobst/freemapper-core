@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- freemapper-web: die Suite-Oberfläche (Entscheidung 0030). `serve` liefert unter `/{token}/suite/` fünf gemeinsame Dateien aus, hinter denselben Prüfungen und Headern wie die Routen der Anwendung: `suite.css` mit den Farbwerten hell und dunkel (Akzent `#0b6bcb`, dunkel `#6cb0ff`) und den Grundelementen, dazu die Module `api.js`, `texts.js`, `status.js` und `tree.js` aus dem Editor von freemapper-courseplan. Ein anderer Name unter `suite/` ergibt 404. `revision` berechnet die Revision einer Datei (FNV-1a 64, 16 Hexziffern), `REVISION_HEADER` ist `x-freemapper-revision`. `stale` antwortet 409 mit `{ "error", "revision" }`, `refused` 422 mit einem Satz als Text. `texts_language` nimmt für die Seitentexte die festgelegte Sprache, sonst `de` oder `en` aus `Accept-Language` nach q-Wert, sonst Englisch. Mit dem Feature `page-rules` prüft `check_page_rules` die Dateien einer Seite auf eingebettete Skripte, Inline-Handler, `javascript:`-Adressen, Quellen aus dem Netz und die Größe; `suite_assets` liefert die Suite-Dateien für diese Prüfung.
+
 ## [0.20.0] - 2026-11-11
 
 ### Hinzugefügt
