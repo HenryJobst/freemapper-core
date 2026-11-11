@@ -583,3 +583,98 @@ fn tokens_are_unique() {
         (0..100).map(|_| token().expect("token")).collect();
     assert_eq!(tokens.len(), 100);
 }
+
+// --- Suite assets (ADR 0030) ---
+
+const SUITE_FILES: [(&str, &str); 5] = [
+    ("suite.css", "text/css; charset=utf-8"),
+    ("api.js", "text/javascript; charset=utf-8"),
+    ("texts.js", "text/javascript; charset=utf-8"),
+    ("status.js", "text/javascript; charset=utf-8"),
+    ("tree.js", "text/javascript; charset=utf-8"),
+];
+
+async fn get_path(server: &LocalServer, path: &str, host_header: &str) -> Reply {
+    request(port_of(server), "GET", path, &[("Host", host_header)], "").await
+}
+
+#[tokio::test]
+async fn suite_files_are_served_below_the_token_with_type_and_headers() {
+    let server = start(true).await;
+    let host = host(port_of(&server));
+    for (name, content_type) in SUITE_FILES {
+        let reply = get_path(&server, &format!("/{}/suite/{name}", server.token), &host).await;
+        assert_eq!(reply.status, 200, "{name}");
+        assert_eq!(reply.header("content-type"), Some(content_type), "{name}");
+        assert_eq!(reply.header("content-security-policy"), Some(CSP), "{name}");
+        assert_eq!(reply.header("x-content-type-options"), Some("nosniff"));
+        assert_eq!(reply.header("referrer-policy"), Some("no-referrer"));
+        assert_eq!(reply.header("x-frame-options"), Some("DENY"));
+        assert_eq!(reply.header("cache-control"), Some("no-store"));
+        assert!(!reply.body.is_empty(), "{name}");
+    }
+}
+
+#[tokio::test]
+async fn an_app_without_routes_gets_the_suite_files() {
+    let server = serve(|_, _| Router::new(), ServeOptions::new(CSP))
+        .await
+        .expect("serve");
+    let host = host(port_of(&server));
+    let reply = get_path(&server, &format!("/{}/suite/api.js", server.token), &host).await;
+    assert_eq!(reply.status, 200);
+    assert!(reply.body.contains("X-Freemapper-Revision"));
+}
+
+#[tokio::test]
+async fn a_suite_path_outside_the_list_is_404() {
+    let server = start(false).await;
+    let host = host(port_of(&server));
+    let token = &server.token;
+    for path in [
+        format!("/{token}/suite/missing.js"),
+        format!("/{token}/suite/"),
+        format!("/{token}/suite"),
+        format!("/{token}/suite/../Cargo.toml"),
+        format!("/{token}/suite/%2e%2e/Cargo.toml"),
+        format!("/{token}/suite/%2fetc%2fpasswd"),
+        format!("/{token}/suite/SUITE.CSS"),
+        format!("/{token}/suite/suite.css/x"),
+    ] {
+        let reply = get_path(&server, &path, &host).await;
+        assert_eq!(reply.status, 404, "{path}");
+        assert_eq!(reply.header("x-content-type-options"), Some("nosniff"));
+    }
+}
+
+#[tokio::test]
+async fn suite_files_need_the_token_and_the_host() {
+    let server = start(false).await;
+    let port = port_of(&server);
+    let good = host(port);
+    let wrong = format!("/{}/suite/suite.css", "0".repeat(32));
+    assert_eq!(get_path(&server, &wrong, &good).await.status, 404);
+    assert_eq!(
+        get_path(&server, "/suite/suite.css", &good).await.status,
+        404
+    );
+    let path = format!("/{}/suite/suite.css", server.token);
+    let reply = get_path(&server, &path, &format!("evil.example:{port}")).await;
+    assert_eq!(reply.status, 403);
+}
+
+#[tokio::test]
+async fn suite_files_refuse_a_post() {
+    let server = start(true).await;
+    let port = port_of(&server);
+    let path = format!("/{}/suite/suite.css", server.token);
+    let host = host(port);
+    let origin = origin(port);
+    let headers = [
+        ("Host", host.as_str()),
+        ("Origin", origin.as_str()),
+        ("Content-Type", "application/json"),
+    ];
+    let reply = request(port, "POST", &path, &headers, "{}").await;
+    assert_eq!(reply.status, 405);
+}

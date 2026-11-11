@@ -10,10 +10,11 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::Router;
-use axum::extract::{DefaultBodyLimit, Request};
+use axum::extract::{DefaultBodyLimit, Path, Request};
 use axum::http::{HeaderValue, Method, StatusCode, header};
 use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
+use axum::routing::get;
 use tokio::sync::Notify;
 
 #[cfg(test)]
@@ -112,9 +113,27 @@ struct Guard {
     strict_post: bool,
 }
 
+/// The suite assets of decision 0030: `suite.css`, `api.js`, `texts.js`, `status.js` and `tree.js`.
+#[derive(rust_embed::RustEmbed)]
+#[folder = "suite"]
+struct Suite;
+
+/// A suite asset by its exact name, or 404. The name is compared with the list first: in a debug build
+/// rust-embed reads from the disk, and a case-insensitive file system would also find `SUITE.CSS`.
+fn suite_file(path: &str) -> Response {
+    if Suite::iter().any(|name| name == path) {
+        embedded::<Suite>(path)
+    } else {
+        StatusCode::NOT_FOUND.into_response()
+    }
+}
+
 /// Binds 127.0.0.1, calls `build` with the path prefix `/{token}` and the shutdown [`Notify`], and serves the
 /// routes it returns behind the guards. The `Notify` is the one [`LocalServer::shutdown`] returns and the
 /// graceful shutdown waits on, so a handler (for example `done`) can call `notify_one()` to stop the server.
+///
+/// Next to the app's routes it serves the suite assets at `/{token}/suite/<file>` (decision 0030), behind the
+/// same guards and headers. The app must not add routes below `/{token}/suite/`; axum panics on the overlap.
 pub async fn serve(
     build: impl FnOnce(&str, Arc<Notify>) -> Router,
     options: ServeOptions,
@@ -138,6 +157,10 @@ pub async fn serve(
     });
     let done = Arc::new(Notify::new());
     let app = build(&format!("/{token}"), Arc::clone(&done))
+        .route(
+            &format!("/{token}/suite/{{*path}}"),
+            get(|Path(path): Path<String>| async move { suite_file(&path) }),
+        )
         .layer(DefaultBodyLimit::max(options.max_body))
         .layer(middleware::from_fn(move |request: Request, next: Next| {
             let guard = Arc::clone(&guard);
