@@ -11,6 +11,7 @@ use std::ffi::{OsStr, OsString};
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc;
 use std::time::{Duration, Instant, SystemTime};
 
@@ -30,18 +31,28 @@ pub trait VersionRunner {
 }
 
 /// Runs `<exe> --version` as a child process with stdin closed and a 10 s timeout, and expects
-/// `<name> <x.y.z>` on the first line, `<name>` being the file name up to its first dot
-/// (`freemapper.previous.exe` prints `freemapper 0.10.0`).
-#[derive(Debug, Clone, Copy, Default)]
-pub struct ProcessRunner;
+/// `<name> <x.y.z>` on the first line, `<name>` being the app name it was made with
+/// (`ProcessRunner::new(app.name)`). The file name does not matter, so a renamed executable still
+/// updates and rolls back.
+#[derive(Debug, Clone, Copy)]
+pub struct ProcessRunner {
+    name: &'static str,
+}
 
-impl VersionRunner for ProcessRunner {
-    fn version_of(&self, exe: &Path) -> Result<String, UpdateError> {
-        version_with_timeout(exe, VERSION_TIMEOUT)
+impl ProcessRunner {
+    /// A runner that expects `<name> x.y.z`; pass the app's name ([`crate::App::name`]).
+    pub const fn new(name: &'static str) -> Self {
+        ProcessRunner { name }
     }
 }
 
-fn version_with_timeout(exe: &Path, timeout: Duration) -> Result<String, UpdateError> {
+impl VersionRunner for ProcessRunner {
+    fn version_of(&self, exe: &Path) -> Result<String, UpdateError> {
+        version_with_timeout(self.name, exe, VERSION_TIMEOUT)
+    }
+}
+
+fn version_with_timeout(name: &str, exe: &Path, timeout: Duration) -> Result<String, UpdateError> {
     let mut child = spawn_version(exe)?;
     let mut stdout = child.stdout.take().expect("stdout is piped");
     // A reader thread keeps the pipe drained while the loop below watches the clock.
@@ -83,8 +94,7 @@ fn version_with_timeout(exe: &Path, timeout: Duration) -> Result<String, UpdateE
             )
         })??;
     let text = String::from_utf8_lossy(&bytes);
-    let name = app_name(exe);
-    match parse_version_line(&name, &text) {
+    match parse_version_line(name, &text) {
         Some(version) if status.success() => Ok(version),
         _ => Err(io::Error::new(
             io::ErrorKind::InvalidData,
@@ -132,12 +142,35 @@ pub(crate) trait Renamer {
     fn rename(&self, from: &Path, to: &Path) -> io::Result<()>;
 }
 
-/// `std::fs::rename`.
+/// How often a rename refused with `PermissionDenied` is tried, and the pause in between: on Windows
+/// a virus scanner opens a fresh executable for a moment (like `freemapper_fs::rename_cache_file`).
+const RENAME_ATTEMPTS: u32 = 5;
+const RENAME_PAUSE: Duration = Duration::from_millis(100);
+
+/// `std::fs::rename`, tried again a few times while it fails with `PermissionDenied`.
 struct FsRenamer;
 
 impl Renamer for FsRenamer {
     fn rename(&self, from: &Path, to: &Path) -> io::Result<()> {
-        std::fs::rename(from, to)
+        retry_denied(RENAME_ATTEMPTS, RENAME_PAUSE, || std::fs::rename(from, to))
+    }
+}
+
+/// Runs `op` up to `attempts` times while it fails with `PermissionDenied`; other errors end at once.
+fn retry_denied(
+    attempts: u32,
+    pause: Duration,
+    mut op: impl FnMut() -> io::Result<()>,
+) -> io::Result<()> {
+    let mut attempt = 1;
+    loop {
+        match op() {
+            Err(e) if e.kind() == io::ErrorKind::PermissionDenied && attempt < attempts => {
+                attempt += 1;
+                std::thread::sleep(pause);
+            }
+            other => return other,
+        }
     }
 }
 
@@ -194,26 +227,44 @@ fn stale_path(exe: &Path, secs: u64, n: u32) -> PathBuf {
     }
 }
 
+/// Stale names tried for one second before giving up.
+const STALE_NAME_ATTEMPTS: u32 = 1000;
+
 /// The first stale name for `secs` that is not taken (two updates in one second get `-1`, `-2`, …).
-fn fresh_stale_path(exe: &Path, secs: u64) -> PathBuf {
-    (0..)
+fn fresh_stale_path(exe: &Path, secs: u64) -> io::Result<PathBuf> {
+    first_free_stale_path(
+        exe,
+        secs,
+        &|path| matches!(std::fs::symlink_metadata(path), Err(e) if e.kind() == io::ErrorKind::NotFound),
+    )
+}
+
+/// Tries [`STALE_NAME_ATTEMPTS`] names, so a folder that answers every look-up with an error other
+/// than "not found" ends in an error instead of a loop.
+fn first_free_stale_path(
+    exe: &Path,
+    secs: u64,
+    is_free: &dyn Fn(&Path) -> bool,
+) -> io::Result<PathBuf> {
+    (0..STALE_NAME_ATTEMPTS)
         .map(|n| stale_path(exe, secs, n))
-        .find(|path| {
-            matches!(std::fs::symlink_metadata(path), Err(e) if e.kind() == io::ErrorKind::NotFound)
+        .find(|path| is_free(path))
+        .ok_or_else(|| {
+            io::Error::other(format!(
+                "no free stale name for {} after {STALE_NAME_ATTEMPTS} tries",
+                exe.display()
+            ))
         })
-        .expect("some stale name is free")
+}
+
+fn since_epoch() -> Duration {
+    SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap_or_default()
 }
 
 fn now_secs() -> u64 {
-    SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .map_or(0, |d| d.as_secs())
-}
-
-/// The app name an executable prints with `--version`: its file name up to the first dot.
-fn app_name(exe: &Path) -> String {
-    let name = exe.file_name().unwrap_or_default().to_string_lossy();
-    name.split('.').next().unwrap_or_default().to_string()
+    since_epoch().as_secs()
 }
 
 /// The folder of `exe`, `.` for a bare file name.
@@ -249,31 +300,110 @@ pub(crate) fn ensure_writable(exe: &Path) -> Result<(), UpdateError> {
     }
 }
 
-/// A lock file older than this was left by a crashed install and is taken over (ruling R12).
+/// A lock file older than this was left by a crashed install and is taken over (ruling R12); temp
+/// files of an install older than this are swept (ruling R14).
 const STALE_LOCK_AGE: Duration = Duration::from_secs(15 * 60);
 
-/// Holds `<base>.update-lock` in the executable's folder: one install or rollback at a time, so a
-/// second one cannot replace the first one's verified file with its own half-written one. The file
-/// is removed when this is dropped.
-pub(crate) struct InstallLock(PathBuf);
+/// The temp names of an install start with `<base>` and one of these.
+const NEW_INFIX: &str = ".update-new-";
+const DOWNLOAD_INFIX: &str = ".update-download-";
 
-impl Drop for InstallLock {
-    fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.0);
+/// Numbers the lock tokens of this process.
+static NEXT_TOKEN: AtomicU64 = AtomicU64::new(0);
+
+/// A token no other lock holder has: process id, nanoseconds since the epoch and a counter, in hex.
+fn new_token() -> String {
+    format!(
+        "{:x}-{:x}-{:x}",
+        std::process::id(),
+        since_epoch().as_nanos(),
+        NEXT_TOKEN.fetch_add(1, Ordering::Relaxed)
+    )
+}
+
+/// Holds `<base>.update-lock` in the executable's folder: one install or rollback at a time. The file
+/// holds this holder's token. A slow install can lose the lock to a takeover (its file is older than
+/// 15 minutes), so the holder checks the token before it swaps ([`InstallLock::ensure_ours`]), and
+/// the file is removed on drop only while it still holds the token.
+pub(crate) struct InstallLock {
+    path: PathBuf,
+    token: String,
+}
+
+impl InstallLock {
+    /// Whether the lock file is still a plain file holding this token (a link is never ours).
+    fn is_ours(&self) -> bool {
+        std::fs::symlink_metadata(&self.path).is_ok_and(|meta| meta.is_file())
+            && std::fs::read(&self.path).is_ok_and(|bytes| bytes == self.token.as_bytes())
+    }
+
+    /// [`UpdateError::Busy`] when another install or rollback has taken the lock over.
+    pub(crate) fn ensure_ours(&self) -> Result<(), UpdateError> {
+        if self.is_ours() {
+            Ok(())
+        } else {
+            Err(UpdateError::Busy(self.path.clone()))
+        }
     }
 }
 
-/// Takes the install lock. An existing lock younger than 15 minutes gives [`UpdateError::Busy`]; an
-/// older one is removed and created once more. A folder the user cannot write gives `NotWritable`.
+impl Drop for InstallLock {
+    fn drop(&mut self) {
+        if self.is_ours() {
+            let _ = std::fs::remove_file(&self.path);
+        }
+    }
+}
+
+/// Takes the install lock and writes a fresh token into it. An existing lock younger than 15 minutes
+/// gives [`UpdateError::Busy`]; an older one is removed and created once more. A folder the user
+/// cannot write gives `NotWritable`. With the lock held, temp files of earlier installs older than
+/// 15 minutes are swept ([`sweep_leftovers`]).
 pub(crate) fn lock_install(exe: &Path) -> Result<InstallLock, UpdateError> {
+    let lock = take_lock(exe)?;
+    sweep_leftovers(exe);
+    Ok(lock)
+}
+
+/// `<base>.update-lock` next to `exe`.
+fn lock_path(exe: &Path) -> PathBuf {
     let (mut name, _) = split_name(exe);
     name.push(".update-lock");
-    let lock = exe.with_file_name(name);
-    let create = || {
-        std::fs::OpenOptions::new()
+    exe.with_file_name(name)
+}
+
+/// Test helper: ages the lock that the running install holds past 15 minutes and takes it over, as
+/// a second install would after a very slow download.
+#[cfg(test)]
+pub(crate) fn take_over_lock(exe: &Path) -> InstallLock {
+    let old = SystemTime::now() - Duration::from_secs(16 * 60);
+    std::fs::File::options()
+        .write(true)
+        .open(lock_path(exe))
+        .and_then(|file| file.set_modified(old))
+        .expect("the first holder's lock exists");
+    lock_install(exe).expect("a lock older than 15 minutes is taken over")
+}
+
+fn take_lock(exe: &Path) -> Result<InstallLock, UpdateError> {
+    let lock = lock_path(exe);
+    let create = || -> io::Result<InstallLock> {
+        let mut file = std::fs::OpenOptions::new()
             .write(true)
             .create_new(true)
-            .open(&lock)
+            .open(&lock)?;
+        let token = new_token();
+        let held = InstallLock {
+            path: lock.clone(),
+            token,
+        };
+        // On a failed write the guard sees no token and leaves the file; remove it here.
+        if let Err(e) = io::Write::write_all(&mut file, held.token.as_bytes()) {
+            drop(file);
+            let _ = std::fs::remove_file(&lock);
+            return Err(e);
+        }
+        Ok(held)
     };
     let not_writable = |e: io::Error| match e.kind() {
         io::ErrorKind::PermissionDenied | io::ErrorKind::ReadOnlyFilesystem => {
@@ -282,7 +412,7 @@ pub(crate) fn lock_install(exe: &Path) -> Result<InstallLock, UpdateError> {
         _ => e.into(),
     };
     match create() {
-        Ok(_) => return Ok(InstallLock(lock)),
+        Ok(held) => return Ok(held),
         Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {}
         Err(e) => return Err(not_writable(e)),
     }
@@ -296,9 +426,52 @@ pub(crate) fn lock_install(exe: &Path) -> Result<InstallLock, UpdateError> {
     }
     let _ = std::fs::remove_file(&lock);
     match create() {
-        Ok(_) => Ok(InstallLock(lock)),
+        Ok(held) => Ok(held),
         Err(e) if e.kind() == io::ErrorKind::AlreadyExists => Err(UpdateError::Busy(lock)),
         Err(e) => Err(not_writable(e)),
+    }
+}
+
+/// Per-install temp names next to `exe`: the unpacked program `<base>.update-new-<pid>-<nanos>[.exe]`
+/// and the download `<base>.update-download-<pid>-<nanos>.gz`. No two installs share them, so an
+/// install that lost its lock cannot touch the files of the one that took it over.
+pub(crate) fn temp_names(exe: &Path) -> (PathBuf, PathBuf) {
+    let tag = format!("{}-{}", std::process::id(), since_epoch().as_nanos());
+    let new = sibling(exe, &format!("{NEW_INFIX}{tag}"));
+    let (mut download, _) = split_name(exe);
+    download.push(format!("{DOWNLOAD_INFIX}{tag}.gz"));
+    (new, exe.with_file_name(download))
+}
+
+/// Deletes temp files of earlier installs of `exe`'s app older than 15 minutes (a killed run left
+/// them; a younger one may belong to a slow install that lost its lock). Only plain files are
+/// removed, links are not followed, and errors are ignored.
+fn sweep_leftovers(exe: &Path) {
+    let prefixes = [NEW_INFIX, DOWNLOAD_INFIX].map(|infix| {
+        let (mut prefix, _) = split_name(exe);
+        prefix.push(infix);
+        prefix
+    });
+    let Ok(entries) = std::fs::read_dir(folder_of(exe)) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        if !prefixes.iter().any(|prefix| starts_with(&name, prefix)) {
+            continue;
+        }
+        // `DirEntry::metadata` does not follow a link, so a link is no file here.
+        let old = entry.metadata().is_ok_and(|meta| {
+            meta.is_file()
+                && meta
+                    .modified()
+                    .ok()
+                    .and_then(|modified| modified.elapsed().ok())
+                    .is_some_and(|age| age > STALE_LOCK_AGE)
+        });
+        if old {
+            let _ = std::fs::remove_file(entry.path());
+        }
     }
 }
 
@@ -366,7 +539,7 @@ pub(crate) fn swap_in_with(
     let previous = previous_path(exe);
     let stale = match std::fs::symlink_metadata(&previous) {
         Ok(_) => {
-            let stale = fresh_stale_path(exe, now_secs());
+            let stale = fresh_stale_path(exe, now_secs())?;
             renamer.rename(&previous, &stale)?;
             Some(stale)
         }
@@ -393,10 +566,13 @@ pub(crate) fn swap_in_with(
 
 /// Swaps [`previous_path`] and `exe` back (`update --rollback`) after checking that the previous one
 /// runs and prints a version, which it returns. The current executable becomes the new previous.
+/// Real callers pass `ProcessRunner::new(app.name)`.
 ///
-/// No previous gives an `Io` error of kind `NotFound`; a previous that prints no version gives
-/// `InvalidData`, and nothing changes. While an install or another rollback runs (its
-/// `<base>.update-lock` exists and is younger than 15 minutes) it gives [`UpdateError::Busy`].
+/// In the order of the checks, and each time nothing changes: while an install or another rollback
+/// runs (its `<base>.update-lock` exists and is younger than 15 minutes, or it took this rollback's
+/// lock over) it gives [`UpdateError::Busy`]; a folder the user cannot write gives
+/// [`UpdateError::NotWritable`]; no previous gives an `Io` error of kind `NotFound`; a previous that
+/// prints no version gives `InvalidData`.
 pub fn rollback(exe: &Path, runner: &dyn VersionRunner) -> Result<Version, UpdateError> {
     rollback_with(exe, runner, &FsRenamer)
 }
@@ -406,7 +582,7 @@ pub(crate) fn rollback_with(
     runner: &dyn VersionRunner,
     renamer: &dyn Renamer,
 ) -> Result<Version, UpdateError> {
-    let _lock = lock_install(exe)?;
+    let lock = lock_install(exe)?;
     let previous = previous_path(exe);
     match std::fs::symlink_metadata(&previous) {
         Ok(_) => {}
@@ -433,8 +609,10 @@ pub(crate) fn rollback_with(
         )
     })?;
     ensure_writable(exe)?;
+    // A slow version check may have cost the lock; then another install or rollback owns the folder.
+    lock.ensure_ours()?;
     // The current executable waits under a stale name, so if the last step fails a later start removes it.
-    let parked = fresh_stale_path(exe, now_secs());
+    let parked = fresh_stale_path(exe, now_secs())?;
     renamer.rename(exe, &parked)?;
     if let Err(failed) = renamer.rename(&previous, exe) {
         return Err(restore(renamer, failed, &parked, exe)?.into());
@@ -638,22 +816,82 @@ mod tests {
             stale_path(&dir.join("freemapper.exe"), 1_700_000_000, 2),
             dir.join("freemapper.stale-1700000000-2.exe")
         );
-        assert_eq!(app_name(&dir.join("freemapper.previous.exe")), "freemapper");
-        assert_eq!(
-            app_name(&dir.join("freemapper-print.update-new")),
-            "freemapper-print"
-        );
-        assert_eq!(app_name(&dir.join("freemapper")), "freemapper");
+        let (new, download) = temp_names(&dir.join(EXE));
+        let pid = std::process::id().to_string();
+        for (path, prefix, suffix) in [
+            (&new, "freemapper.update-new-", SUFFIX),
+            (&download, "freemapper.update-download-", ".gz"),
+        ] {
+            let name = path.file_name().unwrap().to_str().unwrap();
+            let tag = name
+                .strip_prefix(prefix)
+                .and_then(|rest| rest.strip_suffix(suffix))
+                .unwrap_or_else(|| panic!("{name}"));
+            let (got_pid, nanos) = tag.split_once('-').unwrap();
+            assert_eq!(got_pid, pid);
+            assert!(nanos.bytes().all(|b| b.is_ascii_digit()), "{name}");
+        }
     }
 
     #[test]
     fn stale_name_taken_in_the_same_second_gets_a_number() {
         let dir = tempfile::tempdir().unwrap();
         let exe = dir.path().join(EXE);
-        assert_eq!(fresh_stale_path(&exe, 100), stale_path(&exe, 100, 0));
+        assert_eq!(
+            fresh_stale_path(&exe, 100).unwrap(),
+            stale_path(&exe, 100, 0)
+        );
         fs::write(stale_path(&exe, 100, 0), "").unwrap();
         fs::write(stale_path(&exe, 100, 1), "").unwrap();
-        assert_eq!(fresh_stale_path(&exe, 100), stale_path(&exe, 100, 2));
+        assert_eq!(
+            fresh_stale_path(&exe, 100).unwrap(),
+            stale_path(&exe, 100, 2)
+        );
+    }
+
+    /// A folder that answers every look-up with an error (not "not found") ends in an error, not a loop.
+    #[test]
+    fn stale_name_search_gives_up() {
+        let exe = Path::new("dir").join(EXE);
+        let tried = Cell::new(0u32);
+        let error = first_free_stale_path(&exe, 100, &|_| {
+            tried.set(tried.get() + 1);
+            false
+        })
+        .unwrap_err();
+        assert_eq!(tried.get(), STALE_NAME_ATTEMPTS);
+        assert!(error.to_string().contains("no free stale name"), "{error}");
+    }
+
+    /// Windows: a virus scanner holding the fresh file gives `PermissionDenied` for a moment.
+    #[test]
+    fn rename_is_retried_while_permission_is_denied() {
+        let calls = Cell::new(0u32);
+        let result = retry_denied(5, Duration::ZERO, || {
+            calls.set(calls.get() + 1);
+            if calls.get() < 3 {
+                Err(io::ErrorKind::PermissionDenied.into())
+            } else {
+                Ok(())
+            }
+        });
+        assert!(result.is_ok());
+        assert_eq!(calls.get(), 3);
+        // A lasting denial ends after the attempts, other errors at once.
+        calls.set(0);
+        let denied = retry_denied(5, Duration::ZERO, || {
+            calls.set(calls.get() + 1);
+            Err(io::ErrorKind::PermissionDenied.into())
+        });
+        assert_eq!(denied.unwrap_err().kind(), io::ErrorKind::PermissionDenied);
+        assert_eq!(calls.get(), 5);
+        calls.set(0);
+        let missing = retry_denied(5, Duration::ZERO, || {
+            calls.set(calls.get() + 1);
+            Err(io::ErrorKind::NotFound.into())
+        });
+        assert_eq!(missing.unwrap_err().kind(), io::ErrorKind::NotFound);
+        assert_eq!(calls.get(), 1);
     }
 
     #[test]
@@ -917,6 +1155,66 @@ mod tests {
         assert!(!lock.exists());
     }
 
+    /// Takes the lock over while it is asked for a version, as a second install would after the
+    /// first one's lock aged past 15 minutes, and keeps the second holder's lock.
+    struct TakeoverRunner {
+        exe: PathBuf,
+        second: RefCell<Option<InstallLock>>,
+    }
+
+    impl VersionRunner for TakeoverRunner {
+        fn version_of(&self, _: &Path) -> Result<String, UpdateError> {
+            *self.second.borrow_mut() = Some(take_over_lock(&self.exe));
+            Ok("0.9.0".into())
+        }
+    }
+
+    #[test]
+    fn lock_holds_a_fresh_token() {
+        let dir = tempfile::tempdir().unwrap();
+        let exe = dir.path().join(EXE);
+        let first = lock_install(&exe).unwrap();
+        let token = fs::read_to_string(lock_path(&exe)).unwrap();
+        assert_eq!(token, first.token);
+        assert!(first.ensure_ours().is_ok());
+        drop(first);
+        assert!(!lock_path(&exe).exists());
+        let second = lock_install(&exe).unwrap();
+        assert_ne!(second.token, token);
+        // A lock file that holds another token is not ours, and dropping the guard leaves it.
+        fs::write(lock_path(&exe), "someone else").unwrap();
+        assert!(matches!(second.ensure_ours(), Err(UpdateError::Busy(_))));
+        drop(second);
+        assert_eq!(read(&lock_path(&exe)), "someone else");
+    }
+
+    /// Review finding 1: a rollback that lost its lock to a takeover ends with `Busy` before any
+    /// rename and leaves the second holder's lock alone.
+    #[test]
+    fn rollback_that_lost_its_lock_is_busy() {
+        let dir = tempfile::tempdir().unwrap();
+        let (exe, new_file) = setup(dir.path(), "old", "new");
+        swap_in(&exe, &new_file).unwrap();
+        let runner = TakeoverRunner {
+            exe: exe.clone(),
+            second: RefCell::new(None),
+        };
+        match rollback(&exe, &runner) {
+            Err(UpdateError::Busy(path)) => assert_eq!(path, lock_path(&exe)),
+            other => panic!("expected Busy, got {other:?}"),
+        }
+        assert_eq!(read(&exe), "new");
+        assert_eq!(read(&previous_path(&exe)), "old");
+        assert!(stale_files(dir.path()).is_empty());
+        let second = runner.second.borrow_mut().take().unwrap();
+        assert!(
+            second.is_ours(),
+            "the first holder left the second one's lock"
+        );
+        drop(second);
+        assert!(!lock_path(&exe).exists());
+    }
+
     #[test]
     fn rollback_refuses_a_previous_that_reports_no_version() {
         for answer in [Ok("not a version"), Err(())] {
@@ -1037,16 +1335,46 @@ mod tests {
     #[test]
     fn process_runner_reads_name_and_version() {
         let dir = tempfile::tempdir().unwrap();
+        let runner = ProcessRunner::new("freemapper");
         let good = script(dir.path(), "freemapper.previous", "echo 'freemapper 0.9.0'");
-        assert_eq!(ProcessRunner.version_of(&good).unwrap(), "0.9.0");
+        assert_eq!(runner.version_of(&good).unwrap(), "0.9.0");
         let other = script(dir.path(), "freemapper.other", "echo 'something 0.9.0'");
-        assert!(ProcessRunner.version_of(&other).is_err());
+        assert!(runner.version_of(&other).is_err());
         let failing = script(
             dir.path(),
             "freemapper.failing",
             "echo 'freemapper 0.9.0'; exit 3",
         );
-        assert!(ProcessRunner.version_of(&failing).is_err());
+        assert!(runner.version_of(&failing).is_err());
+    }
+
+    /// The expected name is the app's, not the file's: a renamed executable still updates and rolls back.
+    #[cfg(unix)]
+    #[test]
+    fn process_runner_ignores_the_file_name() {
+        let dir = tempfile::tempdir().unwrap();
+        let renamed = script(dir.path(), "fm", "echo 'freemapper 0.9.0'");
+        assert_eq!(
+            ProcessRunner::new("freemapper")
+                .version_of(&renamed)
+                .unwrap(),
+            "0.9.0"
+        );
+        let print = script(dir.path(), "freemapper", "echo 'freemapper-print 0.9.0'");
+        assert!(ProcessRunner::new("freemapper").version_of(&print).is_err());
+        assert_eq!(
+            ProcessRunner::new("freemapper-print")
+                .version_of(&print)
+                .unwrap(),
+            "0.9.0"
+        );
+        // A rollback of a renamed executable: `fm.previous` prints `freemapper 0.9.0`.
+        let exe = dir.path().join("fm");
+        fs::write(&exe, "new").unwrap();
+        script(dir.path(), "fm.previous", "echo 'freemapper 0.9.0'");
+        let version = rollback(&exe, &ProcessRunner::new("freemapper")).unwrap();
+        assert_eq!(version, "0.9.0".parse().unwrap());
+        assert_eq!(read(&previous_path(&exe)), "new");
     }
 
     #[cfg(unix)]
@@ -1055,7 +1383,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let hanging = script(dir.path(), "freemapper.hanging", "exec sleep 5");
         let start = Instant::now();
-        match version_with_timeout(&hanging, Duration::from_millis(300)) {
+        match version_with_timeout("freemapper", &hanging, Duration::from_millis(300)) {
             Err(UpdateError::Io(e)) => assert_eq!(e.kind(), io::ErrorKind::TimedOut),
             other => panic!("expected TimedOut, got {other:?}"),
         }
