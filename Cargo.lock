@@ -318,10 +318,13 @@ dependencies = [
 name = "freemapper-update"
 version = "0.14.1"
 dependencies = [
+ "freemapper-fs",
  "minisign-verify",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror",
+ "toml",
 ]
 
 [[package]]

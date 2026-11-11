@@ -9,10 +9,15 @@ rust-version.workspace = true
 include = ["Cargo.toml", "README.md", "src/**/*.rs"]
 
 [dependencies]
+freemapper-fs.workspace = true
 minisign-verify.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+toml.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [lints]
 workspace = true
