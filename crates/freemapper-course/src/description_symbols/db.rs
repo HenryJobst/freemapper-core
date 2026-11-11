@@ -205,6 +205,20 @@ pub fn symbol_kind(id: &str, standard: Standard) -> Option<char> {
     symbol(id, standard).map(|g| g.kind)
 }
 
+/// Every symbol id that `standard` defines, in the order of the embedded file, each id once. The ids are the
+/// ones [`symbol`], [`symbol_kind`] and [`exists`] take.
+pub fn ids(standard: Standard) -> impl Iterator<Item = &'static str> {
+    let mut seen = std::collections::HashSet::new();
+    db().into_iter()
+        .flat_map(move |db| {
+            db.entries
+                .iter()
+                .filter(move |e| e.in_standard(standard.purple_pen()))
+                .map(|e| e.id.as_str())
+        })
+        .filter(move |id| seen.insert(*id))
+}
+
 /// Whether the standard defines symbol `id`.
 pub fn exists(id: &str, standard: Standard) -> bool {
     symbol(id, standard).is_some()

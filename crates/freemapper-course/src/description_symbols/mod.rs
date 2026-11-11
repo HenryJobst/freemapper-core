@@ -9,7 +9,7 @@ mod tests;
 
 pub use db::{
     Circle, FLATNESS, MAX_DEPTH, MAX_POINTS_PER_SYMBOL, Standard, Stroke, SymbolGeometry, TextLang,
-    exists, symbol, symbol_kind, symbol_text,
+    exists, ids, symbol, symbol_kind, symbol_text,
 };
 pub use iof_2024::{BEND_2024, DIRECTIONS, Mapped, iof_2024};
 pub use ppen::{ColumnNote, Inverse, PpenColumns, Refusal, ppen_columns, ppen_symbol};
