@@ -1044,3 +1044,113 @@ fn each_suite_script_says_where_it_comes_from() {
         }
     }
 }
+
+// --- Page rules, fix round 1 ---
+
+fn has(found: &[String], needle: &str) -> bool {
+    found.iter().any(|p| p.contains(needle))
+}
+
+#[test]
+fn every_way_to_end_a_comment_ends_it() {
+    for page in [
+        "<!--><script>x</script>",
+        "<!---><script>x</script>",
+        "<!-- a --!><script>x</script>",
+        "<!-- a --><script>x</script>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(has(&found, "inline script"), "{page}: {found:?}");
+    }
+    assert_eq!(
+        check(&[("index.html", "<!-- <script>x</script> -->")], 99),
+        Ok(())
+    );
+}
+
+#[test]
+fn javascript_urls_hidden_by_entities_or_white_space_are_reported() {
+    for page in [
+        "<a href=\"java&#x09;script:go()\">x</a>",
+        "<a href=\"jav&#97;script:go()\">x</a>",
+        "<a href=\"jav&#97script:go()\">x</a>",
+        "<a href=\"javascript&colon;go()\">x</a>",
+        "<a href=\"java\tscript:go()\">x</a>",
+        "<a href=\"java\r\nscript:go()\">x</a>",
+        "<a href=\"&#106;&#x61;vascript&#58;go()\">x</a>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(has(&found, "javascript:"), "{page:?}: {found:?}");
+    }
+}
+
+#[test]
+fn a_literal_javascript_url_is_reported_once_per_file() {
+    let found = problems(&[(
+        "index.html",
+        "<a href=\"javascript:a\">x</a><a href=\"javascript:b\">",
+    )]);
+    assert_eq!(found.len(), 1, "{found:?}");
+}
+
+#[test]
+fn network_urls_hidden_by_entities_are_reported() {
+    for page in [
+        "<script src=\"&sol;&sol;cdn.example/x.js\"></script>",
+        "<script src=\"&#47;/cdn.example/x.js\"></script>",
+        "<link rel=stylesheet href=\"https&colon;//cdn.example/x.css\">",
+        "<script src=\"ht\ttps://cdn.example/x.js\"></script>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(has(&found, "network"), "{page:?}: {found:?}");
+    }
+}
+
+#[test]
+fn base_frames_objects_refresh_and_odd_script_sources_are_reported() {
+    let cases = [
+        ("<base href=\"assets/\">", "<base>"),
+        ("<BASE>", "<base>"),
+        ("<iframe src=\"https://evil.example/\"></iframe>", "network"),
+        ("<frame src=//evil.example/>", "network"),
+        (
+            "<object data=\"http://evil.example/x.swf\"></object>",
+            "network",
+        ),
+        ("<embed src=\"https://evil.example/x\">", "network"),
+        (
+            "<meta http-equiv=\"Refresh\" content=\"0; url=x\">",
+            "refresh",
+        ),
+        ("<meta http-equiv=refresh content=0>", "refresh"),
+        (
+            "<script src=\"data:text/javascript,go()\"></script>",
+            "data:",
+        ),
+        (
+            "<script src=\" blob:http://127.0.0.1/x\"></script>",
+            "blob:",
+        ),
+    ];
+    for (page, needle) in cases {
+        let found = problems(&[("index.html", page)]);
+        assert!(has(&found, needle), "{page}: {found:?}");
+    }
+    let fine = "<iframe src=\"help.html\"></iframe><object data=\"a.svg\"></object>\
+                <meta http-equiv=\"content-type\" content=\"text/html\"><script src=\"a.js\"></script>";
+    assert_eq!(check(&[("index.html", fine)], usize::MAX), Ok(()));
+}
+
+#[test]
+fn a_multibyte_character_in_a_tag_does_not_end_the_scan() {
+    for page in [
+        "<a =\"x\"\u{e4} onclick=\"go()\">x</a>",
+        "<a ='\u{1f600}' onclick=go()>",
+        "<a title=\"\u{e4}\" =\u{e4} onclick=go()>",
+    ] {
+        let found = problems(&[("index.html", page)]);
+        assert!(has(&found, "inline handler"), "{page}: {found:?}");
+    }
+    let found = problems(&[("index.html", "<p =\"\u{e4}\">x</p><script>y</script>")]);
+    assert!(has(&found, "inline script"), "{found:?}");
+}
