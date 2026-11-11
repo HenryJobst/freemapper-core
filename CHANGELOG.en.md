@@ -7,6 +7,12 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-11-11
+
+### Changed
+
+- freemapper-printrules: `scale::MapKind` is the type of `freemapper-contract` now (decision 0028), one type for the suite. `MapKind::allowed_scales()` and `MapKind::proposed_contour_interval_m()` become the functions `scale::allowed_scales(kind)` and `scale::proposed_contour_interval_m(kind)`. A test checks that every scale freemapper draws is in the profile's table.
+
 ## [0.18.0] - 2026-11-11
 
 ### Added

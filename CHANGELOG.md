@@ -7,6 +7,12 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.19.0] - 2026-11-11
+
+### Geändert
+
+- freemapper-printrules: `scale::MapKind` ist jetzt der Typ aus `freemapper-contract` (Entscheidung 0028), ein Typ für die ganze Suite. `MapKind::allowed_scales()` und `MapKind::proposed_contour_interval_m()` werden zu den Funktionen `scale::allowed_scales(kind)` und `scale::proposed_contour_interval_m(kind)`. Ein Test prüft, dass jeder Maßstab, in dem freemapper zeichnet, in der Tabelle des Profils steht.
+
 ## [0.18.0] - 2026-11-11
 
 ### Hinzugefügt
