@@ -14,7 +14,7 @@ before changing code.
   | Crate | Owner |
   |---|---|
   | `freemapper-text`, `freemapper-rules` | freemapper-courseplan |
-  | `freemapper-georef`, `freemapper-fs`, `freemapper-contract` | freemapper |
+  | `freemapper-georef`, `freemapper-fs`, `freemapper-contract`, `freemapper-update` | freemapper |
   | `freemapper-omap`, `freemapper-render`, `freemapper-course` | freemapper-print (after its M3) |
   | `freemapper-web` | freemapper-courseplan |
 

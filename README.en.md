@@ -18,7 +18,7 @@ as a copy in each:
 ## Status
 
 The project is just starting. So far it contains `freemapper-contract`, `freemapper-course`, `freemapper-fs`, `freemapper-georef`,
-`freemapper-omap`, `freemapper-render`, `freemapper-rules`, `freemapper-text` and `freemapper-web`; the other libraries are planned:
+`freemapper-omap`, `freemapper-render`, `freemapper-rules`, `freemapper-text`, `freemapper-update` and `freemapper-web`; the other libraries are planned:
 
 | Library | Content | comes from | Status |
 |---|---|---|---|
@@ -31,6 +31,7 @@ The project is just starting. So far it contains `freemapper-contract`, `freemap
 | `freemapper-web` | shell for local web pages: server on 127.0.0.1 with token path, host and origin checks, security headers, embedded assets, opening the browser | freemapper, freemapper-courseplan | included |
 | `freemapper-contract` | contract between freemapper and its readers: object classes, census, vocabulary and rules for map and sidecar file; with the feature `fixtures`, four maps written by freemapper with their expected values for the apps' tests | freemapper | included |
 | `freemapper-course` | courses, reading .ppen and IOF XML, fitting to the map, number placement for a whole course, control description symbols; also writes .ppen, new or as a patch of an existing file | freemapper-print, freemapper-courseplan | included |
+| `freemapper-update` | self-update from signed releases: manifest, minisign check against a key list, versions, host rule, check record and mode, swapping the executable with a way back; the apps bring the network through `UpdateSource` | freemapper | included |
 
 ## Use
 

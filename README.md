@@ -18,7 +18,7 @@ als Kopie in jeder:
 ## Stand
 
 Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-contract`, `freemapper-course`, `freemapper-fs`, `freemapper-georef`,
-`freemapper-omap`, `freemapper-render`, `freemapper-rules`, `freemapper-text` und `freemapper-web`, die anderen Bibliotheken sind geplant:
+`freemapper-omap`, `freemapper-render`, `freemapper-rules`, `freemapper-text`, `freemapper-update` und `freemapper-web`, die anderen Bibliotheken sind geplant:
 
 | Bibliothek | Inhalt | kommt aus | Stand |
 |---|---|---|---|
@@ -31,6 +31,7 @@ Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-contract`, `freema
 | `freemapper-web` | Rahmen für lokale Webseiten: Server auf 127.0.0.1 mit Token im Pfad, Host- und Origin-Prüfung, Sicherheitsheader, eingebettete Dateien, Browser öffnen | freemapper, freemapper-courseplan | enthalten |
 | `freemapper-contract` | Vertrag zwischen freemapper und seinen Lesern: Objektklassen, Bestandsaufnahme, Vokabular und Regeln für Karte und Begleitdatei; mit dem Feature `fixtures` vier Karten von freemapper samt Erwartungswerten für die Tests der Anwendungen | freemapper | enthalten |
 | `freemapper-course` | Bahnen, .ppen und IOF-XML lesen, Einpassung in die Karte, Nummernplatzierung für eine ganze Bahn, Symbole der Postenbeschreibung; schreibt auch .ppen, neu oder als Patch einer vorhandenen Datei | freemapper-print, freemapper-courseplan | enthalten |
+| `freemapper-update` | Selbst-Aktualisierung aus signierten Veröffentlichungen: Manifest, minisign-Prüfung mit Schlüsselliste, Versionen, Hostregel, Prüfvermerk und Modus, Tausch der Programmdatei mit Rückweg; das Netz liefern die Anwendungen über `UpdateSource` | freemapper | enthalten |
 
 ## Nutzung
 

@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- freemapper-update: neue Bibliothek für die Selbst-Aktualisierung der Anwendungen aus signierten Veröffentlichungen (Entscheidung 0025). Sie enthält das Manifest, die minisign-Prüfung gegen eine Schlüsselliste, Versionen, die Hostregel `check_url`, Prüfvermerk und Modus, den Tausch der laufenden Programmdatei mit Rückweg und Aufräumen sowie `install` mit Prüfung vor dem Tausch und einer Sperrdatei gegen zwei gleichzeitige Installationen. Netzzugriff hat sie nicht: die Anwendungen liefern ihn über `UpdateSource`. Die Testschlüssel unter `tests/keys` nimmt kein Release an.
+
 ## [0.15.0] - 2026-11-11
 
 ### Hinzugefügt
