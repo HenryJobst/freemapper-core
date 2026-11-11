@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "app": "freemapper",
+  "version": "0.11.1",
+  "released": "2026-11-20",
+  "notes": "https://github.com/HenryJobst/freemapper/releases/tag/v0.11.0",
+  "min_self_update_from": "0.11.0",
+  "assets": {
+    "linux-x86_64": {
+      "url": "https://github.com/HenryJobst/freemapper/releases/download/v0.11.0/freemapper-v0.11.0-linux-x86_64.gz",
+      "size": 12345678,
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "exe_sha256": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+    },
+    "linux-arm64": {
+      "url": "https://github.com/HenryJobst/freemapper/releases/download/v0.11.0/freemapper-v0.11.0-linux-arm64.gz",
+      "size": 12345678,
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "exe_sha256": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+    },
+    "macos-arm64": {
+      "url": "https://github.com/HenryJobst/freemapper/releases/download/v0.11.0/freemapper-v0.11.0-macos-arm64.gz",
+      "size": 12345678,
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "exe_sha256": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+    },
+    "macos-x86_64": {
+      "url": "https://github.com/HenryJobst/freemapper/releases/download/v0.11.0/freemapper-v0.11.0-macos-x86_64.gz",
+      "size": 12345678,
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "exe_sha256": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+    },
+    "windows-x86_64": {
+      "url": "https://github.com/HenryJobst/freemapper/releases/download/v0.11.0/freemapper-v0.11.0-windows-x86_64.gz",
+      "size": 12345678,
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "exe_sha256": "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+    }
+  }
+}

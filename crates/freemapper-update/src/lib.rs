@@ -6,11 +6,13 @@
 pub mod error;
 pub mod manifest;
 pub mod platform;
+pub mod signature;
 pub mod source;
 pub mod version;
 
 pub use error::UpdateError;
 pub use manifest::{Asset, Manifest, parse_manifest};
 pub use platform::current_platform;
+pub use signature::verify;
 pub use source::{ALLOWED_HOSTS, check_url};
 pub use version::{ParseVersionError, Version};
