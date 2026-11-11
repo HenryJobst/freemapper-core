@@ -6,6 +6,14 @@ This file lists all notable changes to freemapper-core, newest first, each with 
 format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 
+## [Unreleased]
+
+## [0.16.1] - 2026-11-11
+
+### Changed
+
+- freemapper-course: the shared placement cases (`tests/fixtures/placement/cases.toml`) now assume the number box the renderer draws: 0.8083747 × height per digit (the Arimo advance, checked by a test in freemapper-render) instead of 0.6 × height. The expected values of `numbers_avoid_each_other` and `mixed_course_4` change. `place_course_numbers` itself is unchanged; it takes the box size from the caller.
+
 ## [0.16.0] - 2026-11-11
 
 ### Added
