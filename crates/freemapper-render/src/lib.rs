@@ -22,6 +22,7 @@ pub mod geometry;
 pub mod hit;
 pub mod image;
 mod line;
+pub mod overprint;
 pub mod page;
 mod pattern;
 pub mod pdf;

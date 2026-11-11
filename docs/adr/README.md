@@ -32,3 +32,4 @@ status to `Superseded by NNNN`.
 | [0021](0021-the-contract-gate.md) | The contract gate |
 | [0022](0022-svg-backend-and-hit-test.md) | SVG backend and hit test |
 | [0023](0023-page-builder-in-core.md) | The page builder moves to core |
+| [0024](0024-course-layer-in-render.md) | The course overprint moves to the render crate |
