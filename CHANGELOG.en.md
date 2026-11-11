@@ -9,7 +9,7 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- freemapper-update: new library for the apps' self-update from signed releases (decision 0025). It holds the manifest, the minisign check against a key list, versions, the `check_url` host rule, check record and mode, swapping the running executable with a way back and clean-up, and `install` with verification before the swap and a lock file against two installs at once. It has no network access: the apps bring it through `UpdateSource`. No release build accepts the test keys under `tests/keys`.
+- freemapper-update: new library for the apps' self-update from signed releases (decision 0025). It holds the manifest, the minisign check against a key list, versions, the `check_url` host rule, check record and mode, swapping the running executable with a way back and clean-up, and `install` with verification before the swap. An install lock holding its holder's token keeps two installs apart; one that loses it to a second install after 15 minutes stops before the swap. A check's outcome gives version, release date, notes link and download size. `ProcessRunner::new(app.name)` expects the app's name from `--version`, also when the executable was renamed. It has no network access: the apps bring it through `UpdateSource`. No release build accepts the test keys under `tests/keys`.
 
 ## [0.15.0] - 2026-11-11
 
