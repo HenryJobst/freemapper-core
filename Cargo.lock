@@ -314,6 +314,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "freemapper-update"
+version = "0.14.1"
+dependencies = [
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "freemapper-web"
 version = "0.14.1"
 dependencies = [

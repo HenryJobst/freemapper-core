@@ -1,0 +1,16 @@
+[package]
+name = "freemapper-update"
+description = "The pure parts of a self-update for the freemapper suite: manifest, signature, versions, host rule, check record, binary swap"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+include = ["Cargo.toml", "README.md", "src/**/*.rs"]
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
