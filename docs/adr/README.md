@@ -38,3 +38,4 @@ status to `Superseded by NNNN`.
 | [0027](0027-shared-contract-types.md) | Shared types of the contract |
 | [0028](0028-printrules-use-the-contract-map-kind.md) | The print rules use the contract's map kind |
 | [0029](0029-free-page-and-source-objects.md) | A free page size and the source position of each object |
+| [0030](0030-one-look-for-the-suite-pages.md) | One look and one frame for the suite's local pages |
