@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.18.0] - 2026-11-11
+
 ### Hinzugefügt
 
 - freemapper-contract: gemeinsame Typen für die drei Anwendungen (Entscheidung 0027, Stufe 4 des Vertragstests). `MapKind` ist die eine Definition der Kartenart (`sprint`, `schoolyard`, `forest`) mit `name`, `from_name`, `base_scale` und `drawing_scales`, den Maßstäben, in denen freemapper eine Kartenart schreibt. `Sidecar::parse` und `Sidecar::next_to` lesen die Vertragsschlüssel der `freemapper.toml`; eine unbekannte Kartenart kommt als `SidecarKind::Unknown` mit ihrem Namen zurück und ist kein Fehler. `ObjectClass::of` ordnet die Tags eines Objekts einer Objektklasse zu. Das Modul `tags` enthält die reservierten Wörter: Tag-Schlüssel, Quellen, die Rolle `scale-bar`, die Namen der beiden Kartenteile, den Dateinamen der Begleitdatei und ihre Vertragsschlüssel.

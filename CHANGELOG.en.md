@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-11-11
+
 ### Added
 
 - freemapper-contract: shared types for the three apps (decision 0027, stage 4 of the contract test). `MapKind` is the one definition of the map kind (`sprint`, `schoolyard`, `forest`) with `name`, `from_name`, `base_scale` and `drawing_scales`, the scales freemapper writes a kind at. `Sidecar::parse` and `Sidecar::next_to` read the contract keys of `freemapper.toml`; an unknown map kind comes back as `SidecarKind::Unknown` with its name and is no error. `ObjectClass::of` sorts the tags of an object into an object class. The module `tags` holds the reserved words: tag keys, sources, the role `scale-bar`, the names of the two parts, the sidecar's file name and its contract keys.
