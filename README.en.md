@@ -18,7 +18,7 @@ as a copy in each:
 ## Status
 
 The project is just starting. So far it contains `freemapper-contract`, `freemapper-course`, `freemapper-fs`, `freemapper-georef`,
-`freemapper-omap`, `freemapper-render`, `freemapper-rules`, `freemapper-text`, `freemapper-update` and `freemapper-web`; the other libraries are planned:
+`freemapper-omap`, `freemapper-printrules`, `freemapper-render`, `freemapper-rules`, `freemapper-text`, `freemapper-update` and `freemapper-web`; the other libraries are planned:
 
 | Library | Content | comes from | Status |
 |---|---|---|---|
@@ -28,6 +28,7 @@ The project is just starting. So far it contains `freemapper-contract`, `freemap
 | `freemapper-fs` | writing, copying and removing inside the project folder without following a link | freemapper | included |
 | `freemapper-omap` | map model, reading .omap, embedded symbol sets ISSprOM 2019 and school map 2019; no writer yet | freemapper, freemapper-print | included |
 | `freemapper-render` | map rendering: drawing OOM symbols, the page builder, the page model, PDF and SVG output, hit test, the embedded Arimo font | freemapper-print | included |
+| `freemapper-printrules` | print rules as data: map kinds, symbol size table by print scale, north-line spacing, course symbol sizes of the profile `iof-print` | freemapper-print | included |
 | `freemapper-web` | shell for local web pages: server on 127.0.0.1 with token path, host and origin checks, security headers, embedded assets, opening the browser | freemapper, freemapper-courseplan | included |
 | `freemapper-contract` | contract between freemapper and its readers: object classes, census, vocabulary and rules for map and sidecar file; with the feature `fixtures`, four maps written by freemapper with their expected values for the apps' tests | freemapper | included |
 | `freemapper-course` | courses, reading .ppen and IOF XML, fitting to the map, number placement for a whole course, control description symbols; also writes .ppen, new or as a patch of an existing file | freemapper-print, freemapper-courseplan | included |

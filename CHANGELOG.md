@@ -5,11 +5,18 @@
 Hier stehen alle wichtigen Änderungen an freemapper-core, die neueste zuerst, jeweils mit der betroffenen
 Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.1.0/).
 
-## [Unveröffentlicht]
+
+## [0.17.0] - 2026-11-11
 
 ### Hinzugefügt
 
-- freemapper-update: neue Bibliothek für die Selbst-Aktualisierung der Anwendungen aus signierten Veröffentlichungen (Entscheidung 0025). Sie enthält das Manifest, die minisign-Prüfung gegen eine Schlüsselliste, Versionen, die Hostregel `check_url`, Prüfvermerk und Modus, den Tausch der laufenden Programmdatei mit Rückweg und Aufräumen sowie `install` mit Prüfung vor dem Tausch. Eine Installationssperre mit dem Kennzeichen ihres Halters hält zwei Installationen auseinander; wer sie nach 15 Minuten an eine zweite verliert, bricht vor dem Tausch ab. Das Ergebnis einer Prüfung nennt Version, Veröffentlichungsdatum, Link zu den Versionshinweisen und Downloadgröße. `ProcessRunner::new(app.name)` erwartet bei `--version` den Namen der Anwendung, auch wenn die Programmdatei umbenannt wurde. Netzzugriff hat sie nicht: die Anwendungen liefern ihn über `UpdateSource`. Die Testschlüssel unter `tests/keys` nimmt kein Release an.
+- freemapper-update: neue Bibliothek für die Selbst-Aktualisierung der Anwendungen aus signierten Veröffentlichungen (Entscheidung 0026). Sie enthält das Manifest, die minisign-Prüfung gegen eine Schlüsselliste, Versionen, die Hostregel `check_url`, Prüfvermerk und Modus, den Tausch der laufenden Programmdatei mit Rückweg und Aufräumen sowie `install` mit Prüfung vor dem Tausch. Eine Installationssperre mit dem Kennzeichen ihres Halters hält zwei Installationen auseinander; wer sie nach 15 Minuten an eine zweite verliert, bricht vor dem Tausch ab. Das Ergebnis einer Prüfung nennt Version, Veröffentlichungsdatum, Link zu den Versionshinweisen und Downloadgröße. `ProcessRunner::new(app.name)` erwartet bei `--version` den Namen der Anwendung, auch wenn die Programmdatei umbenannt wurde. Netzzugriff hat sie nicht: die Anwendungen liefern ihn über `UpdateSource`. Die Testschlüssel unter `tests/keys` nimmt kein Release an.
+
+## [0.16.0] - 2026-11-11
+
+### Hinzugefügt
+
+- freemapper-printrules: die Druckregeln aus freemapper-print, im Verhalten unverändert (Entscheidung 0025): das Profil `iof-print`, der Regelsatz, die Kartenarten und die Symbolgrößentabelle je Druckmaßstab. `scale::course_symbols(kind, print_scale)` liefert die Kurssymbolgrößen und den Kursfaktor für `freemapper_render::overprint::overprint`. Mit dem Feature `test-support` sind `rules::load_for_tests` und `rules::embedded_text` öffentlich.
 
 ## [0.15.0] - 2026-11-11
 

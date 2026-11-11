@@ -1,0 +1,367 @@
+# Base rule profile: print rules from the IOF map specifications. Format: freemapper-rules (core
+# ADR 0011, after freemapper-courseplan ADR 0025), adapted in ADR 0031 and rules/README.md;
+# src/rules.rs reads it with its SCHEMA.
+#
+# Every value is given at the base scale of its map kind (sprint 1:4000, forest 1:15000,
+# schoolyard 1:1000). The program enlarges course symbols with the size factor of the print scale,
+# the course factor (ADR 0018, ADR 0034).
+#
+# Rule keys and the values they read:
+#   scale_table        rows: documented table (rules::SCHEMA, `tables`):
+#                      [{ scale, size_factor, standard }, ...], one row per scale denominator
+#                      a map of the kind may be drawn and printed at, ascending. size_factor is
+#                      the symbol size relative to the base scale; standard = false marks a
+#                      reduction the standard does not foresee (default true).
+#   north_lines        spacing_metres: ground distance between north lines
+#   contour_interval   proposed_metres: the contour interval `init` proposes; a map kind
+#                      without a rule gets no proposal
+#   course_symbol      sizes in mm of the course planning symbols (7xx), split by symbol:
+#                      start_side_mm, circle_diameter_mm, number_height_mm, line_width_mm,
+#                      finish_inner_mm, finish_outer_mm, marked_route_dash_mm,
+#                      marked_route_gap_mm, out_of_bounds_line_mm, crossing_point_mm,
+#                      out_of_bounds_hatch_angle_degrees, out_of_bounds_hatch_second_angle_degrees
+#                      (optional, for a cross hatch), out_of_bounds_hatch_spacing_mm (centre to
+#                      centre), out_of_bounds_hatch_line_mm, first_aid_mm, first_aid_bar_mm,
+#                      refreshment_mm (outside measure), refreshment_line_mm. Angles run
+#                      counter-clockwise from east and may be any number.
+#                      Circle diameters are measured from line centre to line centre.
+#   description_box    cell_mm: side of a control description cell printed on the map
+#   course_colour      cyan_percent, magenta_percent, yellow_percent, black_percent
+#   placement_weights  black_factor, brown_factor, blue_factor, other_factor: how much a mm²
+#                      of map detail under a control number counts, by colour class
+#   number_gap         min_gap_mm, max_gap_mm: the gap between control circle and number; with
+#                      several rules the strictest wins, without one placement uses 0.5 mm
+#
+# Course symbol sizes were read from the ISSprOM and ISOM texts (pdftotext) and checked against
+# Purple Pen's NormalCourseAppearance (petergolde/PurplePen, src/PurplePenCore/Appearance.cs and
+# CourseObject.cs at commit 201417f97bb69302e3e0db123f428870e0914515).
+
+format = 1
+
+[profile]
+id = "iof-print"
+kind = "base"
+name = { de = "IOF-Druckregeln", en = "IOF print rules" }
+
+[sources.ISSprOM]
+title = "ISSprOM 2019-2, International Specification for Sprint Orienteering Maps (updated version, January 2022)"
+
+[sources.ISOM]
+title = "ISOM 2017-2, International Specification for Orienteering Maps (errata up to February 2022)"
+
+[sources.IOF-SCHOOL]
+title = "IOF school symbol set 2019, as cited in ADR 0018"
+
+[sources.IOF-PCD]
+title = "IOF Map Specifications: Printing and Colour Definitions, Revision 4 (September 2024)"
+
+[sources.IOF-CD]
+title = "International Specification for Control Descriptions 2024"
+
+[sources.fmp]
+title = "freemapper-print decisions (docs/adr)"
+url = "https://github.com/HenryJobst/freemapper-print/tree/main/docs/adr"
+
+# --- Scale table (ADR 0018) -------------------------------------------------------------------
+
+[[rules]]
+id = "iofprint.scale.sprint"
+key = "scale_table"
+severity = "error"
+map_kinds = ["sprint"]
+source = { doc = "ISSprOM", section = "3.1 (base scale 1:4000, 1:3000 for the youngest age groups), 4.7 (133 % at 1:3000)" }
+note = { de = "1:5000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", en = "1:5000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)." }
+values = { rows = [
+    { scale = 3000, size_factor = 1.3333333333333333 },
+    { scale = 4000, size_factor = 1.0 },
+    { scale = 5000, size_factor = 1.0, standard = false },
+] }
+
+[[rules]]
+id = "iofprint.scale.schoolyard"
+key = "scale_table"
+severity = "error"
+map_kinds = ["schoolyard"]
+source = { doc = "IOF-SCHOOL", section = "base scale 1:1000" }
+values = { rows = [{ scale = 1000, size_factor = 1.0 }] }
+
+[[rules]]
+id = "iofprint.scale.forest"
+key = "scale_table"
+severity = "error"
+map_kinds = ["forest"]
+source = { doc = "ISOM", section = "2.9.1 and 3.7 (base scale 1:15000; 150 % at 1:10000, 300 % at 1:5000, so 200 % at 1:7500)" }
+note = { de = "1:20000 liegt unter dem Basismaßstab und ist in der Norm nicht vorgesehen; die Symbole behalten ihre Größe (ADR 0018).", en = "1:20000 is below the base scale and not foreseen by the standard; the symbols keep their base size (ADR 0018)." }
+values = { rows = [
+    { scale = 5000, size_factor = 3.0 },
+    { scale = 7500, size_factor = 2.0 },
+    { scale = 10000, size_factor = 1.5 },
+    { scale = 15000, size_factor = 1.0 },
+    { scale = 20000, size_factor = 1.0, standard = false },
+] }
+
+# --- North lines (ADR 0027) -------------------------------------------------------------------
+
+[[rules]]
+id = "iofprint.north_lines.sprint"
+key = "north_lines"
+severity = "hint"
+map_kinds = ["sprint"]
+values = { spacing_metres = 120.0 }
+source = { doc = "ISSprOM", section = "4.6, symbol 601 (30 mm at 1:4000)" }
+
+[[rules]]
+id = "iofprint.north_lines.schoolyard"
+key = "north_lines"
+severity = "hint"
+map_kinds = ["schoolyard"]
+values = { spacing_metres = 37.5 }
+source = { doc = "fmp", section = "ADR 0027" }
+note = { de = "Arbeitswert des Projektinhabers (37,5 mm bei 1:1000), nicht am IOF-Schulsymbolsatz geprüft.", en = "Working value from the project owner (37.5 mm at 1:1000), not checked against the IOF school symbol set." }
+
+[[rules]]
+id = "iofprint.north_lines.forest"
+key = "north_lines"
+severity = "hint"
+map_kinds = ["forest"]
+values = { spacing_metres = 300.0 }
+source = { doc = "ISOM", section = "3.6, symbol 601 (20 mm at 1:15000)" }
+
+# --- Contour interval proposed by init (ADR 0025) ---------------------------------------------
+
+[[rules]]
+id = "iofprint.contour.sprint"
+key = "contour_interval"
+severity = "hint"
+map_kinds = ["sprint"]
+values = { proposed_metres = 2.0 }
+source = { doc = "ISSprOM", section = "3.2 (2 m or 2.5 m)" }
+
+[[rules]]
+id = "iofprint.contour.forest"
+key = "contour_interval"
+severity = "hint"
+map_kinds = ["forest"]
+values = { proposed_metres = 5.0 }
+source = { doc = "ISOM", section = "2.10 (5 m, 2.5 m in flat terrain)" }
+
+# --- Course planning symbols, sprint maps (ISSprOM 2019-2 section 4.7, at 1:4000) -------------
+
+[[rules]]
+id = "iofprint.course.start_sprint"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["sprint"]
+values = { start_side_mm = 7.0 }
+source = { doc = "ISSprOM", section = "4.7, symbol 701 Start" }
+
+[[rules]]
+id = "iofprint.course.control_sprint"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["sprint"]
+values = { circle_diameter_mm = 6.0 }
+source = { doc = "ISSprOM", section = "4.7, symbol 703 Control point" }
+
+[[rules]]
+id = "iofprint.course.number_sprint"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["sprint"]
+values = { number_height_mm = 4.0 }
+source = { doc = "ISSprOM", section = "4.7, symbol 704 Control number" }
+
+[[rules]]
+id = "iofprint.course.line_sprint"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["sprint"]
+values = { line_width_mm = 0.35 }
+source = { doc = "ISSprOM", section = "4.7, symbol 705 Course line" }
+
+[[rules]]
+id = "iofprint.course.finish_sprint"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["sprint"]
+values = { finish_inner_mm = 5.0, finish_outer_mm = 7.0 }
+source = { doc = "ISSprOM", section = "4.7, symbol 706 Finish" }
+
+[[rules]]
+id = "iofprint.course.marked_route_sprint"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["sprint"]
+values = { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 }
+source = { doc = "ISSprOM", section = "4.7, symbol 707 Marked route" }
+
+[[rules]]
+id = "iofprint.course.out_of_bounds_sprint"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["sprint"]
+values = { out_of_bounds_line_mm = 1.0 }
+source = { doc = "ISSprOM", section = "4.7, symbol 708 Out-of-bounds boundary" }
+
+[[rules]]
+id = "iofprint.course.crossing_sprint"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["sprint"]
+values = { crossing_point_mm = 3.0 }
+source = { doc = "ISSprOM", section = "4.7, symbol 710.1 Crossing point (3.0 mm outside measure)" }
+
+[[rules]]
+id = "iofprint.course.out_of_bounds_area_sprint"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["sprint"]
+values = { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2, out_of_bounds_hatch_line_mm = 0.2 }
+source = { doc = "ISSprOM", section = "4.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; changed from 0.8 mm and 0.25 mm on 2022-01-02); Purple Pen 201417f OOBCourseObj agrees" }
+
+[[rules]]
+id = "iofprint.course.first_aid_refreshment_sprint"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["sprint"]
+values = { first_aid_mm = 4.0, first_aid_bar_mm = 1.33, refreshment_mm = 3.5, refreshment_line_mm = 0.4 }
+source = { doc = "fmp", section = "ADR 0034 (ISSprOM 2019-2 has no symbols 712 and 713; the ISOM 2017-2 section 3.7 sizes on paper)" }
+note = { de = "Annahme: ISSprOM 2019-2 kennt weder Erste Hilfe noch Getränkeposten; die Größen auf dem Papier kommen aus ISOM 2017-2 §3.7.", en = "Assumption: ISSprOM 2019-2 has no first aid or refreshment symbol; the sizes on paper come from ISOM 2017-2 section 3.7." }
+
+# --- Course planning symbols, schoolyard maps -------------------------------------------------
+
+[[rules]]
+id = "iofprint.course.schoolyard"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["schoolyard"]
+values = { start_side_mm = 7.0, circle_diameter_mm = 6.0, number_height_mm = 4.0, line_width_mm = 0.35, finish_inner_mm = 5.0, finish_outer_mm = 7.0, marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5, out_of_bounds_line_mm = 1.0, crossing_point_mm = 3.0, out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2, out_of_bounds_hatch_line_mm = 0.2, first_aid_mm = 4.0, first_aid_bar_mm = 1.33, refreshment_mm = 3.5, refreshment_line_mm = 0.4 }
+source = { doc = "fmp", section = "ADR 0031 (the ISSprOM 2019-2 values of section 4.7, symbols 701 to 710.1, assumed at 1:1000)" }
+note = { de = "Annahme: Schulhofkarten übernehmen die Sprintwerte aus ISSprOM 2019-2 §4.7 bei 1:1000. Der IOF-Schulsymbolsatz ist dafür nicht geprüft.", en = "Assumption: schoolyard maps take the sprint values of ISSprOM 2019-2 section 4.7 at 1:1000. Not checked against the IOF school symbol set." }
+
+# --- Course planning symbols, forest maps (ISOM 2017-2 section 3.7, at 1:15000) ---------------
+
+[[rules]]
+id = "iofprint.course.start_forest"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["forest"]
+values = { start_side_mm = 6.0 }
+source = { doc = "ISOM", section = "3.7, symbol 701 Start" }
+
+[[rules]]
+id = "iofprint.course.control_forest"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["forest"]
+values = { circle_diameter_mm = 5.0 }
+source = { doc = "ISOM", section = "3.7, symbol 703 Control point" }
+
+[[rules]]
+id = "iofprint.course.number_forest"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["forest"]
+values = { number_height_mm = 4.0 }
+source = { doc = "ISOM", section = "3.7, symbol 704 Control number" }
+
+[[rules]]
+id = "iofprint.course.line_forest"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["forest"]
+values = { line_width_mm = 0.35 }
+source = { doc = "ISOM", section = "3.7, symbol 705 Course line" }
+
+[[rules]]
+id = "iofprint.course.finish_forest"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["forest"]
+values = { finish_inner_mm = 4.0, finish_outer_mm = 6.0 }
+source = { doc = "ISOM", section = "3.7, symbol 706 Finish" }
+
+[[rules]]
+id = "iofprint.course.marked_route_forest"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["forest"]
+values = { marked_route_dash_mm = 2.0, marked_route_gap_mm = 0.5 }
+source = { doc = "ISOM", section = "3.7, symbol 707 Marked route" }
+
+[[rules]]
+id = "iofprint.course.out_of_bounds_forest"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["forest"]
+values = { out_of_bounds_line_mm = 0.7 }
+source = { doc = "ISOM", section = "3.7, symbol 708 Out-of-bounds boundary" }
+
+[[rules]]
+id = "iofprint.course.crossing_forest"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["forest"]
+values = { crossing_point_mm = 3.0 }
+source = { doc = "ISOM", section = "3.7, symbol 710 Crossing point (drawn 3.0 mm long; the lines follow the length of the crossing)" }
+
+[[rules]]
+id = "iofprint.course.out_of_bounds_area_forest"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["forest"]
+values = { out_of_bounds_hatch_angle_degrees = 45, out_of_bounds_hatch_second_angle_degrees = 135, out_of_bounds_hatch_spacing_mm = 1.2, out_of_bounds_hatch_line_mm = 0.2 }
+source = { doc = "ISOM", section = "3.7, symbol 709 Out-of-bounds area (cross hatch at 45°, 1.2 mm centre to centre, 0.2 mm lines; ISOM 2000 had vertical stripes); Purple Pen 201417f OOBCourseObj agrees" }
+
+[[rules]]
+id = "iofprint.course.first_aid_forest"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["forest"]
+values = { first_aid_mm = 4.0, first_aid_bar_mm = 1.33 }
+source = { doc = "ISOM", section = "3.7, symbol 712 First aid post (4.0 mm, bars 1.33 mm)" }
+
+[[rules]]
+id = "iofprint.course.refreshment_forest"
+key = "course_symbol"
+severity = "warning"
+map_kinds = ["forest"]
+values = { refreshment_mm = 3.5, refreshment_line_mm = 0.4 }
+source = { doc = "ISOM", section = "3.7, symbol 713 Refreshment point (3.5 mm wide and high outside measure, 0.4 mm line)" }
+
+# --- Control descriptions on the map -----------------------------------------------------------
+
+[[rules]]
+id = "iofprint.description.cell"
+key = "description_box"
+severity = "hint"
+values = { cell_mm = 6.0 }
+source = { doc = "IOF-CD", section = "Control description sheet format (square boxes, 5 mm to 7 mm)" }
+note = { de = "6 mm ist die Mitte des Bereichs, den die Norm erlaubt; eine Wahl von freemapper-print.", en = "6 mm is the middle of the range the standard allows; a choice of freemapper-print." }
+
+# --- Course colour (spec 5.9) -------------------------------------------------------------------
+
+[[rules]]
+id = "iofprint.colour.purple"
+key = "course_colour"
+severity = "warning"
+values = { cyan_percent = 35, magenta_percent = 85, yellow_percent = 0, black_percent = 0 }
+source = { doc = "IOF-PCD", section = "6. Colour order (upper and lower purple for course overprint)" }
+
+# --- Control number placement ------------------------------------------------------------------
+
+[[rules]]
+id = "iofprint.placement.weights"
+key = "placement_weights"
+severity = "hint"
+values = { black_factor = 10.0, brown_factor = 4.0, blue_factor = 4.0, other_factor = 1.0 }
+source = { doc = "fmp", section = "ADR 0031" }
+note = { de = "Eigene Wahl: Eine Nummer über schwarzen Kartendetails stört am meisten, über braunen und blauen weniger, über den übrigen Farben am wenigsten.", en = "Our own choice: a number over black map detail hurts legibility most, over brown and blue less, over the other colours least." }
+
+[[rules]]
+id = "iofprint.number.gap"
+key = "number_gap"
+severity = "warning"
+values = { min_gap_mm = 0.5, max_gap_mm = 5.0 }
+source = { doc = "fmp", section = "ADR 0038" }
+note = { de = "Entscheidung des Nutzers vom 2026-11-09, gemeinsam mit freemapper-courseplan (dessen ADR 0032): Zwischen Postenkreis und Nummer liegen mindestens 0,5 und höchstens 5 mm.", en = "User decision 2026-11-09, shared with freemapper-courseplan ADR 0032: at least 0.5 and at most 5 mm between control circle and number." }

@@ -5,11 +5,18 @@
 This file lists all notable changes to freemapper-core, newest first, each with the library it affects. The
 format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+
+## [0.17.0] - 2026-11-11
 
 ### Added
 
-- freemapper-update: new library for the apps' self-update from signed releases (decision 0025). It holds the manifest, the minisign check against a key list, versions, the `check_url` host rule, check record and mode, swapping the running executable with a way back and clean-up, and `install` with verification before the swap. An install lock holding its holder's token keeps two installs apart; one that loses it to a second install after 15 minutes stops before the swap. A check's outcome gives version, release date, notes link and download size. `ProcessRunner::new(app.name)` expects the app's name from `--version`, also when the executable was renamed. It has no network access: the apps bring it through `UpdateSource`. No release build accepts the test keys under `tests/keys`.
+- freemapper-update: new library for the apps' self-update from signed releases (decision 0026). It holds the manifest, the minisign check against a key list, versions, the `check_url` host rule, check record and mode, swapping the running executable with a way back and clean-up, and `install` with verification before the swap. An install lock holding its holder's token keeps two installs apart; one that loses it to a second install after 15 minutes stops before the swap. A check's outcome gives version, release date, notes link and download size. `ProcessRunner::new(app.name)` expects the app's name from `--version`, also when the executable was renamed. It has no network access: the apps bring it through `UpdateSource`. No release build accepts the test keys under `tests/keys`.
+
+## [0.16.0] - 2026-11-11
+
+### Added
+
+- freemapper-printrules: the print rules from freemapper-print, unchanged in behaviour (decision 0025): the profile `iof-print`, the rule set, the map kinds and the symbol size table by print scale. `scale::course_symbols(kind, print_scale)` gives the course symbol sizes and the course factor for `freemapper_render::overprint::overprint`. With the feature `test-support`, `rules::load_for_tests` and `rules::embedded_text` are public.
 
 ## [0.15.0] - 2026-11-11
 

@@ -1,4 +1,4 @@
-# 0025. The update crate
+# 0026. The update crate
 
 Date: 2026-11-11
 Status: Accepted
