@@ -1,16 +1,16 @@
 //! The rules a map and sidecar written by freemapper must keep.
 
-use crate::class::{
-    BASE_PART, LEGACY_SOURCE_SCALE_BAR, ObjectClass, ROLE_KEY, SHEET_PART, SOURCE_KEY, classify,
-    tag,
+use crate::class::{ObjectClass, tag};
+use crate::tags::{
+    BASE_PART, KEY_CRS, KEY_MAP_KIND, KEY_SCALE, KEY_TITLE, LEGACY_SOURCE_SCALE_BAR, ROLE_KEY,
+    SHEET_PART, SOURCE_KEY,
 };
-use crate::sidecar::{KEY_CRS, KEY_MAP_KIND, KEY_SCALE, KEY_TITLE, read_sidecar};
-use crate::{ContractError, read_map};
+use crate::{ContractError, Sidecar, read_map};
 
 /// A rule of the contract.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Rule {
-    /// `map_kind` is `sprint` or `schoolyard`.
+    /// `map_kind` is a kind freemapper writes: `sprint` or `schoolyard`.
     KindKnown,
     /// `title` is a string with a character that is no blank.
     TitlePresent,
@@ -43,55 +43,49 @@ pub struct Violation {
     pub detail: String,
 }
 
-const CRS_CODES: [i64; 2] = [25832, 25833];
-
-/// The map scales freemapper writes for a kind; `None` for a kind it does not write.
-fn allowed_scales(kind: &str) -> Option<&'static [u32]> {
-    match kind {
-        "schoolyard" => Some(&[1000]),
-        "sprint" => Some(&[4000, 5000]),
-        _ => None,
-    }
-}
+const CRS_CODES: [u32; 2] = [25832, 25833];
 
 /// Checks a map (OOM XML) and its sidecar (the text of `freemapper.toml`) against the rules. A map or
 /// sidecar that cannot be read at all is an error; everything else comes back as violations.
 pub fn check(omap_xml: &str, sidecar_toml: &str) -> Result<Vec<Violation>, ContractError> {
-    let sidecar = read_sidecar(sidecar_toml)?;
+    let sidecar = Sidecar::parse(sidecar_toml).map_err(ContractError::Sidecar)?;
     let doc = read_map(omap_xml)?;
     let mut violations = Vec::new();
     let mut report = |rule: Rule, detail: String| violations.push(Violation { rule, detail });
     let shown =
         |value: Option<String>| value.unwrap_or_else(|| "missing or of another type".into());
 
-    let scales = sidecar.map_kind.as_deref().and_then(allowed_scales);
+    let scales = sidecar
+        .map_kind
+        .known()
+        .map(|kind| kind.drawing_scales())
+        .filter(|scales| !scales.is_empty());
     if scales.is_none() {
         report(
             Rule::KindKnown,
-            format!("{KEY_MAP_KIND}: {}", shown(sidecar.map_kind.clone())),
+            format!(
+                "{KEY_MAP_KIND}: {}",
+                shown(sidecar.map_kind.name().map(str::to_owned))
+            ),
         );
     }
-    if !sidecar
-        .title
-        .as_deref()
-        .is_some_and(|t| !t.trim().is_empty())
-    {
+    if sidecar.title().is_none() {
         report(
             Rule::TitlePresent,
             format!(
                 "{KEY_TITLE}: {}",
-                shown(sidecar.title.as_ref().map(|t| format!("{t:?}")))
+                shown(sidecar.raw_title.as_ref().map(|t| format!("{t:?}")))
             ),
         );
     }
     let scale = sidecar.scale_denominator;
     if let (Some(scales), Some(scale)) = (scales, scale)
-        && !scales.iter().any(|s| i64::from(*s) == scale)
+        && !scales.contains(&scale)
     {
         report(Rule::ScaleAllowed, format!("{KEY_SCALE}: {scale}"));
     }
     let map_scale = doc.georef.scale_denominator;
-    if scale != Some(i64::from(map_scale)) {
+    if scale != Some(map_scale) {
         report(
             Rule::ScaleMatchesMap,
             format!(
@@ -119,7 +113,7 @@ pub fn check(omap_xml: &str, sidecar_toml: &str) -> Result<Vec<Violation>, Contr
 
     for part in &doc.parts {
         for (index, object) in part.objects.iter().enumerate() {
-            let class = classify(&object.tags);
+            let class = ObjectClass::of(&object.tags);
             let mut at = |rule: Rule| report(rule, format!("part {:?}, object {index}", part.name));
             if part.name == SHEET_PART && class != ObjectClass::Sheet {
                 at(Rule::SheetPartOnlySheetObjects);

@@ -1,23 +1,8 @@
-//! The reserved words of the contract and the class of an object.
+//! The class of an object.
 
-/// Tag that names where an object comes from. Three values are reserved; every other value is the
-/// identifier of a data source.
-pub(crate) const SOURCE_KEY: &str = "freemapper:source";
-/// Tag that names the role of a sheet object, e.g. `scale-bar`.
-pub(crate) const ROLE_KEY: &str = "freemapper:sheet";
-/// Every tag key freemapper writes starts with this.
-pub(crate) const TAG_PREFIX: &str = "freemapper:";
-
-pub(crate) const SOURCE_SHEET: &str = "sheet";
-pub(crate) const SOURCE_BASE: &str = "base";
-pub(crate) const SOURCE_NORTH_LINES: &str = "north-lines";
-/// What freemapper v0.9.0 wrote on the scale bar instead of `sheet`.
-pub(crate) const LEGACY_SOURCE_SCALE_BAR: &str = "scale-bar";
-
-/// The part with the sheet objects.
-pub(crate) const SHEET_PART: &str = "peripheral information";
-/// The part with the base area.
-pub(crate) const BASE_PART: &str = "base";
+use crate::tags::{
+    LEGACY_SOURCE_SCALE_BAR, SOURCE_BASE, SOURCE_KEY, SOURCE_NORTH_LINES, SOURCE_SHEET,
+};
 
 /// What an object is to a reader of the map.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,17 +17,62 @@ pub enum ObjectClass {
     Content,
 }
 
+impl ObjectClass {
+    /// The class of an object, from its source tag alone; the part it lies in plays no role. `tags` are
+    /// the object's tags as key and value, in any order.
+    pub fn of(tags: &[(String, String)]) -> ObjectClass {
+        match tag(tags, SOURCE_KEY) {
+            Some(SOURCE_SHEET | LEGACY_SOURCE_SCALE_BAR) => ObjectClass::Sheet,
+            Some(SOURCE_BASE) => ObjectClass::Base,
+            Some(SOURCE_NORTH_LINES) => ObjectClass::NorthLines,
+            _ => ObjectClass::Content,
+        }
+    }
+
+    /// Whether objects of this class are map content. Sheet objects and the base area are not: they do
+    /// not count for the map extent and are no features.
+    pub fn is_map_content(self) -> bool {
+        matches!(self, ObjectClass::NorthLines | ObjectClass::Content)
+    }
+}
+
 /// The value of the tag `key`, if the object carries it.
-pub(crate) fn tag<'a>(tags: &'a [(String, String)], key: &str) -> Option<&'a str> {
+pub fn tag<'a>(tags: &'a [(String, String)], key: &str) -> Option<&'a str> {
     tags.iter().find(|(k, _)| k == key).map(|(_, v)| v.as_str())
 }
 
-/// The class of an object, from its source tag alone; the part it lies in plays no role.
-pub(crate) fn classify(tags: &[(String, String)]) -> ObjectClass {
-    match tag(tags, SOURCE_KEY) {
-        Some(SOURCE_SHEET | LEGACY_SOURCE_SCALE_BAR) => ObjectClass::Sheet,
-        Some(SOURCE_BASE) => ObjectClass::Base,
-        Some(SOURCE_NORTH_LINES) => ObjectClass::NorthLines,
-        _ => ObjectClass::Content,
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tags(pairs: &[(&str, &str)]) -> Vec<(String, String)> {
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect()
+    }
+
+    #[test]
+    fn the_source_tag_decides_the_class() {
+        let class = |source: &str| ObjectClass::of(&tags(&[("freemapper:source", source)]));
+        assert_eq!(class("sheet"), ObjectClass::Sheet);
+        assert_eq!(class("scale-bar"), ObjectClass::Sheet);
+        assert_eq!(class("base"), ObjectClass::Base);
+        assert_eq!(class("north-lines"), ObjectClass::NorthLines);
+        assert_eq!(class("osm"), ObjectClass::Content);
+        assert_eq!(ObjectClass::of(&[]), ObjectClass::Content);
+        // The role alone makes no sheet object.
+        assert_eq!(
+            ObjectClass::of(&tags(&[("freemapper:sheet", "scale-bar")])),
+            ObjectClass::Content
+        );
+    }
+
+    #[test]
+    fn sheet_objects_and_the_base_area_are_no_map_content() {
+        assert!(!ObjectClass::Sheet.is_map_content());
+        assert!(!ObjectClass::Base.is_map_content());
+        assert!(ObjectClass::NorthLines.is_map_content());
+        assert!(ObjectClass::Content.is_map_content());
     }
 }

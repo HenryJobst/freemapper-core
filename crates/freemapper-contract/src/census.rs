@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::class::{ObjectClass, classify};
+use crate::class::ObjectClass;
 use crate::{ContractError, read_map};
 
 /// A box in map coordinates (1/1000 mm, y south): `[min_x, min_y, max_x, max_y]`.
@@ -43,7 +43,7 @@ pub fn census(omap_xml: &str) -> Result<Census, ContractError> {
     let mut census = Census::default();
     for object in doc.parts.iter().flat_map(|p| &p.objects) {
         let points = object.coords.iter().map(|c| (c.x, c.y));
-        match classify(&object.tags) {
+        match ObjectClass::of(&object.tags) {
             ObjectClass::Sheet => {
                 census.objects.sheet += 1;
                 grow(&mut census.bbox.sheet, points);
