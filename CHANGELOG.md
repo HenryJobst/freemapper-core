@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.14.0] - 2026-11-11
+
 ### Hinzugefügt
 
 - freemapper-course: `description_symbols::ids(standard)` zählt alle Symbol-IDs eines Beschreibungsstandards auf, in der Reihenfolge der Datei und jede einmal. `symbol_kind` nennt dazu die Spalte.
