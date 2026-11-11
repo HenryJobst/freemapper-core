@@ -769,10 +769,14 @@ mod tests {
         }
         // A copy of this test binary running `old_version_sleeps`. Not a copied /bin/sleep: macOS kills a
         // copy of a system binary at once (exit 137), while an ad-hoc signed copy runs, like the real app.
+        //
+        // It returns once the copy has written its first byte ("running 1 test"), so it has started. macOS
+        // kills a process whose executable is renamed while it still starts (SIGKILL); under load the swap
+        // could hit that window, and the old version ended before the check (about 1 run in 100).
         #[cfg(not(windows))]
         {
             fs::copy(std::env::current_exe().unwrap(), path).unwrap();
-            spawn(
+            let mut child = spawn(
                 Command::new(path)
                     .args([
                         "--exact",
@@ -781,9 +785,14 @@ mod tests {
                         "--test-threads=1",
                     ])
                     .stdin(Stdio::null())
-                    .stdout(Stdio::null())
+                    .stdout(Stdio::piped())
                     .stderr(Stdio::null()),
-            )
+            );
+            // The pipe stays with the child, so its later output does not fail.
+            let mut first = [0u8; 1];
+            let read = child.stdout.as_mut().unwrap().read(&mut first).unwrap();
+            assert_eq!(read, 1, "the old version ended before it started");
+            child
         }
     }
 
