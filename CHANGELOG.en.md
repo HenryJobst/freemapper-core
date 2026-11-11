@@ -5,12 +5,19 @@
 This file lists all notable changes to freemapper-core, newest first, each with the library it affects. The
 format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
 
 ## [0.17.0] - 2026-11-11
 
 ### Added
 
 - freemapper-update: new library for the apps' self-update from signed releases (decision 0026). It holds the manifest, the minisign check against a key list, versions, the `check_url` host rule, check record and mode, swapping the running executable with a way back and clean-up, and `install` with verification before the swap. An install lock holding its holder's token keeps two installs apart; one that loses it to a second install after 15 minutes stops before the swap. A check's outcome gives version, release date, notes link and download size. `ProcessRunner::new(app.name)` expects the app's name from `--version`, also when the executable was renamed. It has no network access: the apps bring it through `UpdateSource`. No release build accepts the test keys under `tests/keys`.
+
+## [0.16.1] - 2026-11-11
+
+### Changed
+
+- freemapper-course: the shared placement cases (`tests/fixtures/placement/cases.toml`) now assume the number box the renderer draws: 0.8083747 × height per digit (the Arimo advance, checked by a test in freemapper-render) instead of 0.6 × height. The expected values of `numbers_avoid_each_other` and `mixed_course_4` change. `place_course_numbers` itself is unchanged; it takes the box size from the caller.
 
 ## [0.16.0] - 2026-11-11
 
