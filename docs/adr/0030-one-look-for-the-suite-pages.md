@@ -106,5 +106,8 @@ Contracts fixed by the first core implementation (`freemapper-web`), as stable a
   not from a fixed id.
 - **Language**: a fixed language other than `de` or `en` counts as unset; in `Accept-Language`, `*` names no
   language.
+- **Text on the accent** (v0.21.1): the token `--on-accent` (`#ffffff` light, `#1c1c1e` dark) colours text on a
+  surface filled with `--accent`; `button.primary` is the filled main action of a view. Apps use the token instead
+  of `--bg`, which matched only by chance.
 - **Page rules**: `check_page_rules` is text matching that backs up the CSP and does not replace it. Images
   are not checked; the CSP names their hosts.

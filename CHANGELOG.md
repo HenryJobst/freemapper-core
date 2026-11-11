@@ -7,6 +7,12 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.21.1] - 2026-11-11
+
+### Hinzugefügt
+
+- freemapper-web: `suite.css` hat den Farbwert `--on-accent` für Text auf einer mit `--accent` gefüllten Fläche (hell `#ffffff`, dunkel `#1c1c1e`) und die Klasse `button.primary` für die Hauptaktion einer Ansicht (Entscheidung 0030, Nachtrag).
+
 ## [0.21.0] - 2026-11-11
 
 ### Hinzugefügt

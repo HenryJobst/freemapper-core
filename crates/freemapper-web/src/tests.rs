@@ -1024,6 +1024,24 @@ fn the_suite_assets_keep_the_page_rules() {
 }
 
 #[test]
+fn text_on_the_accent_has_its_own_token_in_both_modes() {
+    let css = suite_assets()
+        .into_iter()
+        .find(|(name, _)| name == "suite.css")
+        .map(|(_, bytes)| String::from_utf8(bytes).expect("utf-8"))
+        .expect("suite.css");
+    let (light, dark) = css
+        .split_once("prefers-color-scheme: dark")
+        .expect("dark block");
+    assert!(light.contains("--on-accent: #ffffff;"), "light");
+    assert!(dark.contains("--on-accent: #1c1c1e;"), "dark");
+    assert!(
+        css.contains("background: var(--accent)") && css.contains("color: var(--on-accent)"),
+        "a filled primary button uses both"
+    );
+}
+
+#[test]
 fn each_suite_script_says_where_it_comes_from() {
     for (name, bytes) in suite_assets() {
         let text = String::from_utf8(bytes).expect("utf-8");

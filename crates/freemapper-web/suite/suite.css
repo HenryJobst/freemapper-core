@@ -11,6 +11,7 @@
   --line: #c8c8cc;
   --bar: #ececef;
   --accent: #0b6bcb;
+  --on-accent: #ffffff;
   --sel: #0b6bcb;
   --map-bg: #ffffff;
   --pool: #76767c;
@@ -29,6 +30,7 @@
     --line: #48484a;
     --bar: #2c2c2e;
     --accent: #6cb0ff;
+    --on-accent: #1c1c1e;
     --sel: #6cb0ff;
     --map-bg: #2a2a2d;
     --pool: #98989f;
@@ -76,6 +78,8 @@ input, select, textarea {
 input[type="checkbox"], input[type="radio"] { padding: 0; }
 input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] { border: 2px solid var(--warn-line); }
 button:disabled { opacity: 0.5; }
+/* The one main action of a view: filled with the accent, text in --on-accent. */
+button.primary { background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); }
 .field-error { margin: 0.1rem 0 0.4rem; color: var(--warn-line); font-weight: 600; }
 .hint { margin: 0.25rem 0; opacity: 0.75; }
 

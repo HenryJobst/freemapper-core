@@ -7,6 +7,12 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.21.1] - 2026-11-11
+
+### Added
+
+- freemapper-web: `suite.css` has the token `--on-accent` for text on a surface filled with `--accent` (light `#ffffff`, dark `#1c1c1e`) and the class `button.primary` for the main action of a view (decision 0030, addendum).
+
 ## [0.21.0] - 2026-11-11
 
 ### Added
