@@ -3,16 +3,23 @@
 //!
 //! The crate has no network code (core ADR 0007). Apps bring the network through the `UpdateSource` trait.
 
+mod atomic;
+pub mod check;
 pub mod error;
 pub mod manifest;
 pub mod platform;
+pub mod record;
+pub mod settings;
 pub mod signature;
 pub mod source;
 pub mod version;
 
+pub use check::{Outcome, check_for_update};
 pub use error::UpdateError;
 pub use manifest::{Asset, Manifest, parse_manifest};
 pub use platform::current_platform;
+pub use record::{CheckRecord, RecordResult, due, load_record, save_record};
+pub use settings::{Mode, load_mode, save_mode};
 pub use signature::verify;
-pub use source::{ALLOWED_HOSTS, check_url};
+pub use source::{ALLOWED_HOSTS, App, UpdateSource, check_url, manifest_url};
 pub use version::{ParseVersionError, Version};

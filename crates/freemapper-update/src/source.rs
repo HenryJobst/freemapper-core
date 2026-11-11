@@ -1,6 +1,7 @@
 //! The host rule: where an update may be fetched from.
 
 use crate::error::UpdateError;
+use crate::version::Version;
 
 /// The only hosts a manifest, signature or asset may come from, directly or by redirect.
 pub const ALLOWED_HOSTS: [&str; 3] = [
@@ -8,6 +9,46 @@ pub const ALLOWED_HOSTS: [&str; 3] = [
     "release-assets.githubusercontent.com",
     "objects.githubusercontent.com",
 ];
+
+/// The network, as the apps provide it. Every URL passes [`check_url`] on the way, redirects included.
+pub trait UpdateSource {
+    /// Fetches `url` into memory; fails when the body exceeds `max_bytes`.
+    fn get(&self, url: &str, max_bytes: u64) -> Result<Vec<u8>, UpdateError>;
+    /// Streams `url` into `file`; fails when the body is not exactly `size` bytes.
+    fn download_to(
+        &self,
+        url: &str,
+        size: u64,
+        file: &mut std::fs::File,
+    ) -> Result<(), UpdateError>;
+}
+
+/// What the update code needs to know about the running app.
+#[derive(Debug, Clone)]
+pub struct App {
+    /// Short name, as in the manifest's `app` field and the manifest file name.
+    pub name: &'static str,
+    /// Repository URL without a trailing slash.
+    pub repo_url: &'static str,
+    /// Trusted minisign public keys (a list, so a key can be rotated).
+    pub keys: &'static [&'static str],
+    /// The running version.
+    pub current: Version,
+}
+
+/// The manifest URL: the latest release, or the release `v{version}`.
+pub fn manifest_url(app: &App, version: Option<&Version>) -> String {
+    match version {
+        None => format!(
+            "{}/releases/latest/download/{}-update.json",
+            app.repo_url, app.name
+        ),
+        Some(v) => format!(
+            "{}/releases/download/v{v}/{}-update.json",
+            app.repo_url, app.name
+        ),
+    }
+}
 
 /// Accepts `https://` URLs without user info, on port 443 (or none), whose host is exactly one of
 /// [`ALLOWED_HOSTS`] (ASCII case-insensitive). Parsed by hand: no URL crate.
