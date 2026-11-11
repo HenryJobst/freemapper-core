@@ -1,12 +1,12 @@
 //! Installing an update (spec 3.5 steps 4 to 7): download the `.gz` next to the executable, check its
 //! size and SHA-256, unpack it, check the executable's SHA-256, run it, and only then swap it in.
-
 //!
 //! Both temp files sit in the executable's folder, so the final rename stays on one file system:
 //! `freemapper.update-download.gz` and `freemapper.update-new` (`freemapper.update-new.exe` on Windows,
 //! so it can run). The name up to the first dot is the app's, which `ProcessRunner` expects (ruling
 //! R11). They are created with `freemapper_fs::create_new_file`, which never follows a link, and removed
-//! on every way out; after a success only the swapped-in executable and its previous remain.
+//! on every way out; after a success only the swapped-in executable and its previous remain. The fixed
+//! names are safe because only the holder of the install lock (`freemapper.update-lock`) touches them.
 
 use std::fs::File;
 use std::io::{self, Read, Write};
@@ -19,7 +19,7 @@ use crate::check::Outcome;
 use crate::error::UpdateError;
 use crate::manifest::Asset;
 use crate::source::{App, UpdateSource};
-use crate::swap::{VersionRunner, ensure_writable, sibling, split_name, swap_in};
+use crate::swap::{VersionRunner, ensure_writable, lock_install, sibling, split_name, swap_in};
 use crate::version::Version;
 
 /// The unpacked executable may not be larger than this (512 MiB); a larger one is refused.
@@ -53,6 +53,10 @@ fn install_capped(
     let Outcome::Available { version, asset, .. } = available else {
         return Err(UpdateError::NothingToInstall);
     };
+    // One install at a time: the temp names are fixed, and `create_new_file` removes what is there,
+    // so a second install would otherwise replace this one's verified file (ruling R12). Declared
+    // first, so it is released last, after the temp files are gone.
+    let _lock = lock_install(exe)?;
     // A folder the user cannot write fails here, before the download.
     ensure_writable(exe)?;
     let (mut download_name, _) = split_name(exe);
@@ -63,7 +67,13 @@ fn install_capped(
     let _cleanup = RemoveOnDrop([download.clone(), new.clone()]);
     fetch(source, asset, &download)?;
     unpack(&download, &new, &asset.exe_sha256, max_exe_bytes)?;
-    let got = runner.version_of(&new)?;
+    let got = runner.version_of(&new).map_err(|e| match e {
+        UpdateError::Io(e) => UpdateError::Io(io::Error::new(
+            e.kind(),
+            format!("the downloaded program {} did not run: {e}", new.display()),
+        )),
+        other => other,
+    })?;
     match got.trim().parse::<Version>() {
         Ok(reported) if reported == *version => {}
         _ => {
@@ -194,6 +204,7 @@ mod tests {
         "freemapper"
     };
     const SUFFIX: &str = if cfg!(windows) { ".exe" } else { "" };
+    const LOCK: &str = "freemapper.update-lock";
     const URL: &str = "https://github.com/HenryJobst/freemapper/releases/download/v0.12.0/x.gz";
 
     fn sha256_hex(bytes: &[u8]) -> String {
@@ -277,14 +288,18 @@ mod tests {
     /// executable held at that moment (to show the run comes before the swap).
     struct FakeRunner {
         answer: Result<&'static str, ()>,
-        asked: RefCell<Vec<(PathBuf, Vec<u8>)>>,
+        /// Per call: the path, the executable's bytes and whether the install lock was held.
+        asked: RefCell<Vec<(PathBuf, Vec<u8>, bool)>>,
         exe: PathBuf,
     }
 
     impl VersionRunner for FakeRunner {
         fn version_of(&self, path: &Path) -> Result<String, UpdateError> {
             let exe_now = fs::read(&self.exe).unwrap();
-            self.asked.borrow_mut().push((path.to_path_buf(), exe_now));
+            let locked = self.exe.with_file_name(LOCK).exists();
+            self.asked
+                .borrow_mut()
+                .push((path.to_path_buf(), exe_now, locked));
             self.answer
                 .map(str::to_string)
                 .map_err(|()| UpdateError::Io(std::io::Error::other("does not run")))
@@ -357,7 +372,8 @@ mod tests {
         // The new program ran from its temp name while the old one was still in place.
         let asked = runner.asked.borrow();
         assert_eq!(asked.len(), 1);
-        let (ran, exe_then) = &asked[0];
+        let (ran, exe_then, locked) = &asked[0];
+        assert!(locked, "the install lock is held during the run");
         assert_eq!(
             ran,
             &dir.path().join(format!("freemapper.update-new{SUFFIX}"))
@@ -540,7 +556,13 @@ mod tests {
             &exe,
             &outcome,
         );
+        let text = error.to_string();
         assert!(matches!(error, UpdateError::Io(_)), "{error}");
+        assert!(text.contains("did not run"), "{text}");
+        assert!(
+            text.contains(&format!("freemapper.update-new{SUFFIX}")),
+            "{text}"
+        );
         // A download that matches the manifest but is no gzip.
         let junk = b"not gzip at all".to_vec();
         let junk_asset = Asset {
@@ -581,6 +603,131 @@ mod tests {
         assert_eq!(fs::read(&exe).unwrap(), b"new program");
         let previous = format!("freemapper.previous{SUFFIX}");
         assert_eq!(names(dir.path()), vec![EXE.to_string(), previous]);
+    }
+
+    /// Finding 1 of the review: a second install while one runs would replace the first one's verified
+    /// file with its own half-written one. The lock refuses it before anything is touched.
+    #[test]
+    fn concurrent_install_is_refused_while_locked() {
+        let (dir, exe) = setup();
+        let lock = dir.path().join(LOCK);
+        fs::write(&lock, b"").unwrap();
+        let (gz, asset) = release(b"new program");
+        let source = FakeSource::serving(gz);
+        let runner = runner(&exe, Ok("0.12.0"));
+        let error = fails_and_changes_nothing(&source, &runner, &exe, &available("0.12.0", asset));
+        match &error {
+            UpdateError::Busy(path) => assert_eq!(path, &lock),
+            other => panic!("expected Busy, got {other:?}"),
+        }
+        assert!(
+            error.to_string().contains("another update is running"),
+            "{error}"
+        );
+        assert_eq!(*source.calls.borrow(), 0);
+        assert!(runner.asked.borrow().is_empty());
+    }
+
+    /// A lock older than 15 minutes is left by a crash and is taken over.
+    #[test]
+    fn stale_lock_is_taken_over() {
+        let (dir, exe) = setup();
+        let lock = dir.path().join(LOCK);
+        let file = fs::File::create(&lock).unwrap();
+        let old = std::time::SystemTime::now() - std::time::Duration::from_secs(16 * 60);
+        file.set_modified(old).unwrap();
+        drop(file);
+        let (gz, asset) = release(b"new program");
+        let runner = runner(&exe, Ok("0.12.0"));
+        install(
+            &app(),
+            &FakeSource::serving(gz),
+            &runner,
+            &exe,
+            &available("0.12.0", asset),
+        )
+        .unwrap();
+        assert_eq!(fs::read(&exe).unwrap(), b"new program");
+        let previous = format!("freemapper.previous{SUFFIX}");
+        assert_eq!(names(dir.path()), vec![EXE.to_string(), previous]);
+    }
+
+    #[test]
+    fn lock_is_released_after_success_and_after_failure() {
+        let (dir, exe) = setup();
+        let (gz, asset) = release(b"new program");
+        let mut wrong = asset.clone();
+        wrong.exe_sha256 = sha256_hex(b"another program");
+        let error = install(
+            &app(),
+            &FakeSource::serving(gz.clone()),
+            &runner(&exe, Ok("0.12.0")),
+            &exe,
+            &available("0.12.0", wrong),
+        )
+        .unwrap_err();
+        assert!(
+            matches!(error, UpdateError::Hash { what: "program" }),
+            "{error}"
+        );
+        assert_eq!(names(dir.path()), vec![EXE.to_string()]);
+        let runner = runner(&exe, Ok("0.12.0"));
+        install(
+            &app(),
+            &FakeSource::serving(gz),
+            &runner,
+            &exe,
+            &available("0.12.0", asset),
+        )
+        .unwrap();
+        assert!(
+            runner.asked.borrow()[0].2,
+            "the lock is held during the run"
+        );
+        assert!(!dir.path().join(LOCK).exists());
+        // And a second install can take it again.
+        let (gz, asset) = release(b"newer program");
+        install(
+            &app(),
+            &FakeSource::serving(gz),
+            &runner,
+            &exe,
+            &available("0.12.0", asset),
+        )
+        .unwrap();
+        assert_eq!(fs::read(&exe).unwrap(), b"newer program");
+        assert!(!dir.path().join(LOCK).exists());
+    }
+
+    /// Finding 5 of the review: a folder the user cannot write stops the install before the download.
+    #[cfg(unix)]
+    #[test]
+    fn read_only_folder_is_not_writable_and_downloads_nothing() {
+        use std::os::unix::fs::PermissionsExt;
+        let (dir, _) = setup();
+        let folder = dir.path().join("app");
+        fs::create_dir(&folder).unwrap();
+        let exe = folder.join(EXE);
+        fs::write(&exe, b"old program").unwrap();
+        let before = snapshot(&folder);
+        let (gz, asset) = release(b"new program");
+        let source = FakeSource::serving(gz);
+        let runner = runner(&exe, Ok("0.12.0"));
+        fs::set_permissions(&folder, fs::Permissions::from_mode(0o555)).unwrap();
+        let privileged = fs::write(folder.join("privilege-check"), "").is_ok();
+        let result = (!privileged)
+            .then(|| install(&app(), &source, &runner, &exe, &available("0.12.0", asset)));
+        fs::set_permissions(&folder, fs::Permissions::from_mode(0o755)).unwrap();
+        let Some(result) = result else {
+            eprintln!("skipped: this user can write into a 0o555 folder (root)");
+            return;
+        };
+        match result {
+            Err(UpdateError::NotWritable(path)) => assert_eq!(path, folder),
+            other => panic!("expected NotWritable, got {other:?}"),
+        }
+        assert_eq!(*source.calls.borrow(), 0);
+        assert_eq!(snapshot(&folder), before);
     }
 
     /// End to end with the real runner: the new program is a shell script that prints its version.

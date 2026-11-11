@@ -36,6 +36,9 @@ pub enum UpdateError {
     /// The release has no asset for this platform.
     #[error("no release asset for platform {0}")]
     NoAssetForPlatform(String),
+    /// Another install or rollback holds the lock file in the program folder.
+    #[error("another update is running (lock file {})", .0.display())]
+    Busy(PathBuf),
     /// `install` was handed `Outcome::Current`.
     #[error("there is no update to install")]
     NothingToInstall,

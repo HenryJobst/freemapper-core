@@ -249,6 +249,59 @@ pub(crate) fn ensure_writable(exe: &Path) -> Result<(), UpdateError> {
     }
 }
 
+/// A lock file older than this was left by a crashed install and is taken over (ruling R12).
+const STALE_LOCK_AGE: Duration = Duration::from_secs(15 * 60);
+
+/// Holds `<base>.update-lock` in the executable's folder: one install or rollback at a time, so a
+/// second one cannot replace the first one's verified file with its own half-written one. The file
+/// is removed when this is dropped.
+pub(crate) struct InstallLock(PathBuf);
+
+impl Drop for InstallLock {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
+/// Takes the install lock. An existing lock younger than 15 minutes gives [`UpdateError::Busy`]; an
+/// older one is removed and created once more. A folder the user cannot write gives `NotWritable`.
+pub(crate) fn lock_install(exe: &Path) -> Result<InstallLock, UpdateError> {
+    let (mut name, _) = split_name(exe);
+    name.push(".update-lock");
+    let lock = exe.with_file_name(name);
+    let create = || {
+        std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&lock)
+    };
+    let not_writable = |e: io::Error| match e.kind() {
+        io::ErrorKind::PermissionDenied | io::ErrorKind::ReadOnlyFilesystem => {
+            UpdateError::NotWritable(folder_of(exe).to_path_buf())
+        }
+        _ => e.into(),
+    };
+    match create() {
+        Ok(_) => return Ok(InstallLock(lock)),
+        Err(e) if e.kind() == io::ErrorKind::AlreadyExists => {}
+        Err(e) => return Err(not_writable(e)),
+    }
+    let stale = std::fs::symlink_metadata(&lock)
+        .and_then(|meta| meta.modified())
+        .ok()
+        .and_then(|modified| modified.elapsed().ok())
+        .is_some_and(|age| age > STALE_LOCK_AGE);
+    if !stale {
+        return Err(UpdateError::Busy(lock));
+    }
+    let _ = std::fs::remove_file(&lock);
+    match create() {
+        Ok(_) => Ok(InstallLock(lock)),
+        Err(e) if e.kind() == io::ErrorKind::AlreadyExists => Err(UpdateError::Busy(lock)),
+        Err(e) => Err(not_writable(e)),
+    }
+}
+
 /// After `failed` (moving something into `to`), moves `from` back to `to` and hands `failed` back. If
 /// that fails too, the error names both paths, so a person can rename the file by hand.
 fn restore(
@@ -342,7 +395,8 @@ pub(crate) fn swap_in_with(
 /// runs and prints a version, which it returns. The current executable becomes the new previous.
 ///
 /// No previous gives an `Io` error of kind `NotFound`; a previous that prints no version gives
-/// `InvalidData`, and nothing changes.
+/// `InvalidData`, and nothing changes. While an install or another rollback runs (its
+/// `<base>.update-lock` exists and is younger than 15 minutes) it gives [`UpdateError::Busy`].
 pub fn rollback(exe: &Path, runner: &dyn VersionRunner) -> Result<Version, UpdateError> {
     rollback_with(exe, runner, &FsRenamer)
 }
@@ -352,6 +406,7 @@ pub(crate) fn rollback_with(
     runner: &dyn VersionRunner,
     renamer: &dyn Renamer,
 ) -> Result<Version, UpdateError> {
+    let _lock = lock_install(exe)?;
     let previous = previous_path(exe);
     match std::fs::symlink_metadata(&previous) {
         Ok(_) => {}
@@ -836,6 +891,30 @@ mod tests {
         assert_eq!(read(&exe), "old");
         assert_eq!(read(&previous_path(&exe)), "new");
         assert!(stale_files(dir.path()).is_empty());
+    }
+
+    /// A rollback waits for nobody: while an install (or another rollback) holds the lock it is refused,
+    /// and it releases the lock it took.
+    #[test]
+    fn rollback_is_refused_while_locked() {
+        let dir = tempfile::tempdir().unwrap();
+        let (exe, new_file) = setup(dir.path(), "old", "new");
+        swap_in(&exe, &new_file).unwrap();
+        let lock = dir.path().join("freemapper.update-lock");
+        fs::write(&lock, "").unwrap();
+        let before = names(dir.path());
+        let runner = fake(Ok("0.9.0"));
+        match rollback(&exe, &runner) {
+            Err(UpdateError::Busy(path)) => assert_eq!(path, lock),
+            other => panic!("expected Busy, got {other:?}"),
+        }
+        assert!(runner.asked.borrow().is_empty());
+        assert_eq!(names(dir.path()), before);
+        assert_eq!(read(&exe), "new");
+        fs::remove_file(&lock).unwrap();
+        rollback(&exe, &runner).unwrap();
+        assert_eq!(read(&exe), "old");
+        assert!(!lock.exists());
     }
 
     #[test]
