@@ -37,3 +37,4 @@ status to `Superseded by NNNN`.
 | [0026](0026-the-update-crate.md) | The update crate |
 | [0027](0027-shared-contract-types.md) | Shared types of the contract |
 | [0028](0028-printrules-use-the-contract-map-kind.md) | The print rules use the contract's map kind |
+| [0029](0029-free-page-and-source-objects.md) | A free page size and the source position of each object |

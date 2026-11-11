@@ -822,3 +822,80 @@ fn base_area_is_still_painted() {
         .expect("the walkable area colour");
     assert!(clip < fill, "{content:.400}");
 }
+
+#[test]
+fn a_free_page_replaces_the_paper() {
+    let doc = map(
+        4000,
+        SymbolSet::issprom_2019(),
+        vec![line(edge(), (10_000, 0))],
+    );
+    let spec = |orientation, page_mm| PageSpec {
+        orientation,
+        page_mm,
+        ..PageSpec::new(1.0, 1.0, Paper::A4)
+    };
+    let (page, report) = render(&doc, &spec(Orientation::Portrait, Some((500.0, 700.0))));
+    assert_eq!(page.page_mm, (500.0, 700.0));
+    assert_eq!(report.page_mm, (500.0, 700.0));
+    assert_eq!(page.clip, frame_box((500.0, 700.0), PAGE_MARGIN_MM));
+    let (page, _) = render(&doc, &spec(Orientation::Landscape, Some((500.0, 700.0))));
+    assert_eq!(page.page_mm, (700.0, 500.0), "the orientation turns it");
+    let (page, _) = render(&doc, &spec(Orientation::Portrait, None));
+    assert_eq!(page.page_mm, Paper::A4.size_mm());
+}
+
+#[test]
+fn a_free_page_outside_the_limits_is_refused() {
+    let doc = map(
+        4000,
+        SymbolSet::issprom_2019(),
+        vec![line(edge(), (10_000, 0))],
+    );
+    for bad in [
+        (9.9, 300.0),
+        (300.0, 5080.1),
+        (0.0, 0.0),
+        (f64::NAN, 300.0),
+        (300.0, f64::INFINITY),
+        (-300.0, 300.0),
+    ] {
+        let spec = PageSpec {
+            page_mm: Some(bad),
+            ..PageSpec::new(1.0, 1.0, Paper::A4)
+        };
+        let error = build_page(&doc, &spec).unwrap_err();
+        assert!(matches!(error, BuildError::PageSize { .. }), "{bad:?}");
+        assert!(error.to_string().contains("between 10 and 5080"), "{error}");
+    }
+    let edge_ok = PageSpec {
+        page_mm: Some((MIN_PAGE_MM, MAX_PAGE_MM)),
+        ..PageSpec::new(1.0, 1.0, Paper::A4)
+    };
+    assert!(build_page(&doc, &edge_ok).is_ok());
+}
+
+#[test]
+fn source_objects_name_the_position_in_the_map() {
+    let set = SymbolSet::issprom_2019();
+    let hidden = MapObject {
+        symbol_id: u32::MAX,
+        ..line(edge(), (1000, 0))
+    };
+    let mut doc = map(
+        4000,
+        set,
+        vec![line(edge(), (1000, 0)), hidden, line(edge(), (2000, 0))],
+    );
+    doc.parts.push(MapPart {
+        name: "second".into(),
+        objects: vec![line(edge(), (3000, 0))],
+    });
+    let (page, report) = render(&doc, &options(Orientation::Portrait));
+    assert_eq!(report.skipped_objects, 1);
+    assert_eq!(report.source_objects, [0, 2, 3]);
+    // The primitives count the drawn objects; the report maps them back.
+    let numbers: std::collections::BTreeSet<u32> =
+        page.primitives.iter().map(|p| p.object).collect();
+    assert_eq!(numbers.into_iter().collect::<Vec<_>>(), [0, 1, 2]);
+}
