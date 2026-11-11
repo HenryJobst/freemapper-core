@@ -7,6 +7,12 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.15.0] - 2026-11-11
+
+### Hinzugefügt
+
+- freemapper-render: die Kursüberdruckung aus freemapper-print, im Verhalten unverändert (Entscheidung 0024). `overprint::overprint` zeichnet einen Kurs (Start, Posten, Ziel, Wechselpunkte, Strecken, Sonderobjekte, Postennummern) als unteres und oberes Purpur einer `RenderedPage`, in der Größe, die der Aufrufer vorgibt; `overprint::on_map` ordnet die untere Ebene zwischen den Kartenfarben ein. `CourseSymbolSizes` zieht mit um. Die Bibliothek hängt jetzt von `freemapper-course` ab.
+
 ## [0.14.1] - 2026-11-11
 
 ### Behoben

@@ -17,6 +17,7 @@ Für die Editoren (Entscheidungen 0022 und 0023):
   `PageSpec::new(symbol_factor, geometry_factor, paper)` nimmt die beiden Faktoren als Zahlen. Welcher
   Druckmaßstab für welche Kartenart erlaubt ist und welche Faktoren daraus folgen, entscheidet die Anwendung.
   Papier, Ausrichtung, Kartenmitte, Rand und Randobjekte sind Felder von `PageSpec`.
+- `overprint::overprint(course, event, numbers, to_page, sizes, course_factor)` draws one course as the lower and upper purple (`Overprint`) of a page; `overprint::on_map` sets the colour and places the lower layer among the map colours. The caller computes the sizes (`CourseSymbolSizes`) and the course factor from its rule set and passes them in; the crate decides no scale policy (decision 0024).
 - `RenderedPage::mapping()` liefert die Seitenabbildung (`PageMapping`). `to_page` und `to_map` rechnen
   zwischen der Karte in Millimetern beim Druckmaßstab und der Seite in Millimetern um, beide mit y nach unten.
 - `RenderedPage::hits_at(p, tolerance_mm)` nennt die Kartenobjekte unter einem Punkt der Seite, das oberste

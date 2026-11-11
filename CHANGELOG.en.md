@@ -7,6 +7,12 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-11
+
+### Added
+
+- freemapper-render: the course overprint from freemapper-print, unchanged in behaviour (decision 0024). `overprint::overprint` draws one course (start, controls, finish, crossing points, legs, special objects, control numbers) as the lower and upper purple of a `RenderedPage`, in the size the caller gives; `overprint::on_map` places the lower layer among the map colours. `CourseSymbolSizes` moves along. The crate now depends on `freemapper-course`.
+
 ## [0.14.1] - 2026-11-11
 
 ### Fixed
