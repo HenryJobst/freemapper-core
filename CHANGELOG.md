@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- freemapper-render: `write_pdf` und `MultiPagePdf::add_page` schreiben Kartenobjekte und Bahnaufdruck nicht mehr ins PDF, wenn sie ganz außerhalb des sichtbaren Rahmens liegen (Entscheidung 0031). Blätter, deren Rahmen nur einen Teil der Karte zeigt, werden dadurch kleiner. Die Beispielblätter von freemapper-print aus einer Sprintkarte von 1,4 MB in 1:4000 schrumpfen um 15 bis 30 %, von 3,6 oder 3,7 MB auf 2,6 bis 3,2 MB; ein Blatt, das nur eine Ecke der Karte zeigt, von 252 KB auf 38 KB. Gerastert gleichen die PDFs den bisherigen Pixel für Pixel (pdftoppm, 6 bis 300 dpi), die Bytes ändern sich. Ob eine Form ins PDF kommt, entscheidet ihr Farbbereich: ihre Punkte mit halber Linienbreite, Gehrungsspitzen, eckigen Linienenden und Glyphenumrissen, dazu 5 mm Spielraum, weil die Kantenglättung am Rahmen auch Formen knapp außerhalb in die Randpixel mischt. `RenderedPage`, `BuildReport` und die Treffer bleiben gleich. Fehlende Glyphen und Zahlen, die ein PDF nicht fassen kann, werden auch für ausgelassene Formen gemeldet. Die SVG-Ausgabe lässt nach derselben Regel aus und behält dadurch am Rand der Ansicht einige Formen mehr. Am Code der Anwendungen ändert sich nichts; wer PDFs mit eingecheckten vergleicht, schreibt sie neu.
+
 ## [0.21.1] - 2026-11-11
 
 ### Hinzugefügt

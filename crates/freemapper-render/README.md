@@ -30,6 +30,9 @@ Für die Editoren (Entscheidungen 0022 und 0023):
 
 `PdfMeta::new` trägt freemapper-print und dessen GitHub-Adresse als Ersteller ein (`CREDIT`).
 
+`write_pdf` schreibt nur, was im Clip-Rechteck sichtbar werden kann. Formen, deren Farbbereich ganz außerhalb
+liegt, lässt es aus, die SVG-Ausgabe ebenso (Entscheidung 0031).
+
 Das Feature `test-support` macht `pdf::content_of`, `draw::work_units` und `draw::BUDGET_SLACK` für die Tests
 einer Anwendung zugänglich. Eine Anwendung trägt es nur unter `[dev-dependencies]` ein.
 
@@ -67,6 +70,9 @@ For the editors (decisions 0022 and 0023):
   CMYK.
 
 `PdfMeta::new` names freemapper-print and its GitHub address as creator (`CREDIT`).
+
+`write_pdf` writes only what can show inside the clip rectangle. It leaves out shapes whose ink box lies wholly
+outside it, and so does the SVG backend (decision 0031).
 
 The feature `test-support` exposes `pdf::content_of`, `draw::work_units` and `draw::BUDGET_SLACK` to an app's
 tests. An app enables it under `[dev-dependencies]` only.

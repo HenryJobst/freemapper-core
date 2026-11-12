@@ -7,6 +7,10 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- freemapper-render: `write_pdf` and `MultiPagePdf::add_page` no longer write map objects and course overprint that lie wholly outside the visible frame (decision 0031). Sheets whose frame shows part of the map get smaller. freemapper-print's example sheets of a 1.4 MB sprint map at 1:4000 shrink by 15 to 30 %, from 3.6 or 3.7 MB to between 2.6 and 3.2 MB; a sheet that shows one corner of the map goes from 252 KB to 38 KB. Rasterised, the PDFs match the old ones pixel for pixel (pdftoppm, 6 to 300 dpi); the bytes change. A shape is written when its ink box may reach the frame: its points with half the line width, miter tips, square caps and glyph outlines, plus 5 mm, because anti-aliasing at the frame mixes shapes just outside it into the edge pixels. `RenderedPage`, `BuildReport` and the hits stay the same. Missing glyphs and numbers a PDF cannot hold are still reported for shapes that are left out. The SVG backend leaves out by the same rule and so keeps a few more shapes at the edge of the view. Apps change no code; an app that compares committed PDFs writes them again.
+
 ## [0.21.1] - 2026-11-11
 
 ### Added
