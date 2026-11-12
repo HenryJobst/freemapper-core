@@ -39,3 +39,4 @@ status to `Superseded by NNNN`.
 | [0028](0028-printrules-use-the-contract-map-kind.md) | The print rules use the contract's map kind |
 | [0029](0029-free-page-and-source-objects.md) | A free page size and the source position of each object |
 | [0030](0030-one-look-for-the-suite-pages.md) | One look and one frame for the suite's local pages |
+| [0031](0031-backends-leave-out-what-cannot-show.md) | The backends leave out what cannot show |
