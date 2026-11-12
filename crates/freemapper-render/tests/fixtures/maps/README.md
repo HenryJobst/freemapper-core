@@ -1,6 +1,7 @@
 # Map fixtures
 
-Used by the unit tests in `src/symbols.rs` and `src/build/tests.rs`.
+Used by the unit tests in `src/symbols.rs`, `src/build/tests.rs` and `src/pdf/culling_pixels.rs`, and by
+`tests/page_builder.rs`.
 
 ## forest-sample.omap
 

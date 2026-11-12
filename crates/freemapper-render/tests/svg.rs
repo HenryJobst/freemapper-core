@@ -251,9 +251,11 @@ fn shapes_outside_the_view_are_left_out() {
     let part = write_svg(&page, &view).unwrap();
     assert!(part.contains("viewBox=\"6 6 5 5\">"), "{part}");
     assert!(part.contains("width=\"20\" height=\"20\""), "{part}");
-    // The area is green; the line, the hatch, the texts, the overprint and the sheet are gone.
-    assert_eq!(drawn_paths(&part), 1, "{part}");
+    // The area is green; the line, the hatch, the map texts, the overprint and the sheet fill are gone. The sheet
+    // title "T" ends 2 mm above the view, within the slack of ADR 0031, and stays.
+    assert_eq!(drawn_paths(&part), 2, "{part}");
     assert!(part.contains("fill=\"#80ff00\""));
+    assert!(part.contains("fill=\"#000000\""));
     for gone in ["#00ffff", "#ff00ff", "<image", "url(#c0)", "#808080"] {
         assert!(whole.contains(gone), "{gone}");
         assert!(!part.contains(gone), "{gone}");
@@ -276,14 +278,14 @@ fn shapes_outside_the_view_are_left_out() {
 fn every_primitive_on_the_page_becomes_one_path_and_the_pdf_draws_the_same_page() {
     let mut page = tiny_page();
     page.map_clips.clear();
-    let mut far = at(9, 3, stroke(vec![(500.0, 500.0), (600.0, 500.0)], 1.0));
+    let far = at(9, 3, stroke(vec![(500.0, 500.0), (600.0, 500.0)], 1.0));
     page.primitives.push(far.clone());
-    // On the page, but outside the frame: clipped away, so left out too.
-    far.shape = stroke(vec![(1.0, 1.0), (3.0, 1.0)], 0.2);
-    page.primitives.push(far);
+    // On the page beside the frame, within the slack of ADR 0031: kept, and the frame clips it away.
+    let near = at(9, 3, stroke(vec![(1.0, 1.0), (3.0, 1.0)], 0.2));
+    page.primitives.push(near);
     write_pdf(&page, &PdfMeta::new("parity")).unwrap();
     let svg = write_svg(&page, &SvgView::default()).unwrap();
-    let primitives = page.primitives.len() - 2;
+    let primitives = page.primitives.len() - 1;
     let overprint = page.overprint.lower.len() + page.overprint.upper.len();
     let sheet_shapes = 2;
     assert_eq!(

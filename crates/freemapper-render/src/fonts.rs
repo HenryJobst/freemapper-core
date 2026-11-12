@@ -165,6 +165,33 @@ pub(crate) fn text_outline(text: &str, face: FontFace, mut out: impl FnMut(Outli
     }
 }
 
+/// The box the glyph outlines of `text` lie in, in em as [`text_outline`] places them (x along the baseline from
+/// the start of the text, y down); `None` when no glyph has an outline (an empty text, spaces). Each glyph adds the
+/// box of its outline points, control points included.
+pub(crate) fn glyph_extent(text: &str, face: FontFace) -> Option<(Pt, Pt)> {
+    let parsed = face.parsed();
+    let em = face.units_per_em();
+    let mut pen = 0.0;
+    let mut extent: Option<(Pt, Pt)> = None;
+    for c in text.chars() {
+        let glyph = face.glyph(c).unwrap_or(GlyphId(0));
+        // ttf-parser outlines the glyph for its box and counts the control points; a space has none.
+        if let Some(r) = parsed.glyph_bounding_box(glyph) {
+            let min = (pen + f64::from(r.x_min) / em, -f64::from(r.y_max) / em);
+            let max = (pen + f64::from(r.x_max) / em, -f64::from(r.y_min) / em);
+            extent = Some(match extent {
+                None => (min, max),
+                Some((a, b)) => (
+                    (a.0.min(min.0), a.1.min(min.1)),
+                    (b.0.max(max.0), b.1.max(max.1)),
+                ),
+            });
+        }
+        pen += f64::from(face.advance(glyph)) / em;
+    }
+    extent
+}
+
 /// The cap height of `face` in em, from its OS/2 table. Arimo's digits are as tall as its capitals
 /// (test `digits_are_as_tall_as_capitals`), so a control number of height h is set at h / cap height.
 pub fn cap_height(face: FontFace) -> f64 {
@@ -254,6 +281,12 @@ impl PageFonts {
             cids.extend(cid.to_be_bytes());
         }
         cids
+    }
+
+    /// Reports the characters `other` found without a glyph as missing here too. Its glyphs stay out of these
+    /// subsets.
+    pub(crate) fn note_missing(&mut self, other: PageFonts) {
+        self.missing.extend(other.missing);
     }
 
     /// Allocates the PDF objects of the used faces from `next`.
@@ -521,6 +554,62 @@ mod tests {
         for (a, b) in l.iter().zip(&ll[l.len()..]) {
             assert!((b.0 - a.0 - shift).abs() < 1e-12 && b.1 == a.1);
         }
+    }
+
+    /// Every point of the outline of `text` (em, y down), control points included.
+    fn outline_points(text: &str, face: FontFace) -> Vec<Pt> {
+        let mut points = Vec::new();
+        text_outline(text, face, |s| match s {
+            OutlineSegment::Move(p) | OutlineSegment::Line(p) => points.push(p),
+            OutlineSegment::Quad(c, p) => points.extend([c, p]),
+            OutlineSegment::Cubic(c1, c2, p) => points.extend([c1, c2, p]),
+            OutlineSegment::Close => {}
+        });
+        points
+    }
+
+    #[test]
+    fn glyph_boxes_hold_their_outlines() {
+        // Every character of the Basic Multilingual Plane that a face has, and `.notdef` for one it lacks. A
+        // quadratic or cubic piece lies inside the hull of its points, so the box of the points holds the ink.
+        for face in FACES {
+            let mut checked = 0;
+            for c in ('\u{20}'..='\u{FFFF}').filter(|&c| face.glyph(c).is_some() || c == '中') {
+                let text = format!("x{c}");
+                let points = outline_points(&text, face);
+                let Some((min, max)) = glyph_extent(&text, face) else {
+                    assert!(points.is_empty(), "{face:?} {c:?}");
+                    continue;
+                };
+                for &(x, y) in &points {
+                    assert!(
+                        min.0 <= x && x <= max.0 && min.1 <= y && y <= max.1,
+                        "{face:?} {c:?}: ({x}, {y}) outside {min:?}..{max:?}"
+                    );
+                }
+                checked += 1;
+            }
+            assert!(checked > 2000, "{face:?}: {checked}");
+        }
+        assert_eq!(glyph_extent("", FontFace::Regular), None);
+        assert_eq!(glyph_extent("   ", FontFace::Regular), None);
+    }
+
+    #[test]
+    fn glyph_extent_is_the_box_of_the_outline() {
+        // `l` (no overshoot) gives exactly the box of its points; the second glyph sits one advance on.
+        let points = outline_points("l l", FontFace::Regular);
+        let (min, max) = glyph_extent("l l", FontFace::Regular).unwrap();
+        let fold = points
+            .iter()
+            .fold(((f64::MAX, f64::MAX), (f64::MIN, f64::MIN)), |(a, b), p| {
+                ((a.0.min(p.0), a.1.min(p.1)), (b.0.max(p.0), b.1.max(p.1)))
+            });
+        let close = |a: Pt, b: Pt| (a.0 - b.0).abs() < 1e-9 && (a.1 - b.1).abs() < 1e-9;
+        assert!(
+            close(min, fold.0) && close(max, fold.1),
+            "{min:?} {max:?} vs {fold:?}"
+        );
     }
 
     #[test]

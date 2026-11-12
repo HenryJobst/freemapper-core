@@ -14,7 +14,7 @@ use std::sync::Arc;
 use image::ImageEncoder as _;
 use image::codecs::png::PngEncoder;
 
-use crate::bounds::{Bounds, shape_bounds};
+use crate::bounds::{Bounds, may_show};
 use crate::draw::{FillRule, KEPT_POINTS_PER_UNIT, Primitive, Shape};
 use crate::fonts::{OutlineSegment, face, text_outline};
 use crate::geometry::Pt;
@@ -505,9 +505,10 @@ fn shown(part: &[Primitive], r: PaperBox) -> Vec<&Primitive> {
     part.iter().filter(|p| visible(&p.shape, r)).collect()
 }
 
-/// True when `shape` paints somewhere in `r`.
+/// True when `shape` may paint somewhere in `r`, by the rule the PDF backend leaves shapes out with
+/// ([`may_show`], ADR 0031).
 fn visible(shape: &Shape, r: PaperBox) -> bool {
-    shape_bounds(shape).is_some_and(|b| overlaps(b, r))
+    may_show(shape, r)
 }
 
 /// `page` as an SVG document showing `view`.
@@ -518,9 +519,10 @@ fn visible(shape: &Shape, r: PaperBox) -> bool {
 /// unclipped. The masks clip the map only, through `clip-path` with `clip-rule="nonzero"` from
 /// [`MapClip::rings`]. Every overprint element multiplies with what lies under it (`mix-blend-mode:multiply`).
 ///
-/// Each map primitive, overprint shape and sheet shape that paints inside the view (and, for the map and the
-/// overprint, inside the clip) becomes one `<path>` element; clip paths hold further `<path>`s. A primitive that
-/// paints only outside is left out ([`shape_bounds`]). The same page and view always give the same text.
+/// Each map primitive, overprint shape and sheet shape that may paint inside the view (and, for the map and the
+/// overprint, inside the clip) becomes one `<path>` element; clip paths hold further `<path>`s. A shape whose ink
+/// box ([`crate::bounds`], ADR 0031) lies wholly outside is left out, by the rule the PDF backend uses. The same
+/// page and view always give the same text.
 ///
 /// Fails for a zoom that is not above 0, a rectangle that is not finite or whose minimum lies beyond its
 /// maximum, a number on the page that is not finite, an image that cannot be encoded, and a document that would

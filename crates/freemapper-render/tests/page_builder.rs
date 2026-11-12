@@ -6,6 +6,7 @@ use freemapper_omap::{
 };
 use freemapper_render::build::{Orientation, PageSpec, Paper, SHEET_TAG, build_page};
 use freemapper_render::page::RenderedPage;
+use freemapper_render::pdf::{PdfMeta, write_pdf};
 
 fn map(set: SymbolSet, objects: Vec<MapObject>) -> MapDocument {
     MapDocument {
@@ -133,4 +134,33 @@ fn the_page_centre_hits_the_area_of_a_one_area_map() {
     // Just outside the square there is nothing.
     let outside = page.mapping().to_page((32.5, 16.0));
     assert!(page.hits_at(outside, 0.0).is_empty());
+}
+
+#[test]
+fn a_cropped_sheet_writes_only_what_its_frame_can_show() {
+    // ADR 0031. The forest sample (drawn at 1:10000, about 58 x 54 mm) printed at 1:2000 paints about 290 x 270
+    // mm. A page of 100 x 80 mm shows a tenth of it; a page of 320 x 300 mm holds all of it, the uncropped sheet.
+    let path = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/maps/forest-sample.omap"
+    );
+    let doc = freemapper_omap::read::read_map_file(std::path::Path::new(path)).unwrap();
+    let at = |page_mm: (f64, f64)| PageSpec {
+        page_mm: Some(page_mm),
+        ..PageSpec::new(2.5, 5.0, Paper::A4)
+    };
+    let (whole, whole_report) = build_page(&doc, &at((320.0, 300.0))).unwrap();
+    let (cropped, cropped_report) = build_page(&doc, &at((100.0, 80.0))).unwrap();
+    assert_eq!(whole_report.overflow_mm, None);
+    assert!(cropped_report.overflow_mm.is_some());
+    // The page keeps every primitive and the report every object: only the PDF leaves out what cannot show.
+    assert_eq!(cropped.primitives.len(), whole.primitives.len());
+    assert_eq!(cropped_report.source_objects, whole_report.source_objects);
+    let size = |page: &RenderedPage| write_pdf(page, &PdfMeta::new("forest")).unwrap().0.len();
+    let (whole, cropped) = (size(&whole), size(&cropped));
+    // About 31 %: the fonts, the areas that cross the frame and what lies within 5 mm of it stay.
+    assert!(
+        cropped * 5 < whole * 2,
+        "cropped {cropped} bytes, whole {whole} bytes"
+    );
 }

@@ -9,11 +9,12 @@ use std::sync::Arc;
 use pdf_writer::types::{BlendMode, LineCapStyle, LineJoinStyle, TextRenderingMode};
 use pdf_writer::{Content, Filter, Finish, Name, Pdf, Rect, Ref, Str, TextStr};
 
+use crate::bounds::may_show;
 use crate::draw::{FillRule, Primitive, Shape};
 use crate::fonts::{PageFonts, face};
 use crate::geometry::Pt;
 use crate::image::RasterImage;
-use crate::page::{MapClip, RenderedPage, SheetItem};
+use crate::page::{MapClip, PaperBox, RenderedPage, SheetItem};
 use crate::symbols::{Cap, Join, RenderColour};
 
 /// Points per millimetre.
@@ -325,7 +326,7 @@ fn paint_run<'a>(
     }
 }
 
-/// Paints the map primitives `items` where every mask of `masks` leaves the map visible. Without masks this is
+/// Paints the map shapes `items` where every mask of `masks` leaves the map visible. Without masks this is
 /// [`paint_run`] alone. With masks the run gets one clip block: `q`, then each mask's rings followed by `W n`
 /// (nonzero), then the run, then `Q`. Successive clips in one graphics state intersect, so the map is hidden in the
 /// union of the masked areas, and the nesting depth stays the same however many masks there are (ruling R10). The
@@ -335,12 +336,11 @@ fn masked_run(
     content: &mut Content,
     t: &Transform,
     masks: &[MapClip],
-    colours: &[RenderColour],
-    items: &[Primitive],
+    items: Vec<([f64; 4], &Shape)>,
     fonts: &mut PageFonts,
 ) {
     if masks.is_empty() {
-        paint_run(content, t, map_run(colours, items), fonts);
+        paint_run(content, t, items, fonts);
         return;
     }
     if items.is_empty() {
@@ -354,8 +354,48 @@ fn masked_run(
         content.clip_nonzero();
         content.end_path();
     }
-    paint_run(content, t, map_run(colours, items), fonts);
+    paint_run(content, t, items, fonts);
     content.restore_state();
+}
+
+/// The part of the page that shows the map and the overprint: the page clip, its corners in either order, as far
+/// as it lies on the page. `None` when that is not a finite rectangle; then nothing is left out.
+fn visible_area(page: &RenderedPage) -> Option<PaperBox> {
+    let (a, b) = (page.clip.min, page.clip.max);
+    let min = (a.0.min(b.0).max(0.0), a.1.min(b.1).max(0.0));
+    let max = (
+        a.0.max(b.0).min(page.page_mm.0),
+        a.1.max(b.1).min(page.page_mm.1),
+    );
+    let finite = [min.0, min.1, max.0, max.1].iter().all(|v| v.is_finite());
+    (finite && min.0 <= max.0 && min.1 <= max.1).then_some(PaperBox { min, max })
+}
+
+/// The shapes of `shapes` that may put ink in `area` ([`may_show`]), in their order; all of them without an area.
+///
+/// A shape left out is still painted, into a stream that is thrown away. So a number on it that the PDF cannot
+/// hold still refuses the page, and a character of its text that has no glyph is still reported, as when the
+/// shape was written (ADR 0031). Its glyphs do not join the embedded subsets.
+fn kept<'a>(
+    t: &Transform,
+    area: Option<PaperBox>,
+    shapes: impl IntoIterator<Item = ([f64; 4], &'a Shape)>,
+    fonts: &mut PageFonts,
+) -> Vec<([f64; 4], &'a Shape)> {
+    let Some(area) = area else {
+        return shapes.into_iter().collect();
+    };
+    let mut kept = Vec::new();
+    for (cmyk, shape) in shapes {
+        if may_show(shape, area) {
+            kept.push((cmyk, shape));
+        } else {
+            let mut unused = PageFonts::new();
+            paint(&mut Content::new(), t, cmyk, shape, &mut unused);
+            fonts.note_missing(unused);
+        }
+    }
+    kept
 }
 
 /// One page drawn into a content stream, before any PDF object is written: the content, the images it uses, and
@@ -379,11 +419,13 @@ struct PageRefs {
 }
 
 /// Draws `page` into a content stream: every primitive clipped to `page.clip`, the course overprint among them,
-/// the sheet layer on top. Refuses a page with a number that is not finite before anything is written.
-fn page_body(page: &RenderedPage) -> Result<(PageBody<'_>, PageFonts), PdfError> {
+/// the sheet layer on top. With `cull`, map primitives and overprint shapes that cannot show inside the clip are
+/// left out ([`kept`]). Refuses a page with a number that is not finite before anything is written.
+fn page_body(page: &RenderedPage, cull: bool) -> Result<(PageBody<'_>, PageFonts), PdfError> {
     let (page_w, page_h) = page.page_mm;
     let t = Transform::new(page_h);
     let colours = &page.colours;
+    let area = if cull { visible_area(page) } else { None };
 
     // The page's primitives are in paint order already ([`RenderedPage::primitives`]).
     let items = &page.primitives;
@@ -404,7 +446,7 @@ fn page_body(page: &RenderedPage) -> Result<(PageBody<'_>, PageFonts), PdfError>
     // The masks clip the map, never the overprint (ADR 0045): see [`masked_run`].
     let masks: &[MapClip] = if clipped { &page.map_clips } else { &[] };
     // The lower purple goes before the first primitive of the full-strength colour painted first
-    // (ADR 0034), or after all of them.
+    // (ADR 0034), or after all of them. The place is found among all primitives, before any is left out.
     let split = match overprint.below_priority {
         Some(below) if !overprint.lower.is_empty() => items
             .iter()
@@ -412,33 +454,22 @@ fn page_body(page: &RenderedPage) -> Result<(PageBody<'_>, PageFonts), PdfError>
             .unwrap_or(items.len()),
         _ => items.len(),
     };
-    masked_run(
-        &mut content,
-        &t,
-        masks,
-        colours,
-        &items[..split],
-        &mut fonts,
-    );
+    let below = kept(&t, area, map_run(colours, &items[..split]), &mut fonts);
+    masked_run(&mut content, &t, masks, below, &mut fonts);
     let purple = overprint.colour.cmyk;
     let layer = |content: &mut Content, fonts: &mut PageFonts, shapes: &[Shape]| {
+        let shapes = kept(&t, area, shapes.iter().map(|s| (purple, s)), fonts);
         if shapes.is_empty() {
             return;
         }
         content.save_state();
         content.set_parameters(Name(MULTIPLY));
-        paint_run(content, &t, shapes.iter().map(|s| (purple, s)), fonts);
+        paint_run(content, &t, shapes, fonts);
         content.restore_state();
     };
     layer(&mut content, &mut fonts, &overprint.lower);
-    masked_run(
-        &mut content,
-        &t,
-        masks,
-        colours,
-        &items[split..],
-        &mut fonts,
-    );
+    let above = kept(&t, area, map_run(colours, &items[split..]), &mut fonts);
+    masked_run(&mut content, &t, masks, above, &mut fonts);
     layer(&mut content, &mut fonts, &overprint.upper);
     if clipped {
         content.restore_state();
@@ -544,7 +575,16 @@ fn write_info(pdf: &mut Pdf, id: Ref, meta: &PdfMeta) {
 /// millimetre, and every primitive is clipped to `page.clip`. Also returns what the page could
 /// not show.
 pub fn write_pdf(page: &RenderedPage, meta: &PdfMeta) -> Result<(Vec<u8>, PdfInfo), PdfError> {
-    let (body, fonts) = page_body(page)?;
+    write_pdf_with(page, meta, true)
+}
+
+/// [`write_pdf`], leaving out what cannot show only with `cull`. Tests compare the two.
+fn write_pdf_with(
+    page: &RenderedPage,
+    meta: &PdfMeta,
+    cull: bool,
+) -> Result<(Vec<u8>, PdfInfo), PdfError> {
+    let (body, fonts) = page_body(page, cull)?;
     // References come from a counter, so a page holds only the fonts it uses.
     let mut next = Ref::new(1);
     let (catalog, pages, page, contents) = (next.bump(), next.bump(), next.bump(), next.bump());
@@ -603,7 +643,7 @@ impl MultiPagePdf {
     /// Appends `page` with its own MediaBox. A page refused for a number that is not finite leaves the document as
     /// it was; after a font that cannot be embedded the document is incomplete and must be dropped.
     pub fn add_page(&mut self, page: &RenderedPage) -> Result<PdfInfo, PdfError> {
-        let (body, fonts) = page_body(page)?;
+        let (body, fonts) = page_body(page, true)?;
         let mut next = self.next;
         let (page_ref, contents) = (next.bump(), next.bump());
         let fonts = fonts.finish(&mut next);
@@ -655,6 +695,9 @@ pub fn content_of(pdf: &[u8]) -> Vec<u8> {
     let end = find(b"\nendstream").expect("end of stream");
     miniz_oxide::inflate::decompress_to_vec_zlib(&pdf[start..end]).expect("FlateDecode")
 }
+
+#[cfg(test)]
+mod culling_pixels;
 
 #[cfg(test)]
 mod tests {
@@ -1796,5 +1839,136 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    // --- Shapes that cannot show are left out (ADR 0031) ---
+
+    /// A square of priority `priority` from (`x`, `y`), 10 mm a side.
+    fn square_at(priority: i32, x: f64, y: f64) -> Primitive {
+        Primitive::new(
+            priority,
+            Shape::Fill {
+                rings: vec![ring(x, y, x + 10.0, y + 10.0)],
+                rule: FillRule::EvenOdd,
+            },
+        )
+    }
+
+    /// How many fills the content stream of `page` paints.
+    fn fills(page: &RenderedPage) -> usize {
+        lines(page)
+            .iter()
+            .filter(|l| *l == "f*" || *l == "f")
+            .count()
+    }
+
+    #[test]
+    fn shapes_wholly_outside_the_frame_are_not_written() {
+        // The frame is 0..100 mm; grey squares lie beside it on the page, more than the slack away, black ones inside
+        // or across its edge.
+        let p = page(&[
+            square_at(2, 20.0, 20.0),
+            square_at(9, 120.0, 20.0),
+            square_at(2, 95.0, 50.0),
+            square_at(9, 20.0, 150.0),
+            square_at(9, -30.0, 20.0),
+        ]);
+        let l = lines(&p);
+        assert_eq!(fills(&p), 2, "{l:?}");
+        assert!(!l.iter().any(|x| x == "0 0 0 0.6 k"), "{l:?}");
+        // Written without leaving anything out, all five are there.
+        let (all, _) = write_pdf_with(&p, &PdfMeta::new("t"), false).unwrap();
+        let all = String::from_utf8(content_of(&all)).unwrap();
+        assert_eq!(all.lines().filter(|l| *l == "f*").count(), 5);
+    }
+
+    #[test]
+    fn shapes_off_the_page_are_not_written_even_inside_the_clip() {
+        // A clip larger than the page: only the page shows.
+        let mut p = page(&[square_at(2, 20.0, 20.0), square_at(9, -40.0, -40.0)]);
+        p.clip = PaperBox {
+            min: (-100.0, -100.0),
+            max: (400.0, 400.0),
+        };
+        assert_eq!(fills(&p), 1);
+        // A clip given with its corners swapped is the same rectangle in the PDF, and culls the same.
+        p.clip = PaperBox {
+            min: (100.0, 100.0),
+            max: (0.0, 0.0),
+        };
+        assert_eq!(fills(&p), 1);
+    }
+
+    #[test]
+    fn the_overprint_outside_the_frame_is_left_out_and_keeps_its_place() {
+        let mut p = masked_page(Vec::new());
+        // A second lower shape and a second upper shape beside the frame.
+        p.overprint.lower.push(Shape::Fill {
+            rings: vec![ring(130.0, 30.0, 140.0, 40.0)],
+            rule: FillRule::NonZero,
+        });
+        p.overprint.upper.push(Shape::Stroke {
+            path: vec![(130.0, 50.0), (160.0, 50.0)],
+            closed: false,
+            width: 0.35,
+            cap: Cap::Flat,
+            join: Join::Miter,
+        });
+        let l = lines(&p);
+        assert_eq!(l.iter().filter(|x| *x == "0 1 0 0 k").count(), 1, "{l:?}");
+        assert_eq!(l.iter().filter(|x| *x == "0 1 0 0 K").count(), 1, "{l:?}");
+        // The lower purple still lies between grey and black.
+        let grey = line_of(&l, 0, "0 0 0 0.6 k");
+        let lower = line_of(&l, grey, "0 1 0 0 k");
+        line_of(&l, lower, "0 0 0 1 k");
+        // An overprint layer with nothing left writes no Multiply block.
+        p.overprint.lower = vec![p.overprint.lower.pop().unwrap()];
+        p.overprint.upper.clear();
+        let l = lines(&p);
+        assert!(!l.iter().any(|x| x == "/Mul gs"), "{l:?}");
+    }
+
+    #[test]
+    fn a_mask_run_with_nothing_left_writes_no_mask_block() {
+        let mut p = masked_page(vec![window_clip()]);
+        // Grey moves beside the frame; black stays.
+        p.primitives = vec![square_at(9, 150.0, 20.0), square(2)];
+        let l = lines(&p);
+        assert_eq!(mask_blocks(&l).len(), 1, "{l:?}");
+        assert!(!l.iter().any(|x| x == "0 0 0 0.6 k"));
+    }
+
+    #[test]
+    fn a_text_left_out_still_reports_its_missing_glyphs_and_embeds_no_font() {
+        let mut beside = plain_text("Wald ✈", false, false);
+        let Shape::Text { origin, .. } = &mut beside.shape else {
+            panic!()
+        };
+        *origin = (150.0, 50.0);
+        let (pdf, info) = write_info(&[beside], "Test");
+        assert_eq!(info.missing_glyphs, ['✈'].into_iter().collect());
+        assert!(find(&pdf, b"/FontFile2").is_none());
+        assert!(find(&content_of(&pdf), b"Tj").is_none());
+    }
+
+    #[test]
+    fn a_shape_left_out_still_refuses_a_number_the_pdf_cannot_hold() {
+        // Beyond the f32 range, far left of the frame.
+        let far = Primitive::new(
+            2,
+            Shape::Fill {
+                rings: vec![vec![(-1e39, 10.0), (-2e39, 10.0), (-2e39, 20.0)]],
+                rule: FillRule::EvenOdd,
+            },
+        );
+        let err = write_pdf(&page(&[far]), &PdfMeta::new("t")).unwrap_err();
+        assert!(matches!(err, PdfError::NotFinite), "{err}");
+        // A colour that is not a number, used only beside the frame.
+        let mut p = page(&[square_at(2, 20.0, 20.0), square_at(9, 150.0, 20.0)]);
+        p.colours[1].cmyk[3] = f64::NAN;
+        assert!(matches!(
+            write_pdf(&p, &PdfMeta::new("t")),
+            Err(PdfError::NotFinite)
+        ));
     }
 }
