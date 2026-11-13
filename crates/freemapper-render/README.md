@@ -33,6 +33,10 @@ Für die Editoren (Entscheidungen 0022 und 0023):
 `write_pdf` schreibt nur, was im Clip-Rechteck sichtbar werden kann. Formen, deren Farbbereich ganz außerhalb
 liegt, lässt es aus, die SVG-Ausgabe ebenso (Entscheidung 0031).
 
+`pdf_path::write_path(&mut content, &rings, closed, paint)` schreibt einen Pfad in Seitenpunkten (y nach oben) so
+kompakt wie `write_pdf`, für einen anderen PDF-Schreiber mit pdf-writer (Entscheidungen 0032 und 0033). `Paint`
+nennt den Operator danach; eine kleine Form steht zwischen `q` und `Q`, die die Funktion selbst schreibt.
+
 Das Feature `test-support` macht `pdf::content_of`, `draw::work_units` und `draw::BUDGET_SLACK` für die Tests
 einer Anwendung zugänglich. Eine Anwendung trägt es nur unter `[dev-dependencies]` ein.
 
@@ -73,6 +77,10 @@ For the editors (decisions 0022 and 0023):
 
 `write_pdf` writes only what can show inside the clip rectangle. It leaves out shapes whose ink box lies wholly
 outside it, and so does the SVG backend (decision 0031).
+
+`pdf_path::write_path(&mut content, &rings, closed, paint)` writes a path in page points (y up) as compactly as
+`write_pdf` does, for another PDF writer built on pdf-writer (decisions 0032 and 0033). `Paint` names the operator
+that follows; a small shape sits between `q` and `Q`, which the function writes itself.
 
 The feature `test-support` exposes `pdf::content_of`, `draw::work_units` and `draw::BUDGET_SLACK` to an app's
 tests. An app enables it under `[dev-dependencies]` only.

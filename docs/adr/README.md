@@ -41,3 +41,4 @@ status to `Superseded by NNNN`.
 | [0030](0030-one-look-for-the-suite-pages.md) | One look and one frame for the suite's local pages |
 | [0031](0031-backends-leave-out-what-cannot-show.md) | The backends leave out what cannot show |
 | [0032](0032-compact-pdf-paths-without-beziers.md) | Compact PDF paths without Béziers |
+| [0033](0033-the-compact-path-writer-is-public.md) | The compact path writer is public |

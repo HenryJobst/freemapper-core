@@ -69,5 +69,7 @@ the variants in the table below, before this decision was taken.
   and rasterises them with `pdftoppm` at 150 dpi, and at 600 dpi averaged in 4 × 4 blocks. It fails if more than one
   pixel in 10 000 differs by more than 32 levels either way, or a pixel of the averaged images by more than 64.
 
+The path writer is public since ADR 0033, as `freemapper_render::pdf_path`.
+
 Source: user, 2026-11-13 (smaller PDFs without visible change; Béziers dropped after the measurements, path numbers in
 three decimals); freemapper-print's example sheets; ADR 0031.
