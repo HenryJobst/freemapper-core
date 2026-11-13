@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-11-13
+
 ### Changed
 
 - freemapper-render: `write_pdf` and `MultiPagePdf::add_page` write paths compactly (decision 0032). Path coordinates are rounded to 1/1000 point. A small fill or stroke, four points or more within a square of 7 mm such as the dot of a point symbol or a control circle, is written relative to its first point, so repeated symbols give the same numbers and deflate stores them once. freemapper-print's 13 example sheets of the Gleisdreieck and Rummelsburg sprint maps shrink by 76 to 82 %, from 25.8 MB to 5.37 MB together; training sheet A goes from 2.6 MB to 533 KB. Large pages are written in about a third of the time. The PDF still holds every point; Béziers fitted to the polylines were measured and left out, because they saved only 8 % more and poppler drew small dots as diamonds. Rasterised directly at 150 dpi with poppler, 66 of 41 million pixels of the 13 sheets differ by more than 32 of 255 levels, where a thin hatch line lands one pixel column over. Texts, images, `RenderedPage` and the SVG backend stay the same. Apps change no code; an app that compares committed PDFs writes them again.
