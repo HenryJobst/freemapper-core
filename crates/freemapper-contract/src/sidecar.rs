@@ -5,7 +5,10 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::MapKind;
-use crate::tags::{CONTRACT_KEYS, KEY_CRS, KEY_MAP_KIND, KEY_SCALE, KEY_TITLE, SIDECAR_FILE};
+use crate::tags::{
+    CONTRACT_KEYS, KEY_CONTOUR_INTERVAL, KEY_CONTOURS, KEY_CRS, KEY_MAP_KIND, KEY_SCALE, KEY_TITLE,
+    SIDECAR_FILE,
+};
 
 /// What `map_kind` in a sidecar says.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -50,6 +53,10 @@ pub struct Sidecar {
     pub scale_denominator: Option<u32>,
     /// The EPSG code; absent when the value is no integer or does not fit `u32`.
     pub crs: Option<u32>,
+    /// The contour interval of the traced contours in millimetres, from `[contours] interval_m`;
+    /// absent when the map has the interval of its kind, or when the value is no positive number.
+    /// [`Sidecar::contour_interval_m`] gives metres.
+    pub contour_interval_mm: Option<u32>,
     /// The contract keys that are present, with TOML's name of their type (`string`, `integer`, …).
     pub key_types: BTreeMap<String, String>,
 }
@@ -93,6 +100,13 @@ impl Sidecar {
             raw_title: text_of(KEY_TITLE),
             scale_denominator: number_of(KEY_SCALE),
             crs: number_of(KEY_CRS),
+            contour_interval_mm: table
+                .get(KEY_CONTOURS)
+                .and_then(toml::Value::as_table)
+                .and_then(|contours| contours.get(KEY_CONTOUR_INTERVAL))
+                .and_then(|v| v.as_float().or_else(|| v.as_integer().map(|n| n as f64)))
+                .filter(|m| m.is_finite() && *m > 0.0 && *m < 1000.0)
+                .map(|m| (m * 1000.0).round() as u32),
             key_types: CONTRACT_KEYS
                 .iter()
                 .filter_map(|key| Some((key.to_string(), table.get(*key)?.type_str().to_string())))
@@ -114,6 +128,12 @@ impl Sidecar {
         Sidecar::parse(&text)
             .map(Some)
             .map_err(|message| SidecarError::Invalid { path, message })
+    }
+
+    /// The contour interval in metres, if the sidecar names one; without it the map has the
+    /// interval of its kind.
+    pub fn contour_interval_m(&self) -> Option<f64> {
+        self.contour_interval_mm.map(|mm| f64::from(mm) / 1000.0)
     }
 
     /// The title without blanks around it; `None` without a title or with one of blanks only.
@@ -161,6 +181,32 @@ mod tests {
         assert_eq!(sidecar.scale_denominator, None);
         assert_eq!(sidecar.crs, None);
         assert_eq!(sidecar.key_types["crs"], "integer");
+    }
+
+    #[test]
+    fn the_contour_interval_comes_from_the_contours_table() {
+        let flat = Sidecar::parse("map_kind = \"forest\"\n[contours]\ninterval_m = 2.5\n").unwrap();
+        assert_eq!(flat.contour_interval_mm, Some(2500));
+        assert_eq!(flat.contour_interval_m(), Some(2.5));
+        assert_eq!(flat.key_types["contours"], "table");
+        let whole = Sidecar::parse("[contours]\ninterval_m = 5\n").unwrap();
+        assert_eq!(whole.contour_interval_m(), Some(5.0));
+        // Without the table the reader takes the kind's interval; a bad value is no interval.
+        for text in [
+            "map_kind = \"forest\"\n",
+            "[contours]\ninterval_m = 0.0\n",
+            "[contours]\ninterval_m = -2.5\n",
+            "[contours]\ninterval_m = nan\n",
+            "[contours]\ninterval_m = \"2.5\"\n",
+            "contours = 2.5\n",
+            "contour_interval_m = 2.5\n",
+        ] {
+            assert_eq!(
+                Sidecar::parse(text).unwrap().contour_interval_m(),
+                None,
+                "{text}"
+            );
+        }
     }
 
     #[test]

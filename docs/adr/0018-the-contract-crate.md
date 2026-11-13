@@ -40,10 +40,11 @@ writes maps with its own writer, without `freemapper-omap`.
 
 | Key | Written by freemapper | Readers |
 |---|---|---|
-| `map_kind` | `"sprint"` or `"schoolyard"` | Take it before any inference. Also know `"forest"`. An unknown value counts as absent and is no error. |
+| `map_kind` | `"sprint"`, `"schoolyard"` or `"forest"` (since freemapper-core 0.23.0) | Take it before any inference. An unknown value counts as absent and is no error. |
 | `title` | Always, never empty (since v0.9.1) | Default title. Fall back to the map's file stem only when the key is missing (older projects). |
-| `scale_denominator` | One of the allowed scales of the kind: schoolyard 1000; sprint 4000, 5000 | Equal to the scale in the map's georeferencing. |
+| `scale_denominator` | One of the allowed scales of the kind: schoolyard 1000; sprint 4000, 5000; forest 7500, 10000, 15000 | Equal to the scale in the map's georeferencing. |
 | `crs` | EPSG code, 25832 or 25833 | Informative. |
+| `[contours] interval_m` | The interval the contours were traced at, in metres, only when it is not the kind's (a forest map in flat land: 2.5; since freemapper-core 0.25.0) | `Sidecar::contour_interval_m`. Absent: the kind's interval (schoolyard 1 m, sprint 2 m, forest 5 m). A value that is no positive number counts as absent. |
 | every other key | freemapper's own records | Ignored. An unknown key is never an error. |
 
 ### Map file
