@@ -6,6 +6,13 @@
 //! cargo test -p freemapper-render --lib culling_keeps_every_pixel -- --ignored --nocapture
 //! ```
 //!
+//! Compact paths keep the picture (ADR 0032): `compact_paths_keep_the_picture` writes each page with compact paths and
+//! with every point as before, and rasterises both at 150 dpi, and at 600 dpi averaged in 4 × 4 blocks to 150 dpi. It
+//! fails if more than one pixel in 10 000 differs by more than 32 levels in a channel either way, or a pixel of the
+//! averaged images by more than 64. poppler snaps thin lines to the device pixels, and a line whose coordinates move
+//! by 1/1000 point can land on the next pixel row, a quarter of a 4 × 4 block. The test also prints the write times of
+//! both ways (meaningful with `--release`).
+//!
 //! It draws the forest sample on cropped pages: at 1:2000 on A4, at 1:5000 and 1:10000 on small free pages, at 1:7500
 //! off centre with the information block, and at 1:2000 with a mask and an overprint grid that crosses the frame. More maps
 //! come from `FREEMAPPER_CULLING_MAPS`, paths joined as in `PATH`; each is drawn at its own scale (both factors 1)
@@ -16,10 +23,11 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::Instant;
 
 use freemapper_omap::{MapCoord, MapDocument};
 
-use super::{PdfMeta, write_pdf_with};
+use super::{PdfMeta, Writing, write_pdf_with};
 use crate::build::{Orientation, PageSpec, Paper, build_page};
 use crate::draw::{FillRule, Shape};
 use crate::page::{DirectColour, MapClip, Overprint, RenderedPage};
@@ -251,8 +259,12 @@ fn culling_keeps_every_pixel() {
     let mut failures = Vec::new();
     for case in cases() {
         let meta = PdfMeta::new(&case.name);
-        let (all, all_info) = write_pdf_with(&case.page, &meta, false).unwrap();
-        let (culled, culled_info) = write_pdf_with(&case.page, &meta, true).unwrap();
+        let uncut = Writing {
+            cull: false,
+            ..Writing::FILE
+        };
+        let (all, all_info) = write_pdf_with(&case.page, &meta, uncut).unwrap();
+        let (culled, culled_info) = write_pdf_with(&case.page, &meta, Writing::FILE).unwrap();
         assert_eq!(
             all_info, culled_info,
             "{}: what the page reports",
@@ -280,6 +292,124 @@ fn culling_keeps_every_pixel() {
                     case.name
                 ));
             }
+        }
+    }
+    if !keep {
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+    assert!(failures.is_empty(), "{failures:#?}");
+}
+
+/// The pixels of a binary PPM with each `factor` × `factor` block averaged into one: width, height and RGB bytes.
+fn box_filtered(data: &[u8], factor: usize) -> (usize, usize, Vec<u8>) {
+    let (w, h, start) = ppm_header(data);
+    let pixels = &data[start..];
+    let (bw, bh) = (w / factor, h / factor);
+    let mut out = Vec::with_capacity(bw * bh * 3);
+    for by in 0..bh {
+        for bx in 0..bw {
+            for c in 0..3 {
+                let mut sum = 0usize;
+                for y in by * factor..(by + 1) * factor {
+                    for x in bx * factor..(bx + 1) * factor {
+                        sum += usize::from(pixels[(y * w + x) * 3 + c]);
+                    }
+                }
+                let n = factor * factor;
+                out.push(((sum + n / 2) / n) as u8);
+            }
+        }
+    }
+    (bw, bh, out)
+}
+
+/// How two images of the same size differ: pixels that differ at all, the largest difference of a channel, and the
+/// pixels with a channel more than 16 and more than 32 levels apart.
+fn channel_differences(a: &[u8], b: &[u8]) -> (usize, u8, usize, usize) {
+    assert_eq!(a.len(), b.len(), "image sizes differ");
+    let (mut any, mut max, mut over16, mut over32) = (0, 0u8, 0, 0);
+    for (p, q) in a.chunks(3).zip(b.chunks(3)) {
+        let d = p
+            .iter()
+            .zip(q)
+            .map(|(x, y)| x.abs_diff(*y))
+            .max()
+            .unwrap_or(0);
+        any += usize::from(d > 0);
+        over16 += usize::from(d > 16);
+        over32 += usize::from(d > 32);
+        max = max.max(d);
+    }
+    (any, max, over16, over32)
+}
+
+#[test]
+#[ignore = "needs pdftoppm; run with --ignored"]
+fn compact_paths_keep_the_picture() {
+    let (dir, keep) = match std::env::var_os("FREEMAPPER_CULLING_OUT") {
+        Some(dir) => (PathBuf::from(dir), true),
+        None => (
+            std::env::temp_dir().join(format!("freemapper-compact-{}", std::process::id())),
+            false,
+        ),
+    };
+    std::fs::create_dir_all(&dir).unwrap();
+    let polylines = Writing {
+        compact: false,
+        ..Writing::FILE
+    };
+    let mut failures = Vec::new();
+    for case in cases() {
+        let meta = PdfMeta::new(&case.name);
+        let started = Instant::now();
+        let (old, old_info) = write_pdf_with(&case.page, &meta, polylines).unwrap();
+        let old_time = started.elapsed();
+        let started = Instant::now();
+        let (new, new_info) = write_pdf_with(&case.page, &meta, Writing::FILE).unwrap();
+        let new_time = started.elapsed();
+        assert_eq!(old_info, new_info, "{}: what the page reports", case.name);
+        let old_pdf = dir.join(format!("{}-polylines.pdf", case.name));
+        let new_pdf = dir.join(format!("{}-compact.pdf", case.name));
+        std::fs::write(&old_pdf, &old).unwrap();
+        std::fs::write(&new_pdf, &new).unwrap();
+        eprintln!(
+            "{}: {} bytes as before in {old_time:?}, {} compact in {new_time:?} ({:.1} %)",
+            case.name,
+            old.len(),
+            new.len(),
+            100.0 * new.len() as f64 / old.len() as f64
+        );
+        let read = |pdf: &Path, dpi: u32| {
+            let ppm = rasterise(pdf, dpi);
+            let data = std::fs::read(&ppm).unwrap();
+            std::fs::remove_file(ppm).unwrap();
+            data
+        };
+        let (a, b) = (read(&old_pdf, 150), read(&new_pdf, 150));
+        let start = ppm_header(&a).2;
+        let (any, max, over16, over32) = channel_differences(&a[start..], &b[start..]);
+        eprintln!(
+            "  150 dpi: {any} pixels differ, by up to {max}; {over16} by more than 16, {over32} by more than 32"
+        );
+        if over32 * 10_000 > (a.len() - start) / 3 {
+            failures.push(format!(
+                "{} at 150 dpi: {over32} pixels differ by more than 32 levels",
+                case.name
+            ));
+        }
+        let (a, b) = (read(&old_pdf, 600), read(&new_pdf, 600));
+        let ((wa, ha, a), (wb, hb, b)) = (box_filtered(&a, 4), box_filtered(&b, 4));
+        assert_eq!((wa, ha), (wb, hb));
+        let (any, max, over16, over32) = channel_differences(&a, &b);
+        eprintln!(
+            "  600 dpi averaged to 150: {any} pixels differ, by up to {max}; {over16} by more than 16, {over32} by more \
+             than 32"
+        );
+        if max > 64 || over32 * 10_000 > a.len() / 3 {
+            failures.push(format!(
+                "{} averaged from 600 dpi: {over32} pixels differ by more than 32 levels, by up to {max}",
+                case.name
+            ));
         }
     }
     if !keep {

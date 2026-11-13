@@ -1,6 +1,7 @@
 //! Copied from freemapper 743ce4b (ADR 0014).
 //! Drawing primitives as a one-page PDF: DeviceCMYK colours, painted in the page's order, texts in
-//! embedded subsets of Arimo (freemapper-print ADR 0017).
+//! embedded subsets of Arimo (freemapper-print ADR 0017), paths with rounded coordinates and small shapes relative to
+//! their first point (ADR 0032).
 
 use std::cell::Cell;
 use std::collections::BTreeSet;
@@ -23,19 +24,31 @@ const PT_PER_MM: f64 = 72.0 / 25.4;
 pub(crate) const MITER_LIMIT: f32 = 2.236_068;
 /// OOM's miter limit for text framing in PDF: Qt 0.5 → √(1 + 4 · 0.5²) = √2 (reference §2.1).
 pub(crate) const TEXT_FRAMING_MITER_LIMIT: f32 = std::f32::consts::SQRT_2;
+/// Path coordinates are written in steps of 1/1000 point, 0.00035 mm (ADR 0032).
+const PATH_STEPS_PER_PT: f64 = 1000.0;
+/// A fill or stroke whose points all fit in a square of this side, in page mm, is small ([`is_small`]): a dot or another
+/// part of a point symbol, a control circle. It is written relative to its first point ([`small_origin`]).
+pub(crate) const SMALL_MM: f64 = 7.0;
+/// A small fill or stroke of at least this many points is written relative to its first point; with fewer, the
+/// translation would take more room than it saves.
+const MIN_RELATIVE_POINTS: usize = 4;
 
 /// Page mm (y down) → page points (y up). Every number written to the page goes through
 /// [`Transform::num`], which notes one that is not finite as an `f32`.
 struct Transform {
     page_height: f64,
+    /// Paths are written compactly (ADR 0032): coordinates rounded to [`PATH_STEPS_PER_PT`], small shapes relative to
+    /// their first point ([`small_origin`]).
+    compact: bool,
     /// A number was not finite: the page is refused ([`PdfError::NotFinite`]).
     not_finite: Cell<bool>,
 }
 
 impl Transform {
-    fn new(page_height: f64) -> Self {
+    fn new(page_height: f64, compact: bool) -> Self {
         Transform {
             page_height,
+            compact,
             not_finite: Cell::new(false),
         }
     }
@@ -62,11 +75,24 @@ impl Transform {
             self.num((self.page_height - p.1) * PT_PER_MM),
         )
     }
+
+    /// A point of a path: [`Transform::pt`], or with [`Transform::compact`] rounded to [`PATH_STEPS_PER_PT`] and, with
+    /// an `origin`, relative to it (x right, y up). A number too large for that is still noted.
+    fn path_pt(&self, p: Pt, origin: Option<Pt>) -> (f32, f32) {
+        if !self.compact {
+            return self.pt(p);
+        }
+        let round = |v: f64| self.num((v * PATH_STEPS_PER_PT).round() / PATH_STEPS_PER_PT);
+        let (x0, y0) = origin.unwrap_or((0.0, self.page_height));
+        (round((p.0 - x0) * PT_PER_MM), round((y0 - p.1) * PT_PER_MM))
+    }
 }
 
-fn path(content: &mut Content, t: &Transform, points: &[Pt], close: bool) {
+/// Writes the polyline `points`, closed with `h` when `close`, relative to `origin` if there is one
+/// ([`small_origin`]).
+fn path(content: &mut Content, t: &Transform, points: &[Pt], close: bool, origin: Option<Pt>) {
     for (i, &p) in points.iter().enumerate() {
-        let (x, y) = t.pt(p);
+        let (x, y) = t.path_pt(p, origin);
         if i == 0 {
             content.move_to(x, y);
         } else {
@@ -82,7 +108,7 @@ fn path(content: &mut Content, t: &Transform, points: &[Pt], close: bool) {
 fn begin_clip(content: &mut Content, t: &Transform, rings: &[Vec<Pt>]) {
     content.save_state();
     for ring in rings {
-        path(content, t, ring, true);
+        path(content, t, ring, true, None);
     }
     content.clip_even_odd();
     content.end_path();
@@ -94,6 +120,52 @@ pub(crate) fn map_cmyk(colours: &[RenderColour], priority: i32) -> [f64; 4] {
         .iter()
         .find(|c| c.priority == priority)
         .map_or([0.0, 0.0, 0.0, 1.0], |c| c.cmyk)
+}
+
+/// Whether `points` are finite and fit in a square of side [`SMALL_MM`].
+fn is_small<'a>(points: impl IntoIterator<Item = &'a Pt>) -> bool {
+    let mut points = points.into_iter();
+    let finite = |p: Pt| p.0.is_finite() && p.1.is_finite();
+    let Some(&first) = points.next() else {
+        return false;
+    };
+    if !finite(first) {
+        return false;
+    }
+    let (mut low, mut high) = (first, first);
+    for &p in points {
+        if !finite(p) {
+            return false;
+        }
+        low = (low.0.min(p.0), low.1.min(p.1));
+        high = (high.0.max(p.0), high.1.max(p.1));
+    }
+    high.0 - low.0 < SMALL_MM && high.1 - low.1 < SMALL_MM
+}
+
+/// The first point of a small fill or stroke with `points`, when [`Transform::compact`] writes it relative to that point
+/// (ADR 0032): finite points that fit in a square of [`SMALL_MM`], at least [`MIN_RELATIVE_POINTS`] of them. The
+/// repeated parts of point symbols then give the same numbers each time, which deflate stores once.
+fn small_origin<'a>(t: &Transform, points: impl Iterator<Item = &'a Pt> + Clone) -> Option<Pt> {
+    let first = *points.clone().next()?;
+    (t.compact && points.clone().nth(MIN_RELATIVE_POINTS - 1).is_some() && is_small(points))
+        .then_some(first)
+}
+
+/// Opens the graphics state of a shape written relative to `origin`: `q` and a translation to it. [`end_relative`]
+/// closes it.
+fn begin_relative(content: &mut Content, t: &Transform, origin: Option<Pt>) {
+    if let Some(o) = origin {
+        let (x, y) = t.path_pt(o, None);
+        content.save_state();
+        content.transform([1.0, 0.0, 0.0, 1.0, x, y]);
+    }
+}
+
+fn end_relative(content: &mut Content, origin: Option<Pt>) {
+    if origin.is_some() {
+        content.restore_state();
+    }
 }
 
 /// Paints `shape` in `cmyk`. A clipped shape gets its own clip block here;
@@ -109,13 +181,16 @@ fn paint(
     match shape {
         Shape::Fill { rings, rule } => {
             content.set_fill_cmyk(c, m, y, k);
+            let origin = small_origin(t, rings.iter().flatten());
+            begin_relative(content, t, origin);
             for ring in rings {
-                path(content, t, ring, true);
+                path(content, t, ring, true, origin);
             }
             match rule {
                 FillRule::EvenOdd => content.fill_even_odd(),
                 FillRule::NonZero => content.fill_nonzero(),
             };
+            end_relative(content, origin);
         }
         Shape::Stroke {
             path: points,
@@ -137,8 +212,11 @@ fn paint(
                 Join::Bevel => LineJoinStyle::BevelJoin,
             });
             content.set_miter_limit(MITER_LIMIT);
-            path(content, t, points, *closed);
+            let origin = small_origin(t, points.iter());
+            begin_relative(content, t, origin);
+            path(content, t, points, *closed, origin);
             content.stroke();
+            end_relative(content, origin);
         }
         Shape::Text {
             origin,
@@ -349,7 +427,7 @@ fn masked_run(
     content.save_state();
     for mask in masks {
         for ring in mask.rings() {
-            path(content, t, ring, true);
+            path(content, t, ring, true, None);
         }
         content.clip_nonzero();
         content.end_path();
@@ -418,14 +496,35 @@ struct PageRefs {
     multiply: Option<Ref>,
 }
 
+/// How [`page_body`] writes a page. Files get [`Writing::FILE`]; tests compare it with the other ways.
+#[derive(Debug, Clone, Copy)]
+struct Writing {
+    /// Map primitives and overprint shapes that cannot show inside the clip are left out ([`kept`], ADR 0031).
+    cull: bool,
+    /// Path coordinates are rounded and small shapes written relative to their first point ([`small_origin`],
+    /// ADR 0032).
+    compact: bool,
+}
+
+impl Writing {
+    const FILE: Writing = Writing {
+        cull: true,
+        compact: true,
+    };
+}
+
 /// Draws `page` into a content stream: every primitive clipped to `page.clip`, the course overprint among them,
-/// the sheet layer on top. With `cull`, map primitives and overprint shapes that cannot show inside the clip are
-/// left out ([`kept`]). Refuses a page with a number that is not finite before anything is written.
-fn page_body(page: &RenderedPage, cull: bool) -> Result<(PageBody<'_>, PageFonts), PdfError> {
+/// the sheet layer on top, as `writing` says. Refuses a page with a number that is not finite before anything is
+/// written.
+fn page_body(page: &RenderedPage, writing: Writing) -> Result<(PageBody<'_>, PageFonts), PdfError> {
     let (page_w, page_h) = page.page_mm;
-    let t = Transform::new(page_h);
+    let t = Transform::new(page_h, writing.compact);
     let colours = &page.colours;
-    let area = if cull { visible_area(page) } else { None };
+    let area = if writing.cull {
+        visible_area(page)
+    } else {
+        None
+    };
 
     // The page's primitives are in paint order already ([`RenderedPage::primitives`]).
     let items = &page.primitives;
@@ -575,16 +674,16 @@ fn write_info(pdf: &mut Pdf, id: Ref, meta: &PdfMeta) {
 /// millimetre, and every primitive is clipped to `page.clip`. Also returns what the page could
 /// not show.
 pub fn write_pdf(page: &RenderedPage, meta: &PdfMeta) -> Result<(Vec<u8>, PdfInfo), PdfError> {
-    write_pdf_with(page, meta, true)
+    write_pdf_with(page, meta, Writing::FILE)
 }
 
-/// [`write_pdf`], leaving out what cannot show only with `cull`. Tests compare the two.
+/// [`write_pdf`] the way `writing` says. Tests compare the ways.
 fn write_pdf_with(
     page: &RenderedPage,
     meta: &PdfMeta,
-    cull: bool,
+    writing: Writing,
 ) -> Result<(Vec<u8>, PdfInfo), PdfError> {
-    let (body, fonts) = page_body(page, cull)?;
+    let (body, fonts) = page_body(page, writing)?;
     // References come from a counter, so a page holds only the fonts it uses.
     let mut next = Ref::new(1);
     let (catalog, pages, page, contents) = (next.bump(), next.bump(), next.bump(), next.bump());
@@ -643,7 +742,7 @@ impl MultiPagePdf {
     /// Appends `page` with its own MediaBox. A page refused for a number that is not finite leaves the document as
     /// it was; after a font that cannot be embedded the document is incomplete and must be dropped.
     pub fn add_page(&mut self, page: &RenderedPage) -> Result<PdfInfo, PdfError> {
-        let (body, fonts) = page_body(page, true)?;
+        let (body, fonts) = page_body(page, Writing::FILE)?;
         let mut next = self.next;
         let (page_ref, contents) = (next.bump(), next.bump());
         let fonts = fonts.finish(&mut next);
@@ -1841,6 +1940,127 @@ mod tests {
         );
     }
 
+    // --- Compact paths (ADR 0032) ---
+
+    /// A dot of point symbols as draw.rs draws it: 48 sides around `centre`, radius 0.5 mm, the first point repeated.
+    fn dot(centre: Pt) -> Vec<Pt> {
+        (0..=48)
+            .map(|i| {
+                let a = f64::from(i) / 48.0 * std::f64::consts::TAU;
+                (centre.0 + 0.5 * a.cos(), centre.1 + 0.5 * a.sin())
+            })
+            .collect()
+    }
+
+    /// The lines of each block `q`, `… cm`, …, `Q` of `l`.
+    fn relative_blocks(l: &[String]) -> Vec<Vec<String>> {
+        let mut out = Vec::new();
+        for (i, x) in l.iter().enumerate() {
+            if x == "q" && l.get(i + 1).is_some_and(|c| c.ends_with(" cm")) {
+                let end = line_of(l, i, "Q");
+                out.push(l[i..=end].to_vec());
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn a_small_shape_is_written_relative_to_its_first_point() {
+        let fill = |centre| {
+            Primitive::new(
+                2,
+                Shape::Fill {
+                    rings: vec![dot(centre)],
+                    rule: FillRule::NonZero,
+                },
+            )
+        };
+        let l = lines(&page(&[fill((30.0, 40.0)), fill((61.25, 17.5))]));
+        let blocks = relative_blocks(&l);
+        assert_eq!(blocks.len(), 2, "{l:?}");
+        // A translation to the first point, (30.5, 40) mm, in points rounded to 1/1000; the ring from 0 0, every
+        // point kept; the fill inside the block.
+        let at = |mm: f64| (mm * PT_PER_MM * 1000.0).round() / 1000.0;
+        assert_eq!(
+            blocks[0][1],
+            format!("1 0 0 1 {} {} cm", at(30.5) as f32, at(297.0 - 40.0) as f32)
+        );
+        assert_eq!(blocks[0][2], "0 0 m");
+        assert_eq!(blocks[0].iter().filter(|x| x.ends_with(" l")).count(), 48);
+        assert_eq!(&blocks[0][blocks[0].len() - 3..], ["h", "f", "Q"]);
+        // The second dot gives the same path, so deflate stores it once.
+        assert_eq!(blocks[0][2..], blocks[1][2..]);
+        // A stroke of a small ring too; the stroke settings stay outside the block.
+        let ring = Primitive::new(
+            2,
+            Shape::Stroke {
+                path: dot((30.0, 40.0)),
+                closed: true,
+                width: 0.1,
+                cap: Cap::Flat,
+                join: Join::Miter,
+            },
+        );
+        let l = lines(&page(&[ring]));
+        let blocks = relative_blocks(&l);
+        assert_eq!(blocks.len(), 1);
+        assert_eq!(&blocks[0][blocks[0].len() - 3..], ["h", "S", "Q"]);
+        assert!(line_of(&l, 0, "w") < line_of(&l, 0, "cm"));
+    }
+
+    #[test]
+    fn small_means_within_a_square_of_7_mm() {
+        // Dots and circles of point symbols up to a control circle of 6 mm.
+        assert!(is_small(&dot((10.0, 20.0))));
+        for r in [0.2, 0.5, 1.0, 3.0] {
+            let circle: Vec<Pt> = (0..48)
+                .map(|i| {
+                    let a = f64::from(i) / 48.0 * std::f64::consts::TAU;
+                    (r * a.cos(), r * a.sin())
+                })
+                .collect();
+            assert!(is_small(&circle), "r {r}");
+        }
+        assert!(!is_small(&[(0.0, 0.0), (7.0, 1.0)]));
+        assert!(!is_small(&[(0.0, 0.0), (1.0, 7.0)]));
+        assert!(is_small(&[(0.0, 0.0), (6.99, 6.99)]));
+        // A point that is not a number makes nothing small, wherever it is.
+        assert!(!is_small(&[(0.0, 0.0), (f64::NAN, 0.0), (1.0, 1.0)]));
+        assert!(!is_small(&[(f64::INFINITY, 0.0), (1.0, 1.0)]));
+        assert!(!is_small(&[]));
+    }
+
+    #[test]
+    fn large_and_short_shapes_keep_page_coordinates() {
+        // A square of 10 mm and a small stroke of three points.
+        let three = Primitive::new(
+            2,
+            Shape::Stroke {
+                path: vec![(30.0, 30.0), (30.5, 30.0), (30.5, 30.5)],
+                closed: false,
+                width: 0.1,
+                cap: Cap::Flat,
+                join: Join::Miter,
+            },
+        );
+        let l = lines(&page(&[square(2), three]));
+        assert!(relative_blocks(&l).is_empty(), "{l:?}");
+        // Without compact paths a dot keeps its page coordinates too.
+        let p = page(&[Primitive::new(
+            2,
+            Shape::Fill {
+                rings: vec![dot((30.0, 40.0))],
+                rule: FillRule::NonZero,
+            },
+        )]);
+        let plain = Writing {
+            compact: false,
+            ..Writing::FILE
+        };
+        let (pdf, _) = write_pdf_with(&p, &PdfMeta::new("t"), plain).unwrap();
+        assert!(find(&content_of(&pdf), b" cm").is_none());
+    }
+
     // --- Shapes that cannot show are left out (ADR 0031) ---
 
     /// A square of priority `priority` from (`x`, `y`), 10 mm a side.
@@ -1877,7 +2097,11 @@ mod tests {
         assert_eq!(fills(&p), 2, "{l:?}");
         assert!(!l.iter().any(|x| x == "0 0 0 0.6 k"), "{l:?}");
         // Written without leaving anything out, all five are there.
-        let (all, _) = write_pdf_with(&p, &PdfMeta::new("t"), false).unwrap();
+        let uncut = Writing {
+            cull: false,
+            ..Writing::FILE
+        };
+        let (all, _) = write_pdf_with(&p, &PdfMeta::new("t"), uncut).unwrap();
         let all = String::from_utf8(content_of(&all)).unwrap();
         assert_eq!(all.lines().filter(|l| *l == "f*").count(), 5);
     }
