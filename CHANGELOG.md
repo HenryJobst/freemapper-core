@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- freemapper-contract: Die Begleitdatei kann die Äquidistanz der Höhenlinien nennen, als Tabelle `[contours]` mit `interval_m` (Entscheidung 0018). freemapper schreibt sie nur, wenn sie nicht die der Kartenart ist, etwa 2,5 m bei einer Waldkarte in flachem Gelände. `Sidecar::contour_interval_m` gibt sie in Metern, sonst `None`, dann gilt die Äquidistanz der Kartenart. Ein Wert, der keine positive Zahl ist, zählt als nicht da. `CONTRACT_KEYS` hat dafür fünf statt vier Schlüssel; `Sidecar` hat das Feld `contour_interval_mm`.
+
 ## [0.24.0] - 2026-11-13
 
 ### Geändert

@@ -38,5 +38,9 @@ pub const KEY_TITLE: &str = "title";
 pub const KEY_SCALE: &str = "scale_denominator";
 /// Sidecar key of the map's coordinate reference system, an EPSG code.
 pub const KEY_CRS: &str = "crs";
+/// Sidecar table of the contours freemapper traced; absent when they have the map kind's interval.
+pub const KEY_CONTOURS: &str = "contours";
+/// Key in [`KEY_CONTOURS`]: the contour interval in metres (a forest map in flat land: 2.5).
+pub const KEY_CONTOUR_INTERVAL: &str = "interval_m";
 /// The contract keys of the sidecar. Every other key is freemapper's own record.
-pub const CONTRACT_KEYS: [&str; 4] = [KEY_MAP_KIND, KEY_TITLE, KEY_SCALE, KEY_CRS];
+pub const CONTRACT_KEYS: [&str; 5] = [KEY_MAP_KIND, KEY_TITLE, KEY_SCALE, KEY_CRS, KEY_CONTOURS];
