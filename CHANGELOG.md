@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- freemapper-render: `write_pdf` und `MultiPagePdf::add_page` schreiben Pfade kompakt (Entscheidung 0032). Pfadkoordinaten werden auf 1/1000 Punkt gerundet. Eine kleine Fläche oder Linie, vier Punkte oder mehr in einem Quadrat von 7 mm wie der Punkt eines Punktsymbols oder ein Postenkreis, wird relativ zu ihrem ersten Punkt geschrieben; wiederholte Symbole ergeben so dieselben Zahlen, und deflate speichert sie einmal. Die 13 Beispielblätter von freemapper-print aus den Sprintkarten Gleisdreieck und Rummelsburg schrumpfen um 76 bis 82 %, zusammen von 25,8 MB auf 5,37 MB; Trainingsblatt A von 2,6 MB auf 533 KB. Große Seiten werden in etwa einem Drittel der Zeit geschrieben. Das PDF enthält weiter jeden Punkt; an die Linienzüge angepasste Bézierkurven wurden gemessen und weggelassen, weil sie nur 8 % mehr sparten und poppler kleine Punkte als Rauten zeichnete. Direkt mit 150 dpi in poppler gerastert, weichen 66 von 41 Millionen Pixeln der 13 Blätter um mehr als 32 von 255 Stufen ab, dort, wo eine dünne Schraffurlinie eine Pixelspalte weiter landet. Texte, Bilder, `RenderedPage` und die SVG-Ausgabe bleiben gleich. Am Code der Anwendungen ändert sich nichts; wer PDFs mit eingecheckten vergleicht, schreibt sie neu.
+
 ## [0.23.0] - 2026-11-13
 
 ### Geändert

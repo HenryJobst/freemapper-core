@@ -40,3 +40,4 @@ status to `Superseded by NNNN`.
 | [0029](0029-free-page-and-source-objects.md) | A free page size and the source position of each object |
 | [0030](0030-one-look-for-the-suite-pages.md) | One look and one frame for the suite's local pages |
 | [0031](0031-backends-leave-out-what-cannot-show.md) | The backends leave out what cannot show |
+| [0032](0032-compact-pdf-paths-without-beziers.md) | Compact PDF paths without Béziers |
