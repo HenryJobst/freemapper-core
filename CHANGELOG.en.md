@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-13
+
 ### Changed
 
 - freemapper-contract: the map kind `forest` has drawing scales, 1:7500, 1:10 000 and 1:15 000 (ISOM 2017-2), so freemapper writes it (`is_written_by_freemapper`). A reader accepts forest maps at these scales now; before, `check` reported them as an unknown kind. freemapper-print and freemapper-courseplan need no code change.
