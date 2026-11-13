@@ -51,7 +51,8 @@ impl MapKind {
         match self {
             MapKind::Sprint => &[4000, 5000],
             MapKind::Schoolyard => &[1000],
-            MapKind::Forest => &[],
+            // ISOM 2017-2: 1:15000, and 1:10000 and 1:7500 with the symbols at 150 % and 200 %.
+            MapKind::Forest => &[7500, 10000, 15000],
         }
     }
 
@@ -124,6 +125,7 @@ mod tests {
                 "{kind}"
             );
         }
-        assert!(!MapKind::Forest.is_written_by_freemapper());
+        assert!(MapKind::Forest.is_written_by_freemapper());
+        assert_eq!(MapKind::Forest.drawing_scales(), [7500, 10000, 15000]);
     }
 }

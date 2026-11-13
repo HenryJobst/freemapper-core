@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- freemapper-contract: Die Kartenart `forest` hat Zeichenmaßstäbe, 1:7500, 1:10 000 und 1:15 000 (ISOM 2017-2), und freemapper schreibt sie damit (`is_written_by_freemapper`). Ein Leser nimmt Waldkarten in diesen Maßstäben jetzt an; vorher meldete `check` sie als unbekannte Art. Für freemapper-print und freemapper-courseplan ändert sich am Code nichts.
+
 ## [0.22.0] - 2026-11-12
 
 ### Geändert
