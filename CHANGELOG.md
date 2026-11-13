@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.26.0] - 2026-11-13
+
 ### Hinzugefügt
 
 - freemapper-render: Der kompakte Pfadschreiber der PDF-Ausgabe ist öffentlich, als `pdf_path` (Entscheidung 0033), damit ihn der eigene PDF-Schreiber von freemapper nutzen kann. `pdf_path::write_path(content, rings, closed, paint)` schreibt die Ringe eines Pfads in einen `pdf_writer::Content` (pdf-writer 0.15.0), in Seitenpunkten mit y nach oben, als `(f32, f32)`, auf 1/1000 Punkt gerundet. Am Ende steht der Operator, den `Paint` nennt: `FillNonZero`, `FillEvenOdd`, `Stroke`, `ClipNonZero` oder `ClipEvenOdd`. Eine kleine Fläche oder Linie steht zwischen `q`, einer Verschiebung zu ihrem ersten Punkt, und `Q`, das die Funktion selbst schließt; Farbe und Linienart setzt der Aufrufer vorher. Eine Koordinate, die keine endliche Zahl ist, ergibt `NotFinite`, und nichts wird geschrieben. `STEPS_PER_PT`, `SMALL_MM` und `MIN_RELATIVE_POINTS` sind öffentlich. `write_pdf` schreibt seine Pfade mit demselben Code; seine PDFs bleiben Byte für Byte gleich.

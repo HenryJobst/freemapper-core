@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-11-13
+
 ### Added
 
 - freemapper-render: the compact path writer of the PDF backend is public as `pdf_path` (decision 0033), so freemapper's own PDF writer can use it. `pdf_path::write_path(content, rings, closed, paint)` writes the rings of one path into a `pdf_writer::Content` (pdf-writer 0.15.0) in page points with y up, as `(f32, f32)`, rounded to 1/1000 point. It ends with the operator `Paint` names: `FillNonZero`, `FillEvenOdd`, `Stroke`, `ClipNonZero` or `ClipEvenOdd`. A small fill or stroke goes inside `q`, a translation to its first point, and `Q`, which the function closes itself; the caller sets colour and line style before the call. A coordinate that is not finite returns `NotFinite` and writes nothing. `STEPS_PER_PT`, `SMALL_MM` and `MIN_RELATIVE_POINTS` are public. `write_pdf` writes its paths with the same code; its PDFs stay the same byte for byte.
