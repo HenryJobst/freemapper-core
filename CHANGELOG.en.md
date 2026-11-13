@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-11-13
+
 ### Added
 
 - freemapper-contract: the sidecar can name the contour interval, as the table `[contours]` with `interval_m` (decision 0018). freemapper writes it only when it is not the kind's, for example 2.5 m for a forest map in flat land. `Sidecar::contour_interval_m` gives it in metres, else `None`, and then the kind's interval applies. A value that is no positive number counts as absent. `CONTRACT_KEYS` has five keys instead of four for it; `Sidecar` has the field `contour_interval_mm`.
