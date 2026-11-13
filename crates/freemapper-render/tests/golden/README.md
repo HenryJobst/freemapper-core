@@ -1,6 +1,6 @@
-# Golden SVGs
+# Golden files
 
-Expected output of `tests/svg.rs`.
+Expected output of `tests/svg.rs`, and of one unit test in `src/pdf.rs`.
 
 ## tiny-page.svg, tiny-page-view.svg
 
@@ -12,3 +12,12 @@ Expected output of `tests/svg.rs`.
   committing.
 - Licence: GPL-3.0-or-later, like the crate. The text paths are outlines of the Arimo fonts in
   `assets/fonts/` (SIL OFL 1.1).
+
+## compact-paths.txt
+
+- Source: the content streams `pdf::write_pdf_with` wrote for the hand-built page `path_page()` in `src/pdf.rs`,
+  with compact paths and with every point as it comes, before the path writer moved to `pdf_path` (v0.25.0, commit
+  599add0, written on branch `pdf-path-api`, 2026-11-13). The test `the_path_writer_writes_the_bytes_it_wrote_before`
+  compares with it. `UPDATE_GOLDEN=1 cargo test -p freemapper-render --lib the_path_writer` writes it again; review
+  the diff before committing.
+- Licence: GPL-3.0-or-later, like the crate.
