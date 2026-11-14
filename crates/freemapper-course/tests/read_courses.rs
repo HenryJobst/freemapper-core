@@ -348,3 +348,22 @@ fn code_and_name_lengths_limited() {
         assert!(matches!(read_iof_xml(&bad), Err(CourseError::Limit(_))));
     }
 }
+
+#[test]
+fn reads_event_date_and_organiser() {
+    let xml = br#"<?xml version="1.0" encoding="UTF-8"?>
+<CourseData xmlns="http://www.orienteering.org/datastandard/3.0" iofVersion="3.0">
+  <Event>
+    <Name>Training</Name>
+    <StartTime><Date>2027-05-15</Date><Time>10:00:00</Time></StartTime>
+    <Organiser><Name>OC Beispiel</Name></Organiser>
+  </Event>
+  <RaceCourseData><Map><Scale>4000</Scale><MapPositionTopLeft x="0" y="0" unit="mm"/><MapPositionBottomRight x="10" y="10" unit="mm"/></Map></RaceCourseData>
+</CourseData>"#;
+    let ev = read_iof_xml(xml).unwrap();
+    assert_eq!(ev.source.event_date.as_deref(), Some("2027-05-15"));
+    assert_eq!(ev.source.organiser.as_deref(), Some("OC Beispiel"));
+    let none = read_iof_xml(&fixture("y-up.xml")).unwrap();
+    assert_eq!(none.source.event_date, None);
+    assert_eq!(none.source.organiser, None);
+}

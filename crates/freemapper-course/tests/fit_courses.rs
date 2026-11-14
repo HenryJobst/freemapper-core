@@ -113,6 +113,8 @@ fn event(controls: Vec<Control<RawPoint>>) -> RawEvent {
         source: CourseSource {
             format: SourceFormat::IofXml,
             event_name: None,
+            event_date: None,
+            organiser: None,
             map_scale: None,
             item_scaling: None,
         },
