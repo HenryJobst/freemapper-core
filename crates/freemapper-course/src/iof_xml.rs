@@ -112,6 +112,8 @@ struct State {
     course_count: usize,
     notes: Notes,
     event_name: Option<String>,
+    event_date: Option<String>,
+    organiser: Option<String>,
     map_scale: Option<u32>,
     control: Option<ControlB>,
     course: Option<CourseB>,
@@ -125,6 +127,15 @@ impl State {
 
     fn parent(&self) -> &str {
         self.stack.last().map_or("", String::as_str)
+    }
+
+    /// The parent of the parent of the element being closed (the stack already lost the element itself).
+    fn grandparent(&self) -> &str {
+        self.stack
+            .len()
+            .checked_sub(2)
+            .and_then(|i| self.stack.get(i))
+            .map_or("", String::as_str)
     }
 
     /// The open element is a direct child of the `RaceCourseData` under the root.
@@ -280,6 +291,12 @@ impl State {
         let missing = |what: &str| CourseError::Xml(format!("<{what}> closed but not open"));
         match (parent.as_str(), name.as_str()) {
             ("Event", "Name") => self.event_name = Some(text.to_string()),
+            ("StartTime", "Date") if self.grandparent() == "Event" && !text.is_empty() => {
+                self.event_date = Some(bounded(text, MAX_CODE_LEN, "event date")?);
+            }
+            ("Organiser", "Name") if self.grandparent() == "Event" && !text.is_empty() => {
+                self.organiser = Some(bounded(text, MAX_NAME_LEN, "organiser")?);
+            }
             ("Map", "Scale") => {
                 let v = number(text, "Scale")?;
                 if v >= 1.0 && v <= f64::from(u32::MAX) {
@@ -441,6 +458,8 @@ impl State {
             source: CourseSource {
                 format: SourceFormat::IofXml,
                 event_name: self.event_name,
+                event_date: self.event_date,
+                organiser: self.organiser,
                 map_scale: self.map_scale,
                 item_scaling: None,
             },

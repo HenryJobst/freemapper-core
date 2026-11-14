@@ -1228,6 +1228,8 @@ impl State {
             source: CourseSource {
                 format: SourceFormat::PurplePen,
                 event_name: self.title,
+                event_date: None,
+                organiser: None,
                 map_scale: self.map_scale.and_then(scale),
                 item_scaling: Some(self.item_scaling),
             },

@@ -1460,6 +1460,8 @@ fn full_event() -> RawEvent {
         source: CourseSource {
             format: SourceFormat::PurplePen,
             event_name: Some("Strict".into()),
+            event_date: None,
+            organiser: None,
             map_scale: Some(10000),
             item_scaling: None,
         },
@@ -1475,6 +1477,8 @@ fn empty_event() -> RawEvent {
         source: CourseSource {
             format: SourceFormat::PurplePen,
             event_name: None,
+            event_date: None,
+            organiser: None,
             map_scale: Some(15000),
             item_scaling: None,
         },

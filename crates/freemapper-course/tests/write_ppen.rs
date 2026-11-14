@@ -880,6 +880,8 @@ fn limits_are_checked_first() {
     let source = CourseSource {
         format: SourceFormat::PurplePen,
         event_name: None,
+        event_date: None,
+        organiser: None,
         map_scale: None,
         item_scaling: None,
     };

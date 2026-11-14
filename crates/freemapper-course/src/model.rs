@@ -138,6 +138,10 @@ impl<P> CourseEvent<P> {
 pub struct CourseSource {
     pub format: SourceFormat,
     pub event_name: Option<String>,
+    /// The event date as the file writes it (`YYYY-MM-DD`), if any. IOF XML `Event/StartTime/Date`.
+    pub event_date: Option<String>,
+    /// The organiser, if the file names one. IOF XML `Event/Organiser/Name`.
+    pub organiser: Option<String>,
     /// The map scale denominator the file states, if any.
     pub map_scale: Option<u32>,
     /// How the file scales course symbols (Purple Pen `course-appearance/@scale-sizes`). `None` for IOF XML,
