@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-11-14
+
 ### Added
 
 - freemapper-course: `read_iof_xml` reads the date (`Event/StartTime/Date`) and the organiser (`Event/Organiser/Name`) into `CourseSource::event_date` and `CourseSource::organiser` (ADR 0034). Both are text as the file writes them; the Purple Pen reader sets both to `None`. Code that builds `CourseSource` by hand adds the two fields.

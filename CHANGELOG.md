@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.27.0] - 2026-11-14
+
 ### Hinzugefügt
 
 - freemapper-course: `read_iof_xml` liest das Datum (`Event/StartTime/Date`) und den Veranstalter (`Event/Organiser/Name`) in `CourseSource::event_date` und `CourseSource::organiser` (Entscheidung 0034). Die Felder sind Text, wie die Datei sie schreibt; der Purple-Pen-Leser setzt beide auf `None`. Wer `CourseSource` von Hand baut, ergänzt die zwei Felder.
