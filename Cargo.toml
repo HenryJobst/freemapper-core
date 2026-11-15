@@ -40,7 +40,7 @@ image = { version = "=0.25.10", default-features = false, features = ["jpeg", "p
 miniz_oxide = "=0.9.1"
 pdf-writer = "=0.15.0"
 subsetter = { version = "=0.2.6", default-features = false }
-ttf-parser = { version = "=0.25.1", default-features = false, features = ["std"] }
+skrifa = { version = "=0.49.0", default-features = false, features = ["std"] }
 # Same versions as freemapper's Cargo.lock. The local web page shell: HTTP server, embedded assets, token.
 axum = { version = "=0.8.9", default-features = false }
 getrandom = "=0.4.3"

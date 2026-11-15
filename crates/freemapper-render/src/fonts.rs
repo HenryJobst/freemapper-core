@@ -9,8 +9,12 @@ use crate::geometry::Pt;
 use crate::pdf::PdfError;
 use pdf_writer::types::{CidFontType, FontFlags, SystemInfo, UnicodeCmap};
 use pdf_writer::{Filter, Finish, Name, Pdf, Rect, Ref, Str};
+use skrifa::charmap::Charmap;
+use skrifa::instance::{LocationRef, Size};
+use skrifa::metrics::GlyphMetrics;
+use skrifa::outline::{DrawSettings, OutlineGlyphCollection, OutlinePen};
+use skrifa::{FontRef, GlyphId, MetadataProvider};
 use subsetter::GlyphRemapper;
-use ttf_parser::GlyphId;
 
 /// One of the four Arimo styles.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -53,29 +57,81 @@ impl FontFace {
     }
 
     /// The parsed font; the embedded files are known to parse (test `embedded_faces_parse`).
-    fn parsed(self) -> &'static ttf_parser::Face<'static> {
-        static PARSED: OnceLock<Vec<ttf_parser::Face<'static>>> = OnceLock::new();
-        &PARSED.get_or_init(|| {
-            FACES
-                .iter()
-                .map(|f| ttf_parser::Face::parse(f.data(), 0).expect("embedded Arimo parses"))
-                .collect()
-        })[self.index()]
+    fn parsed(self) -> &'static ParsedFace {
+        static PARSED: OnceLock<Vec<ParsedFace>> = OnceLock::new();
+        &PARSED.get_or_init(|| FACES.iter().map(|f| ParsedFace::new(f.data())).collect())
+            [self.index()]
     }
 
     /// The glyph of `c`, `None` if Arimo has none.
     fn glyph(self, c: char) -> Option<GlyphId> {
-        self.parsed().glyph_index(c)
+        self.parsed().charmap.map(c).filter(|g| g.to_u32() != 0)
     }
 
     /// Advance width of a glyph in font units.
     fn advance(self, glyph: GlyphId) -> u16 {
-        self.parsed().glyph_hor_advance(glyph).unwrap_or(0)
+        self.parsed()
+            .metrics
+            .advance_width(glyph)
+            .map_or(0, |w| w.round() as u16)
     }
 
     fn units_per_em(self) -> f64 {
-        f64::from(self.parsed().units_per_em())
+        f64::from(self.parsed().units_per_em)
     }
+}
+
+/// One Arimo face read by skrifa: the lookups the text functions need, made once.
+struct ParsedFace {
+    charmap: Charmap<'static>,
+    metrics: GlyphMetrics<'static>,
+    outlines: OutlineGlyphCollection<'static>,
+    units_per_em: u16,
+    cap_height: Option<f32>,
+    /// Line metrics in font units as skrifa reports them; the tests read `leading`, `bold` and `italic`.
+    ascent: f32,
+    descent: f32,
+    #[cfg(test)]
+    leading: f32,
+    #[cfg(test)]
+    bold: bool,
+    #[cfg(test)]
+    italic: bool,
+    /// The weight class of the OS/2 table (400 regular, 700 bold).
+    weight: f32,
+    italic_angle: f32,
+    /// The box of all glyphs, from the head table.
+    bounds: skrifa::metrics::BoundingBox,
+}
+
+impl ParsedFace {
+    fn new(data: &'static [u8]) -> Self {
+        let font = FontRef::new(data).expect("embedded Arimo parses");
+        let metrics = font.metrics(Size::unscaled(), LocationRef::default());
+        ParsedFace {
+            charmap: font.charmap(),
+            metrics: font.glyph_metrics(Size::unscaled(), LocationRef::default()),
+            outlines: font.outline_glyphs(),
+            units_per_em: metrics.units_per_em,
+            cap_height: metrics.cap_height,
+            ascent: metrics.ascent,
+            descent: metrics.descent,
+            #[cfg(test)]
+            leading: metrics.leading,
+            #[cfg(test)]
+            bold: font.attributes().weight.value() >= 700.0,
+            #[cfg(test)]
+            italic: font.attributes().style != skrifa::attribute::Style::Normal,
+            weight: font.attributes().weight.value(),
+            italic_angle: metrics.italic_angle,
+            bounds: metrics.bounds.expect("Arimo has a head table"),
+        }
+    }
+}
+
+/// The glyph number as the PDF subsetter counts it: Arimo has far fewer than 65536 glyphs.
+fn gid16(glyph: GlyphId) -> u16 {
+    u16::try_from(glyph.to_u32()).expect("Arimo glyph ids fit in 16 bits")
 }
 
 /// The face for a text symbol's bold and italic flags.
@@ -95,7 +151,7 @@ pub fn text_width(text: &str, face: FontFace) -> f64 {
 
 /// Advance width of one character in em ([`text_width`]).
 pub fn char_width(c: char, face: FontFace) -> f64 {
-    f64::from(face.advance(face.glyph(c).unwrap_or(GlyphId(0)))) / face.units_per_em()
+    f64::from(face.advance(face.glyph(c).unwrap_or(GlyphId::NOTDEF))) / face.units_per_em()
 }
 
 /// One piece of a glyph outline in em: x along the baseline from the start of the text, y down.
@@ -113,6 +169,10 @@ struct OutlineSink<'a> {
     pen: f64,
     em: f64,
     out: &'a mut dyn FnMut(OutlineSegment),
+    /// First and latest point of the open contour. skrifa closes a contour without the line back to its start;
+    /// `close` adds that line, as the outlines have always had it, so the maps and PDFs stay the same byte for byte.
+    start: Pt,
+    last: Pt,
 }
 
 impl OutlineSink<'_> {
@@ -121,28 +181,35 @@ impl OutlineSink<'_> {
     }
 }
 
-impl ttf_parser::OutlineBuilder for OutlineSink<'_> {
+impl OutlinePen for OutlineSink<'_> {
     fn move_to(&mut self, x: f32, y: f32) {
         let p = self.pt(x, y);
+        (self.start, self.last) = (p, p);
         (self.out)(OutlineSegment::Move(p));
     }
 
     fn line_to(&mut self, x: f32, y: f32) {
         let p = self.pt(x, y);
+        self.last = p;
         (self.out)(OutlineSegment::Line(p));
     }
 
     fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
         let (c, p) = (self.pt(x1, y1), self.pt(x, y));
+        self.last = p;
         (self.out)(OutlineSegment::Quad(c, p));
     }
 
     fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
         let (c1, c2, p) = (self.pt(x1, y1), self.pt(x2, y2), self.pt(x, y));
+        self.last = p;
         (self.out)(OutlineSegment::Cubic(c1, c2, p));
     }
 
     fn close(&mut self) {
+        if self.last != self.start {
+            (self.out)(OutlineSegment::Line(self.start));
+        }
         (self.out)(OutlineSegment::Close);
     }
 }
@@ -156,11 +223,18 @@ pub(crate) fn text_outline(text: &str, face: FontFace, mut out: impl FnMut(Outli
         pen: 0.0,
         em: face.units_per_em(),
         out: &mut out,
+        start: (0.0, 0.0),
+        last: (0.0, 0.0),
     };
     for c in text.chars() {
-        let glyph = face.glyph(c).unwrap_or(GlyphId(0));
+        let glyph = face.glyph(c).unwrap_or(GlyphId::NOTDEF);
         // A glyph without contours (a space) yields nothing.
-        let _ = parsed.outline_glyph(glyph, &mut sink);
+        if let Some(outline) = parsed.outlines.get(glyph) {
+            let _ = outline.draw(
+                DrawSettings::unhinted(Size::unscaled(), LocationRef::default()),
+                &mut sink,
+            );
+        }
         sink.pen += f64::from(face.advance(glyph)) / sink.em;
     }
 }
@@ -174,9 +248,14 @@ pub(crate) fn glyph_extent(text: &str, face: FontFace) -> Option<(Pt, Pt)> {
     let mut pen = 0.0;
     let mut extent: Option<(Pt, Pt)> = None;
     for c in text.chars() {
-        let glyph = face.glyph(c).unwrap_or(GlyphId(0));
-        // ttf-parser outlines the glyph for its box and counts the control points; a space has none.
-        if let Some(r) = parsed.glyph_bounding_box(glyph) {
+        let glyph = face.glyph(c).unwrap_or(GlyphId::NOTDEF);
+        // The box is the one the glyph header stores, control points included; a space has none.
+        // skrifa gives an empty glyph the box 0, 0, 0, 0, which has no extent.
+        if let Some(r) = parsed
+            .metrics
+            .bounds(glyph)
+            .filter(|r| r.x_max > r.x_min || r.y_max > r.y_min)
+        {
             let min = (pen + f64::from(r.x_min) / em, -f64::from(r.y_max) / em);
             let max = (pen + f64::from(r.x_max) / em, -f64::from(r.y_min) / em);
             extent = Some(match extent {
@@ -195,10 +274,9 @@ pub(crate) fn glyph_extent(text: &str, face: FontFace) -> Option<(Pt, Pt)> {
 /// The cap height of `face` in em, from its OS/2 table. Arimo's digits are as tall as its capitals
 /// (test `digits_are_as_tall_as_capitals`), so a control number of height h is set at h / cap height.
 pub fn cap_height(face: FontFace) -> f64 {
-    let parsed = face.parsed();
     // Every Arimo face has an OS/2 table version 2 or later; the fallback is the ascent.
-    parsed
-        .capital_height()
+    face.parsed()
+        .cap_height
         .map_or(ASCENT, |h| f64::from(h) / face.units_per_em())
 }
 
@@ -267,7 +345,7 @@ impl PageFonts {
         for c in text.chars() {
             let cid = match face.glyph(c) {
                 Some(glyph) => {
-                    let cid = usage.remapper.remap(glyph.0);
+                    let cid = usage.remapper.remap(gid16(glyph));
                     if usize::from(cid) == usage.unicode.len() {
                         usage.unicode.push(Some(c));
                     }
@@ -398,18 +476,18 @@ fn write_font(pdf: &mut Pdf, font: &FontObject) -> Result<(), PdfError> {
         .usage
         .remapper
         .remapped_gids()
-        .map(|g| to_pdf(f64::from(face.advance(GlyphId(g)))))
+        .map(|g| to_pdf(f64::from(face.advance(GlyphId::new(u32::from(g))))))
         .collect();
     cid_font.widths().consecutive(0, widths);
     cid_font.finish();
 
-    let bbox = parsed.global_bounding_box();
+    let bbox = parsed.bounds;
     let mut flags = FontFlags::NON_SYMBOLIC;
     if matches!(face, FontFace::Italic | FontFace::BoldItalic) {
         flags |= FontFlags::ITALIC;
     }
     // Stem width estimated from the weight class, as is common when the font does not state it.
-    let weight = f32::from(parsed.weight().to_number());
+    let weight = parsed.weight;
     pdf.font_descriptor(font.descriptor)
         .name(Name(base_font.as_bytes()))
         .flags(flags)
@@ -419,11 +497,11 @@ fn write_font(pdf: &mut Pdf, font: &FontObject) -> Result<(), PdfError> {
             to_pdf(f64::from(bbox.x_max)),
             to_pdf(f64::from(bbox.y_max)),
         ))
-        .italic_angle(parsed.italic_angle())
-        .ascent(to_pdf(f64::from(parsed.ascender())))
-        .descent(to_pdf(f64::from(parsed.descender())))
+        .italic_angle(parsed.italic_angle)
+        .ascent(to_pdf(f64::from(parsed.ascent)))
+        .descent(to_pdf(f64::from(parsed.descent)))
         .cap_height(to_pdf(f64::from(
-            parsed.capital_height().unwrap_or(parsed.ascender()),
+            parsed.cap_height.unwrap_or(parsed.ascent),
         )))
         .stem_v(10.0 + 0.244 * (weight - 50.0))
         .font_file2(font.font_file);
@@ -482,11 +560,11 @@ mod tests {
         for face in FACES {
             let parsed = face.parsed();
             assert_eq!(
-                parsed.is_bold(),
+                parsed.bold,
                 matches!(face, FontFace::Bold | FontFace::BoldItalic)
             );
             assert_eq!(
-                parsed.is_italic(),
+                parsed.italic,
                 matches!(face, FontFace::Italic | FontFace::BoldItalic)
             );
         }
@@ -497,9 +575,9 @@ mod tests {
         for face in FACES {
             let f = face.parsed();
             let em = face.units_per_em();
-            assert!((f64::from(f.ascender()) / em - ASCENT).abs() < 1e-9);
-            assert!((-f64::from(f.descender()) / em - DESCENT).abs() < 1e-9);
-            let spacing = f64::from(f.ascender() - f.descender() + f.line_gap()) / em;
+            assert!((f64::from(f.ascent) / em - ASCENT).abs() < 1e-9);
+            assert!((-f64::from(f.descent) / em - DESCENT).abs() < 1e-9);
+            let spacing = f64::from(f.ascent - f.descent + f.leading) / em;
             assert!((spacing - LINE_SPACING).abs() < 1e-9);
         }
     }
@@ -507,12 +585,12 @@ mod tests {
     #[test]
     fn digits_are_as_tall_as_capitals() {
         let face = FontFace::Regular;
-        let f = face.parsed();
+        let f = &face.parsed().metrics;
         let em = face.units_per_em();
         let cap = cap_height(face);
         assert!(cap > 0.6 && cap < 0.8, "{cap}");
         for d in '0'..='9' {
-            let bbox = f.glyph_bounding_box(face.glyph(d).unwrap()).unwrap();
+            let bbox = f.bounds(face.glyph(d).unwrap()).unwrap();
             // Round digits overshoot the cap height by a few units.
             let top = f64::from(bbox.y_max) / em;
             assert!((top - cap).abs() < 0.02, "{d}: {top} vs {cap}");
@@ -524,7 +602,7 @@ mod tests {
         assert!(text_width("Wald", FontFace::Bold) > text_width("Wald", FontFace::Regular));
         assert_eq!(
             text_width("中", FontFace::Regular),
-            f64::from(FontFace::Regular.advance(GlyphId(0))) / 2048.0
+            f64::from(FontFace::Regular.advance(GlyphId::NOTDEF)) / 2048.0
         );
     }
 
