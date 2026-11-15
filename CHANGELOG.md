@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.29.0] - 2026-11-15
+
 ### Geändert
 
 - freemapper-render: liest die eingebetteten Arimo-Schnitte mit `skrifa` 0.49.0 statt mit dem nicht mehr gepflegten `ttf-parser` (RUSTSEC-2026-0192, ADR 0037). Die Funktionen von `fonts` bleiben, jede Golden-Datei ist unverändert. Die Ausnahme für die Sicherheitsmeldung verlässt `deny.toml`. Ein Programm, das selbst von `ttf-parser` abhängt, ersetzt es für sich.

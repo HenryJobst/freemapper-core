@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-11-15
+
 ### Changed
 
 - freemapper-render: reads the embedded Arimo faces with `skrifa` 0.49.0 instead of the unmaintained `ttf-parser` (RUSTSEC-2026-0192, ADR 0037). The functions of `fonts` stay as they are and every golden file is unchanged. The ignore for the advisory leaves `deny.toml`. A program that depends on `ttf-parser` itself replaces it separately.
