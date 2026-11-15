@@ -59,4 +59,4 @@ Entscheidungen stehen in [`docs/adr/`](docs/adr/README.md), Änderungen im [Chan
 
 ## Lizenz
 
-GPL-3.0-or-later, siehe [LICENSE](LICENSE).
+AGPL-3.0-or-later, siehe [LICENSE](LICENSE). Die Symbolsätze und Testkarten von OpenOrienteering Mapper behalten ihre eigene Lizenz, GPL-3.0 (neben ihnen aufgeführt).

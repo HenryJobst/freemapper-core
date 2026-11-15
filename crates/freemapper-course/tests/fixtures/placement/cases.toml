@@ -5,7 +5,7 @@
 #   `placement::place_course_numbers`. freemapper-courseplan copies this file unchanged and runs it through its
 #   old code; both repositories read it with `placement_cases_match_expected`.
 # Date: 2026-11-10 (number box width changed to the renderer's digit advance on 2026-11-11)
-# Licence: GPL-3.0-or-later (same as the repository)
+# Licence: AGPL-3.0-or-later (same as the repository)
 #
 # FORMAT (format = 1). Coordinates are map mm, y points down. Angles are degrees, 0 = east, counter-clockwise
 # on the page (so "north" is -y).

@@ -59,4 +59,4 @@ Decisions are in [`docs/adr/`](docs/adr/README.md), changes in the [changelog](C
 
 ## Licence
 
-GPL-3.0-or-later, see [LICENSE](LICENSE).
+AGPL-3.0-or-later, see [LICENSE](LICENSE). The OpenOrienteering Mapper symbol sets and fixtures keep their own licence, GPL-3.0 (listed beside them).

@@ -27,7 +27,7 @@ before changing code.
 - Every significant decision gets an ADR in `docs/adr/` in the same branch. ADRs that move here from an app keep
   their content and name the app's ADR in their source line. Every merged change gets an entry under
   "Unveröffentlicht"/"Unreleased" in `CHANGELOG.md` and `CHANGELOG.en.md`, named by crate.
-- Licence GPL-3.0-or-later for every crate (ADR 0002). Toolchain pinned in `rust-toolchain.toml`, moved
+- Licence AGPL-3.0-or-later for every crate (ADR 0035, replaces ADR 0002). Toolchain pinned in `rust-toolchain.toml`, moved
   together with the apps (ADR 0003). Third-party dependencies at least two weeks old; the suite's own crates
   are exempt (ADR 0004).
 - `unsafe_code = "forbid"` and clippy `-D warnings` for the whole workspace. `cargo fmt`,
