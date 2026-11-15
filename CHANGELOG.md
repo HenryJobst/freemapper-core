@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Geändert
+
+- Lizenz: Jede Crate steht unter AGPL-3.0-or-later statt GPL-3.0-or-later (ADR 0035). Wer eine geänderte Version als Netzwerkdienst betreibt, muss ihren Quelltext anbieten. Die Symbolsätze und Testkarten von OpenOrienteering Mapper behalten GPL-3.0. Veröffentlichungen bis 0.27.0 bleiben GPL-3.0-or-later.
+
 ## [0.27.0] - 2026-11-14
 
 ### Hinzugefügt

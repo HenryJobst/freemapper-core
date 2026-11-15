@@ -6,7 +6,7 @@ fixtures that only freemapper-print's own tests use stayed there.
 
 The IOF XML files were written by hand for freemapper-print on 2026-11-09 (its M3 Tasks 2 and 3), following the
 public IOF data standard 3.0 `CourseData` structure. They contain made-up data and are released under the
-same licence as this repository (GPL-3.0-or-later). The IOF datastandard-v3 examples were not copied: their
+same licence as this repository (AGPL-3.0-or-later). The IOF datastandard-v3 examples were not copied: their
 licence could not be confirmed.
 
 The Purple Pen fixtures in `ppen/` come from Purple Pen's repository under its BSD licence; `ppen/README.md`

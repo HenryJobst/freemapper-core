@@ -10,7 +10,7 @@ Expected output of `tests/svg.rs`, and of one unit test in `src/pdf.rs`.
   which lie outside the view but within its 5 mm slack.
   `UPDATE_GOLDEN=1 cargo test -p freemapper-render --test svg` writes them again; review the diff before
   committing.
-- Licence: GPL-3.0-or-later, like the crate. The text paths are outlines of the Arimo fonts in
+- Licence: AGPL-3.0-or-later, like the crate. The text paths are outlines of the Arimo fonts in
   `assets/fonts/` (SIL OFL 1.1).
 
 ## compact-paths.txt
@@ -20,4 +20,4 @@ Expected output of `tests/svg.rs`, and of one unit test in `src/pdf.rs`.
   599add0, written on branch `pdf-path-api`, 2026-11-13). The test `the_path_writer_writes_the_bytes_it_wrote_before`
   compares with it. `UPDATE_GOLDEN=1 cargo test -p freemapper-render --lib the_path_writer` writes it again; review
   the diff before committing.
-- Licence: GPL-3.0-or-later, like the crate.
+- Licence: AGPL-3.0-or-later, like the crate.

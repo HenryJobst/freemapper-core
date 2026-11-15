@@ -10,7 +10,7 @@ status to `Superseded by NNNN`.
 | ADR | Decision |
 |---|---|
 | [0001](0001-one-workspace-of-small-crates.md) | One workspace of small crates |
-| [0002](0002-gpl-3.0-or-later.md) | GPL-3.0-or-later |
+| [0002](0002-gpl-3.0-or-later.md) | GPL-3.0-or-later (superseded by 0035) |
 | [0003](0003-toolchain-pinned-with-the-apps.md) | Toolchain pinned with the apps |
 | [0004](0004-dependencies-at-least-two-weeks-old.md) | Dependencies at least two weeks old, own crates exempt |
 | [0005](0005-the-contributing-session-owns-a-crate.md) | The contributing session owns a crate |
@@ -43,3 +43,4 @@ status to `Superseded by NNNN`.
 | [0032](0032-compact-pdf-paths-without-beziers.md) | Compact PDF paths without Béziers |
 | [0033](0033-the-compact-path-writer-is-public.md) | The compact path writer is public |
 | [0034](0034-iof-xml-event-date-and-organiser.md) | IOF XML event date and organiser |
+| [0035](0035-agpl-3.0-or-later.md) | AGPL-3.0-or-later |

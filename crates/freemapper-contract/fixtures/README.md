@@ -6,7 +6,7 @@ freemapper-courseplan (ADR 0018). Each folder under `v1/` holds `map.omap`, `fre
 
 All four show the same small area, freemapper's offline test project "Clara-Zetkin-Schule". Its objects are test
 data built in freemapper's tests; no data was downloaded. The embedded symbol set is ISSprOM 2019 from
-OpenOrienteering Mapper (GPL-3.0). Licence of the fixtures: GPL-3.0-or-later, as the rest of this repository.
+OpenOrienteering Mapper (GPL-3.0). Licence of the fixtures: AGPL-3.0-or-later (the OpenOrienteering Mapper parts keep GPL-3.0), as the rest of this repository.
 The maps name templates (`templates/…`) that are not shipped.
 
 | Fixture | Written by | Date | Edited by hand |
