@@ -33,3 +33,10 @@ jobs:
       # The shared types of the contract crate must build and pass without the map reader.
       - if: steps.crates.outputs.any == 'true'
         run: cargo test --locked -p freemapper-contract --no-default-features
+
+  # Licences, advisories, bans and sources of the dependencies (deny.toml, ADR 0036).
+  deny:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
