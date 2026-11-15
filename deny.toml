@@ -29,10 +29,7 @@ allow = [
 # Known vulnerabilities and yanked or unmaintained crates come from the RustSec database.
 yanked = "deny"
 # Each ignore names the advisory, why it does not reach this code, and when to look again.
-ignore = [
-    # No safe upgrade; freemapper-render reads fonts with it. Moving to skrifa is a core decision.
-    { id = "RUSTSEC-2026-0192", reason = "ttf-parser is unmaintained, no replacement in core yet" },
-]
+ignore = []
 
 [bans]
 # Two versions of one crate are common while its users move at different speeds; only report them.

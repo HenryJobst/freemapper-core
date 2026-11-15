@@ -24,7 +24,7 @@ quick-xml.workspace = true
 serde.workspace = true
 subsetter.workspace = true
 thiserror.workspace = true
-ttf-parser.workspace = true
+skrifa.workspace = true
 
 [lints]
 workspace = true
