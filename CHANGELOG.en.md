@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-11-15
+
 ### Changed
 
 - Licence: every crate is AGPL-3.0-or-later instead of GPL-3.0-or-later (ADR 0035). Whoever runs a modified version as a network service must offer its source. The OpenOrienteering Mapper symbol sets and test maps keep GPL-3.0. Releases up to 0.27.0 stay GPL-3.0-or-later.
