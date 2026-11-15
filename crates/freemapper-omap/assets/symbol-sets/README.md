@@ -2,7 +2,7 @@
 
 | File | Source | Licence |
 |---|---|---|
-| `ISSprOM 2019_4000.omap` | OpenOrienteering Mapper, `symbol sets/4000/ISSprOM 2019_4000.omap`, commit `eae21b05851495923ac245fdf4b89cf575df38ce` (2025-05-18), https://github.com/OpenOrienteering/mapper | GPL-3.0-or-later (OpenOrienteering Mapper) |
+| `ISSprOM 2019_4000.omap` | OpenOrienteering Mapper, `symbol sets/4000/ISSprOM 2019_4000.omap`, commit `eae21b05851495923ac245fdf4b89cf575df38ce` (2025-05-18), https://github.com/OpenOrienteering/mapper | GPL-3.0 (OpenOrienteering Mapper: README and COPYING say version 3, its source files "version 3 or later"; we take the narrower) |
 | `school-2019-additions.xml` | freemapper, drawn after the IOF "Symbol Set for School Orienteering Maps 2019" | AGPL-3.0-or-later |
 | `sheet-additions.xml` | freemapper, the sheet symbols 991–994 for the peripheral information | AGPL-3.0-or-later |
 
