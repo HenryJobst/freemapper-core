@@ -7,6 +7,10 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- CI: `cargo deny check` (`deny.toml`) checks the licences, advisories, bans and sources of the dependencies on every push (ADR 0036). `ttf-parser` (RUSTSEC-2026-0192, unmaintained) is ignored until a replacement is decided.
+
 ## [0.28.0] - 2026-11-15
 
 ### Changed

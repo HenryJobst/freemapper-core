@@ -44,3 +44,4 @@ status to `Superseded by NNNN`.
 | [0033](0033-the-compact-path-writer-is-public.md) | The compact path writer is public |
 | [0034](0034-iof-xml-event-date-and-organiser.md) | IOF XML event date and organiser |
 | [0035](0035-agpl-3.0-or-later.md) | AGPL-3.0-or-later |
+| [0036](0036-cargo-deny.md) | cargo-deny checks the dependencies |
