@@ -55,3 +55,10 @@ rejects before 1.99. That made the whole core need 1.99 although its code does n
   better number.
 - `typos` will meet a new German quote in English text and fail; the answer is an entry in
   `_typos.toml` with its reason, not switching the gate off.
+
+## Amendment 2026-11-19, badges
+`scripts/badges.sh` writes the block between `<!-- badges:start -->` and `<!-- badges:end -->` in
+both READMEs: line coverage, MSRV, ADRs, the number of gates and the licence. Every number has a
+source in the repository, and `scripts/check.sh badges` fails when a block is out of date, so a
+change that moves a number carries the badge in the same commit. The AI-cost badge beside them
+belongs to its own service and keeps its own markers.
