@@ -2,7 +2,6 @@
 
 [Deutsche Version](README.md)
 
-[![Line coverage](https://img.shields.io/badge/Coverage-92.4%25-brightgreen)](docs/coverage.json) [![MSRV](https://img.shields.io/badge/MSRV-1.88-blue)](Cargo.toml) [![ADRs](https://img.shields.io/badge/ADRs-38-blue)](docs/adr/README.md) [![Hygiene](https://img.shields.io/badge/Hygiene-11-brightgreen)](scripts/check.sh) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue)](LICENSE)
 
 <!-- badges:start -->
 [![Line coverage](https://img.shields.io/badge/Coverage-92.4%25-brightgreen)](docs/coverage.json) [![MSRV](https://img.shields.io/badge/MSRV-1.88-blue)](Cargo.toml) [![ADRs](https://img.shields.io/badge/ADRs-38-blue)](docs/adr/README.md) [![Hygiene](https://img.shields.io/badge/Hygiene-12-brightgreen)](scripts/check.sh) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue)](LICENSE)
