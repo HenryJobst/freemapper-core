@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Print rules as data profiles (ADR 0031): the symbol size table, north-line spacing, course symbol
 //! sizes, the course colour and the other print values, each with its source.
 //!

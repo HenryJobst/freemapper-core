@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! From a Purple Pen symbol id to the number in the IOF Control Descriptions 2024.
 
 /// The IOF 2024 number of the bend (column F).

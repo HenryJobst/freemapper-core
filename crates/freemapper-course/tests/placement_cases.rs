@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The shared number placement cases (`tests/fixtures/placement/cases.toml`, format described in its header)
 //! run through `place_course_numbers`. freemapper-courseplan copies the file and runs it through its own
 //! `auto_place`.

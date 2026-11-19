@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Line symbols (`docs/render/oom-render-reference.md` §2): main line, dashes, pointed caps,
 //! start and end offsets, borders, mid, start, end and dash symbols.
 //!

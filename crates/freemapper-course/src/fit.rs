@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Course fitting: puts the points of a course file into the map's coordinates (ADR 0032).
 //!
 //! A course file gives map positions in mm from the map's origin, but writers disagree on the y axis:

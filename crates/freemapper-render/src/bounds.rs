@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Where primitives paint: axis-parallel bounding boxes on paper (mm, y down). Used for the extent
 //! of a point symbol in a pattern and for the part of a page the map covers.
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The page builder through the public API, as a browser editor uses it: map → page → hit test → map
 //! (ADR 0023).
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Copied from freemapper 743ce4b (ADR 0014).
 //! The OOM symbol definitions as far as the renderer needs them (`docs/render/oom-render-reference.md`).
 //!

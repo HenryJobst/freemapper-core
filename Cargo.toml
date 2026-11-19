@@ -16,7 +16,9 @@ freemapper-printrules = { path = "crates/freemapper-printrules" }
 freemapper-omap = { path = "crates/freemapper-omap" }
 freemapper-course = { path = "crates/freemapper-course" }
 freemapper-georef = { path = "crates/freemapper-georef" }
-freemapper-contract = { path = "crates/freemapper-contract" }
+# `default-features = false` belongs to the workspace entry, not to one member: a member that
+# overrides it needs cargo 1.99, and no member here wants the `check` feature (ADR 0038).
+freemapper-contract = { path = "crates/freemapper-contract", default-features = false }
 freemapper-render = { path = "crates/freemapper-render" }
 freemapper-web = { path = "crates/freemapper-web" }
 freemapper-fs = { path = "crates/freemapper-fs" }

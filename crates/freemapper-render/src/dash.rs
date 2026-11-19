@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Dash patterns and mid-symbol positions of line symbols (`docs/render/oom-render-reference.md`
 //! §2.2, §2.4, §2.5): OOM's `processDashedLine`, `createDashGroups` and
 //! `createMidSymbolRenderables` on arc lengths (mm).

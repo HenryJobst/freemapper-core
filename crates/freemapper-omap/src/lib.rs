@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! OpenOrienteering Mapper maps: the map model, a reader for `.omap` and `.xmap` (XML, version 9) and
 //! the embedded symbol sets ISSprOM 2019 and school map 2019.
 

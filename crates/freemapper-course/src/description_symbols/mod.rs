@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The IOF control description symbols and their German and English texts, from Purple Pen's `symbols.xml`.
 //! See `db` for the file format and the reader.
 

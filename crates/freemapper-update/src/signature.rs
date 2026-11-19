@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The minisign check of the update manifest against a list of accepted public keys.
 
 use minisign_verify::{Error, PublicKey, Signature};

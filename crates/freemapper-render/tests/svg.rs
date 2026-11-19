@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The SVG backend against hand-built pages: golden output, determinism, the view, and parity with the PDF.
 //!
 //! `UPDATE_GOLDEN=1 cargo test -p freemapper-render --test svg` rewrites the golden files in `tests/golden/`.

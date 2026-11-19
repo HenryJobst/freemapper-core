@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Transverse Mercator on an ellipsoid: latitude and longitude to easting, northing, grid convergence and
 //! point scale factor. Krüger's series to the sixth power of the third flattening n, as in EPSG Guidance
 //! Note 7-2 §1.3.5.1 ("JHS formula") and Karney (2011), "Transverse Mercator with an accuracy of a few

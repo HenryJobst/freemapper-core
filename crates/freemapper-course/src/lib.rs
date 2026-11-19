@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Orienteering courses: the course model, readers for Purple Pen (`.ppen`) and IOF XML 3.0, a `.ppen` writer
 //! that also patches an existing file, the fit of a course file to an OOM map, and the placement of control
 //! numbers. Terms follow `docs/glossary.md`.

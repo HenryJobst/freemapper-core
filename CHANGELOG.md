@@ -7,6 +7,16 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- `scripts/check.sh` bündelt die Gates für die Lizenzzeile, die Rechtschreibung der englischen Doku, interne Links, Geheimnisse in der Historie, ungenutzte Abhängigkeiten, Action-Pins, den ADR-Index, das Changelog-Paar, rustdoc ohne Warnungen, die Zeilenabdeckung und die MSRV (ADR 0038). Jede Rust-Datei trägt die Zeile `// SPDX-License-Identifier: AGPL-3.0-or-later`.
+
+### Geändert
+
+- `default-features = false` für `freemapper-contract` steht jetzt am Workspace-Eintrag statt an der Abhängigkeit von `freemapper-printrules`. Der Bau bleibt gleich, aber das Manifest liest wieder mit Cargo vor 1.99, also bleibt die MSRV bei 1.88; ein CI-Job prüft sie mit 1.88.0.
+- freemapper-printrules: die ungenutzte Abhängigkeit `serde` entfällt.
+- Die Zeilenabdeckung wird gemessen: 92,4 %. `docs/coverage.json` hält den Messwert, die Schwelle steht bei 90,0 %; ein Lauf darunter scheitert.
+
 ## [0.29.0] - 2026-11-15
 
 ### Geändert

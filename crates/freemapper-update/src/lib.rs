@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The pure parts of a self-update for the freemapper suite's apps: versions, platform names, the signed
 //! update manifest, the host rule, the check record, the binary swap and the install.
 //!

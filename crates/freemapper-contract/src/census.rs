@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! How many objects of each class a map holds, and where they lie.
 
 use serde::{Deserialize, Serialize};

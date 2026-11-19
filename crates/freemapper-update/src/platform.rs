@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Platform names as used in release asset names and manifest keys.
 
 /// The five platforms the suite releases for.

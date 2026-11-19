@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The course model, independent of the input format. Readers return a [`RawEvent`] (points in file
 //! coordinates); fitting to the map (feature `fit`) turns it into a `FittedEvent` with
 //! [`CourseEvent::map_points`].

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The embedded symbol sets must ship with the crate. A git dependency builds the crate from its
 //! own folder in cargo's checkout, so a file that `include_str!` takes from outside that folder
 //! would be missing there.

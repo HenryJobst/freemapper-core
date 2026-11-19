@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The reserved words of the contract: tag keys and values, part names, the sidecar's file name and keys.
 //! freemapper writes them from here and the readers compare against them, so a word exists once.
 

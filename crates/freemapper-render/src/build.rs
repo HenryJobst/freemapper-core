@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The page builder: from a map to the page every backend draws (ADR 0023).
 //!
 //! Provenance: freemapper-print's `print.rs` (`render_page_within` and its helpers), moved here with its

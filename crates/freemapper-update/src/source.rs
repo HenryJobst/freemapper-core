@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The host rule: where an update may be fetched from.
 
 use crate::error::UpdateError;

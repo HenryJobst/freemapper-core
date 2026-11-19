@@ -1,0 +1,10 @@
+# Secret scanning of the history and the working tree (gitleaks, ADR 0070).
+#
+# `scripts/check.sh secrets` and the CI job run `gitleaks git` with `--redact`,
+# so a finding names the rule and the file, never the value.
+#
+# The default rule set of the pinned release is the base. An allowlist entry is
+# a decision: name the file pattern and say why it holds no secret.
+
+[extend]
+useDefault = true

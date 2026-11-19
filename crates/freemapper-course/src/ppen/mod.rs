@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Reader for Purple Pen's native event files (`.ppen`).
 //!
 //! The format follows Purple Pen's own reader and writer: `src/PurplePenCore/EventDB.cs` (the

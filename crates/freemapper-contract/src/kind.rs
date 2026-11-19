@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The map kinds of the suite and the scales freemapper draws them at.
 
 use std::fmt;

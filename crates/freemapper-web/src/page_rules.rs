@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The suite's rules for a page's assets (decision 0030, from freemapper-courseplan ADRs 0042 and 0045), as a
 //! check for the apps' tests. Public with the feature `page-rules`.
 

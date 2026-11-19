@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The check record: when the last check ran, by which version, and what it found.
 
 use std::io;

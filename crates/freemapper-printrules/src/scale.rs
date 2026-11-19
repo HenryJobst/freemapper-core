@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Map kinds and the symbol size table (ADR 0018).
 //!
 //! Printing at another scale than the map was drawn at scales geometry by the geometry factor and symbol

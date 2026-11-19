@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The numbers of a whole course, placed in running order. A port of freemapper-courseplan's `auto_place`
 //! (its ADR 0030 to 0032): kept numbers stay and block the others, each placed number blocks the ones after
 //! it, and the circles and legs of the course are overprint obstacles. Uses only the parent module.

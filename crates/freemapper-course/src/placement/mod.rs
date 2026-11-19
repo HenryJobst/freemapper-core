@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Control number placement: the box a number takes next to its circle, how a position scores against
 //! obstacles, and the search for the best position (ADR 0038). freemapper-courseplan places numbers by the
 //! same rules (its ADR 0030 and 0031), so the module is shared (spec §5.7). It uses nothing else of this crate;

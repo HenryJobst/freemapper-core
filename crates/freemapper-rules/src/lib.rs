@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Rule profiles: check rules as TOML files, validated against a schema the app supplies.
 //!
 //! A profile is a TOML file that an app embeds with `include_str!` and hands over as a list of

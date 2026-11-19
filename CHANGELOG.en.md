@@ -7,6 +7,16 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `scripts/check.sh` bundles the gates for the licence line, the spelling of the English documents, internal links, secrets in the history, declared but unused dependencies, action pins, the ADR index, the changelog pair, rustdoc without warnings, line coverage and the MSRV (ADR 0038). Every Rust file carries the line `// SPDX-License-Identifier: AGPL-3.0-or-later`.
+
+### Changed
+
+- `default-features = false` for `freemapper-contract` now stands on the workspace entry instead of on the dependency of `freemapper-printrules`. The build stays the same, but the manifest reads with cargo before 1.99 again, so the MSRV stays at 1.88; a CI job checks it with 1.88.0.
+- freemapper-printrules: the unused dependency `serde` is gone.
+- Line coverage is measured: 92.4 %. `docs/coverage.json` holds the measurement, the floor sits at 90.0 %, and a run below it fails.
+
 ## [0.29.0] - 2026-11-15
 
 ### Changed

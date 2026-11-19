@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Coordinates and coordinate reference systems of the freemapper suite: geographic and projected points,
 //! bounding boxes, the 1 km and 2 km tile grids, ETRS89 / UTM zones 32N and 33N ([`Crs`]) and the
 //! Transverse Mercator projection they share with UTM zones read from a map's CRS text ([`tm`]).

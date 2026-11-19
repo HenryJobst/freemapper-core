@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Copied from freemapper 743ce4b (ADR 0014).
 //! Drawing primitives as a one-page PDF: DeviceCMYK colours, painted in the page's order, texts in
 //! embedded subsets of Arimo (freemapper-print ADR 0017), paths with rounded coordinates and small shapes relative to

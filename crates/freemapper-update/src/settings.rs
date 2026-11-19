@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The update mode: `off`, `notify` or `install`, from an environment value or `settings.toml`.
 
 use std::fmt;

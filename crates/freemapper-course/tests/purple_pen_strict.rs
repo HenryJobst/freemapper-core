@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! What Purple Pen needs to load a `.ppen`, as a strict check of the file text, and the writer's output held
 //! against it.
 //!

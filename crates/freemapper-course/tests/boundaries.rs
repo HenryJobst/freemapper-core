@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The crate's boundary (core ADR 0013): of the suite it uses `freemapper-omap` and `freemapper-georef` alone, so an app reads
 //! courses without building rule profiles, a renderer or another app's code.
 

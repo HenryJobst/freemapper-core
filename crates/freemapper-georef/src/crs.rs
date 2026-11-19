@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Coordinate reference systems: ETRS89 / UTM zone 32N and 33N (EPSG:25832, EPSG:25833).
 //!
 // Provenance: freemapper `crates/freemapper/src/crs.rs` (freemapper v0.9.0, commit 0f25841), public items

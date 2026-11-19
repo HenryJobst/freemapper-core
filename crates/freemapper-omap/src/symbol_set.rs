@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Symbol sets: colours and symbols copied verbatim from OOM symbol set files.
 
 // Copied from freemapper 743ce4b (freemapper-print ADR 0014); moved here from freemapper-print 918cec2

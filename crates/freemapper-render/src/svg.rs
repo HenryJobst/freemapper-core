@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The SVG backend for the browser editors (ADR 0022): a [`RenderedPage`] as one SVG document, painted in the
 //! order of the PDF backend.
 //!

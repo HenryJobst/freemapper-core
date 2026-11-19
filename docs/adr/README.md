@@ -46,3 +46,4 @@ status to `Superseded by NNNN`.
 | [0035](0035-agpl-3.0-or-later.md) | AGPL-3.0-or-later |
 | [0036](0036-cargo-deny.md) | cargo-deny checks the dependencies |
 | [0037](0037-skrifa-reads-the-fonts.md) | skrifa reads the fonts |
+| [0038](0038-housekeeping-gates.md) | The repository checks its own housekeeping |

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The conversion between a course file's number offset and a number placement.
 
 use freemapper_course::model::{NumberPlacement, Offset};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The course overprint: one course as purple shapes in page millimetres, split into the lower and the
 //! upper purple of IOF "Printing and Colour Definitions" Rev. 4 (spec §5.9, ADR 0034). The PDF writer paints
 //! both layers in the course colour with the blend mode Multiply.

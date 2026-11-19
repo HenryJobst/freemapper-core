@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Shell for the local web pages of the suite.
 //!
 //! [`serve`] starts an HTTP server on 127.0.0.1 and wraps the app's routes in the guards every local page

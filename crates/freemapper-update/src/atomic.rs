@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Small files written whole: a temporary file next to the target, then a rename.
 
 use std::io::{self, Write};

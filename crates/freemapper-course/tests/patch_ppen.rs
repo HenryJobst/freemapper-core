@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Purple Pen `.ppen` patch of an existing file (M3b Task 5).
 
 use std::collections::{BTreeMap, BTreeSet};

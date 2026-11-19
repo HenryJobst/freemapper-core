@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use super::db::{MAX_DEPTH, MAX_POINTS_PER_SYMBOL, Pt, SYMBOLS_XML, db, parse, seg_dist};
 use super::iof_2024::{BEND_2024, DIRECTIONS, Mapped, iof_2024};
 use super::ppen::{ColumnNote, Inverse, Refusal, ppen_columns, ppen_symbol};

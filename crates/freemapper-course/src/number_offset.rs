@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The conversion between a number offset, where a course file puts the centre of a control number, and a
 //! number placement, the direction and gap the placement module works with (freemapper-print ruling R12,
 //! ADR 0038). freemapper-print turns a file's offset into a placement; a `.ppen` writer goes the other way.

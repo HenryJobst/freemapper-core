@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Map coordinates as stored by OOM: 1/1000 mm on paper, y pointing south.
 
 // Copied from freemapper 743ce4b (freemapper-print ADR 0014); moved here from freemapper-print 918cec2

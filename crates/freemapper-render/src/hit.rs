@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Which map objects a point on the page touches: the hit test of the browser editors (ADR 0022).
 //!
 //! It answers from the drawn page alone, in page mm (y down), with the same rules the backends paint by: the

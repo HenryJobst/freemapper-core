@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The words of a map and its sidecar, without their content.
 
 use std::collections::{BTreeMap, BTreeSet};

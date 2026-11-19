@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Versions of three integers, compared by hand. Pre-release suffixes are refused.
 
 use std::fmt;

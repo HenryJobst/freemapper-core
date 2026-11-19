@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The output style of the writer: elements laid out as .NET's `XmlTextWriter` with `Formatting.Indented`
 //! writes them, escaping, and the text of numbers.
 

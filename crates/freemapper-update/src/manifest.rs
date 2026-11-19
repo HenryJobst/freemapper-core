@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The update manifest, spec 3.1: one signed JSON file per release.
 
 use std::collections::BTreeMap;

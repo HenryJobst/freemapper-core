@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Scenarios ported from freemapper-courseplan's `numbers.rs` tests, same names, sprint sizes.
 
 use super::super::{GAP_LIMITS_MM, Score, angle_diff, score};

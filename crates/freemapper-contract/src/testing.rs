@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Small maps for the tests of this crate.
 
 /// A path object with tags.

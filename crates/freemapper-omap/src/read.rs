@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Reader for finished OOM maps (`.omap` and `.xmap`, XML format).
 //!
 //! Colours and symbols come from [`SymbolSet::from_omap_xml`]; this module adds the objects of

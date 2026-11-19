@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The update check (spec 3.2): fetch the signed manifest, verify it, compare versions.
 
 use crate::error::UpdateError;
