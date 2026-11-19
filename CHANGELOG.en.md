@@ -5,6 +5,16 @@
 This file lists all notable changes to freemapper-core, newest first, each with the library it affects. The
 format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- The READMEs carry badges for line coverage, MSRV, ADRs, the number of checks and the licence. `scripts/badges.sh` writes them from the data in the repository, and the check fails when they are out of date (amendment to ADR 0038).
+
+### Changed
+
+- The coverage job reports the measurement on every run and catches a `docs/coverage.json` that is not committed yet; both were invisible before.
+
 ## [0.29.1] - 2026-11-19
 
 ### Added
