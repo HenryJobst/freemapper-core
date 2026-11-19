@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Purple Pen `.ppen` writer from scratch (M3b Task 4).
 
 use std::collections::{BTreeMap, BTreeSet};

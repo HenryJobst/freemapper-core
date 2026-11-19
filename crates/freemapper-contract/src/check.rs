@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The rules a map and sidecar written by freemapper must keep.
 
 use crate::class::{ObjectClass, tag};

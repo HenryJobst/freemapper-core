@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Fitting a course file to the map (M3 Task 3, ADR 0032).
 
 use std::path::Path;

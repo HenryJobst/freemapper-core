@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Writer for Purple Pen's native event files (`.ppen`), the inverse of [`read_ppen`](super::read_ppen).
 //!
 //! The output follows Purple Pen's own writer (`EventDB.Save` and the `WriteAttributesAndContent` methods in

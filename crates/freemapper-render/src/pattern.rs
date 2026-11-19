@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Area fill patterns: parallel lines and point grids clipped to the area, as OOM v0.9.6 draws
 //! them (`docs/render/oom-render-reference.md` §4.2–4.5) [AS `FillPattern::createRenderables`,
 //! `createPointPatternLine`; PS `createRenderablesIf*Inside`].

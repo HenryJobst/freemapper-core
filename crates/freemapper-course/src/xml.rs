@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The streaming XML loop of the course readers. [`drive`] runs a [`Handler`] over the quick-xml events of a
 //! file and refuses a file larger than `MAX_COURSE_FILE_BYTES`, a DOCTYPE and any entity other than the five
 //! predefined ones (ADR 0019). [`local`], [`attr`] and [`number`] read element names, attributes and finite

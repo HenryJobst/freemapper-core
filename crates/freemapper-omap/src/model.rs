@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! In-memory model of an OOM map document.
 
 // Copied from freemapper 743ce4b (freemapper-print ADR 0014); moved here from freemapper-print 918cec2

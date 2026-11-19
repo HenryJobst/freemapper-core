@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Copied from freemapper 743ce4b (ADR 0014).
 //! Map objects → drawing primitives tagged with a colour priority (`docs/render/oom-render-reference.md`).
 //!

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The course symbols as shapes in page mm (y down). Sizes come in already multiplied by the symbol
 //! factor. The point symbols (crossing point, first aid, water) and the area hatches follow the course
 //! symbols of OOM's ISSprOM 2019 and ISOM 2017 sets (freemapper-omap's `assets/symbol-sets/`, the forest

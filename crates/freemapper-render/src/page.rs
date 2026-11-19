@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! One rendered page as every backend needs it: drawing primitives in page millimetres (origin top
 //! left, y down), the clip rectangle, the page size and the colours.
 

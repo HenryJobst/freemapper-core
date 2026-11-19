@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Raster images for the sheet layer: logos and the like, as plain pixels.
 
 /// A raster image: 8-bit RGB, top row first, with an optional 8-bit alpha channel.

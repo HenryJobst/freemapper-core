@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Provenance: the render code of freemapper-print, which copied it from freemapper 743ce4b; moved here
 //! unchanged (ADR 0019).
 //!

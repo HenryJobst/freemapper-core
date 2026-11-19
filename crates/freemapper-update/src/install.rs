@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Installing an update (spec 3.5 steps 4 to 7): download the `.gz` next to the executable, check its
 //! size and SHA-256, unpack it, check the executable's SHA-256, run it, and only then swap it in.
 //!

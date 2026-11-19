@@ -5,3 +5,14 @@ pre-commit:
       run: ls crates/*/Cargo.toml >/dev/null 2>&1 || exit 0; cargo fmt --all --check
     clippy:
       run: ls crates/*/Cargo.toml >/dev/null 2>&1 || exit 0; cargo clippy --workspace --all-targets -- -D warnings
+    # The gates that need no build (ADR 0038). The tools come from `cargo install` or a release
+    # archive; CI installs the pinned versions.
+    gates:
+      run: scripts/check.sh spdx typos links machete actions adr changelog
+
+# The history scan costs more than a commit should wait for. CI blocks a push that carries a
+# secret anyway; this catches it before the push.
+pre-push:
+  commands:
+    secrets:
+      run: scripts/check.sh secrets

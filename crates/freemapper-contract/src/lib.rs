@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The contract between what freemapper writes (a map and its `freemapper.toml`) and the programs that
 //! read it, freemapper-print and freemapper-courseplan (ADR 0018).
 //!

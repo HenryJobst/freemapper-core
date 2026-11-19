@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The lossless parse of a base file for a patch. [`parse_base`] splits the text into the top-level objects
 //! and the bytes around them (byte order mark, root tags, `<event>`, comments, whitespace), which a patch
 //! writes back verbatim. It takes the output style from the file and refuses a file from a Purple Pen version

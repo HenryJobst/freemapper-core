@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Compact PDF paths (ADR 0032), public for other PDF writers of the suite (ADR 0033).
 //!
 //! [`write_path`] writes the path of one fill, stroke or clip into a [`pdf_writer::Content`] with `m`, `l` and `h`,

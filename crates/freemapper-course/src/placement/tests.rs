@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use super::*;
 
 /// Sprint circle: radius 3 mm, line 0.35 mm.

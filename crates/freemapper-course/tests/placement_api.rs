@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Guards the placement API that freemapper-print builds against (its `numbers.rs` and `rules.rs`). The test
 //! builds every item in print's shape: struct literals with all fields and exhaustive matches. A field or
 //! variant added to one of these types stops compiling here before it reaches print.

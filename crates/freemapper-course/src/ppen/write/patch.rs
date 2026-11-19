@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The patch of an existing `.ppen` ([`write_ppen_patch`]). The base file is read twice, by the reader (with
 //! all its budgets) for the values Purple Pen and the reader see, and by the lossless parse (`base.rs`) for its
 //! bytes. Event objects are matched to base objects; a matched object is merged field by field, an object

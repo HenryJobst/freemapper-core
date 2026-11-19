@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Purple Pen `.ppen` reader (M3 Task 4).
 
 use freemapper_course::model::{

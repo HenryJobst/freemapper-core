@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Leaving out what cannot show changes no pixel (ADR 0031): each page is written with and without culling,
 //! rasterised by poppler's `pdftoppm`, and the two images are compared byte for byte. The test needs `pdftoppm`
 //! (or the program `PDFTOPPM` names), so it is ignored by default:

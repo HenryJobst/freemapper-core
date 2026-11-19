@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Copied from freemapper 743ce4b (ADR 0014).
 //! Path geometry for rendering (`docs/render/oom-render-reference.md` §2, §7): parts, Bézier
 //! flattening, arc length, positions and directions along a part ([`Walker`]), and cutting a

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The fixtures agree with what the crate derives from them.
 
 use std::collections::BTreeSet;

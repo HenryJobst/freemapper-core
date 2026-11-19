@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The IOF control description symbols (columns C to H and the instruction rows) and their German and English
 //! texts, from Purple Pen's `symbols.xml` (freemapper-print ADR 0036).
 //!

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! From an IOF 2024 number back to the symbol id Purple Pen stores (the inverse of [`iof_2024`]).
 
 use std::collections::BTreeMap;

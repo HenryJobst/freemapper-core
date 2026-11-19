@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Reader for IOF XML 3.0 `CourseData` files (Purple Pen, Condes, OCAD and others write them).
 //!
 //! Streaming with quick-xml. A DOCTYPE is refused and entities other than the five predefined ones are

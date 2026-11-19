@@ -1,0 +1,14 @@
+# Spelling of the English documents (typos, see `scripts/check.sh typos`).
+#
+# A real misspelling is fixed in the text, not listed here. The entries below
+# are technical terms the dictionary does not know, each with the place that
+# made it necessary.
+
+[default.extend-words]
+# The International Orienteering Federation, written as IOF in running text and
+# as `iof` in file and element names.
+IOF = "IOF"
+iof = "iof"
+Iof = "Iof"
+# `deflate` and `inflate` shortened in the names of compression levels.
+flate = "flate"

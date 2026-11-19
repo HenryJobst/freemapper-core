@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The loader against fixture profiles and a schema shaped like the apps' schemas.
 //!
 //! This file is an outside crate, so `SCHEMA` also shows that an app can build its schema as a

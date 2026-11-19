@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! IOF XML 3.0 `CourseData` reader (M3 Task 2).
 
 use freemapper_course::model::{

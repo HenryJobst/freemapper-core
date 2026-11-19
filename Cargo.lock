@@ -318,7 +318,6 @@ dependencies = [
  "freemapper-course",
  "freemapper-render",
  "freemapper-rules",
- "serde",
  "thiserror",
 ]
 

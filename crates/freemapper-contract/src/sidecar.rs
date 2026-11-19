@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The sidecar `freemapper.toml`: its contract keys, read once for the suite. Every other key is
 //! freemapper's own record and is ignored.
 

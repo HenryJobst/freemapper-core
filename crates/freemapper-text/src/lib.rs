@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Program texts from Fluent catalogs.
 //!
 //! The crate holds no texts. An app embeds its own `.ftl` files and hands them to a [`Catalog`],

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Stable ids: the `.ppen` reader keeps Purple Pen's own ids of controls and courses, so that a writer can
 //! refer to the same objects again; IOF XML has none.
 

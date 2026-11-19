@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Writes, copies and removals inside a project folder that never follow a link.
 //!
 //! What the crate guarantees (ADR 0008, ADR 0009):

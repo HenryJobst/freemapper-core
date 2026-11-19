@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The language of a page's texts (decision 0030, the rule of freemapper ADR 0092).
 
 /// The language in which `api/texts` answers: `"de"` or `"en"`.

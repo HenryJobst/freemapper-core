@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! Revisions of files and the answers to a stale or a refused write (decision 0030, from freemapper-courseplan
 //! ADRs 0043 and 0044).
 

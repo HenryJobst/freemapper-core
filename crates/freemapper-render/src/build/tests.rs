@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! The page builder's tests, moved from freemapper-print's `print.rs` (ADR 0023). Each print scale of the
 //! old tests is replaced by the two factors print's scale policy computes for it.
 
