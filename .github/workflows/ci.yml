@@ -56,7 +56,6 @@ jobs:
   # Everything that needs no build: the licence line, spelling, links, the history, declared but
   # unused dependencies, action pins, the ADR index and the changelog pair (ADR 0038).
   hygiene:
-    if: ${{ hashFiles('crates/*/Cargo.toml') != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -101,7 +100,6 @@ jobs:
 
   # rustdoc with `-D warnings`: a broken intra-doc link or an unclosed HTML tag fails the run.
   docs:
-    if: ${{ hashFiles('crates/*/Cargo.toml') != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -111,7 +109,6 @@ jobs:
 
   # The documented MSRV is a claim until something builds with it (ADR 0038).
   msrv:
-    if: ${{ hashFiles('crates/*/Cargo.toml') != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -121,7 +118,6 @@ jobs:
   # Line coverage with a floor and a snapshot (docs/coverage.json). It needs an instrumented build
   # in its own target directory, so it is a job of its own.
   coverage:
-    if: ${{ hashFiles('crates/*/Cargo.toml') != '' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
