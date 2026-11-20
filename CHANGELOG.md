@@ -9,6 +9,7 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ### Hinzugefügt
 
+- Zwei Badges in den READMEs: die Zahl der Tests und das Testbudget (2 min). `docs/tests.json` hält beides; `scripts/check.sh tests` zählt die `#[test]` im Quelltext und scheitert bei Abweichung (`tests --fix` schreibt neu), und der Linux-Testlauf in der CI scheitert, wenn er das Budget überschreitet (Entscheidung 0043).
 - `scripts/check.sh architecture` scheitert, wenn ein Crate von einem Geschwister-Crate abhängt, das seine Zeile in der Schichtentabelle nicht nennt, oder ein Drittanbieter-Crate nutzt, das einem anderen Crate gehört (Web-Stack, PDF- und Schriftstack, Update-Archive und -Hashes, Lokalisierung); ein neues Crate muss einer Schicht zugeordnet werden (Entscheidung 0042).
 
 ## [0.31.1] - 2026-11-20
