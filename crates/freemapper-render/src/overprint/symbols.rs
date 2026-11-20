@@ -389,7 +389,7 @@ pub(super) fn first_aid(centre: Pt, length: f64, bar: f64) -> Vec<Shape> {
 pub(super) fn water(centre: Pt, size: f64, width: f64) -> Vec<Shape> {
     // OOM's cup spans x ±1340 and y -1770..1605 µm at its line centres (the bottom curve peaks at 1605).
     let inner = (size - width).max(0.0);
-    let (sx, sy) = (inner / 2680.0, inner / 3375.0);
+    let sy = inner / 3375.0;
     let centre = (centre.0, centre.1 - (1605.0 - 1770.0) / 2.0 * sy);
     let paths: [&[(f64, f64, bool)]; 4] = [
         &[(-1340.0, -1395.0, false), (-820.0, 1380.0, false)],
@@ -419,8 +419,10 @@ pub(super) fn water(centre: Pt, size: f64, width: f64) -> Vec<Shape> {
     paths
         .iter()
         .map(|p| {
-            let stretched: Vec<(f64, f64, bool)> =
-                p.iter().map(|&(x, y, c)| (x * sx / sy, y, c)).collect();
+            let stretched: Vec<(f64, f64, bool)> = p
+                .iter()
+                .map(|&(x, y, c)| (x * 3375.0 / 2680.0, y, c))
+                .collect();
             line(oom_path(&stretched, centre, 0.0, sy), width)
         })
         .collect()
@@ -758,6 +760,19 @@ mod tests {
         assert!(near(y(&l[1]) - y(&l[0]), 2.0 * fonts::LINE_SPACING * 2.0));
         assert!(near(y(&l[0]), 10.0 + fonts::ASCENT * 2.0));
         assert!(text_lines("", (0.0, 0.0), 2.0).is_empty());
+    }
+
+    #[test]
+    fn a_cup_no_wider_than_its_line_collapses_to_the_centre_without_nan() {
+        for (size, width) in [(0.4, 0.4), (0.3, 0.4), (0.0, 0.0)] {
+            for shape in water((10.0, 10.0), size, width) {
+                assert!(
+                    path(&shape)
+                        .iter()
+                        .all(|p| p.0.is_finite() && p.1.is_finite())
+                );
+            }
+        }
     }
 
     #[test]
