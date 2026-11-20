@@ -4,7 +4,7 @@
 
 
 <!-- badges:start -->
-[![Zeilenabdeckung](https://img.shields.io/badge/Coverage-92.4%25-brightgreen)](docs/coverage.json) [![MSRV](https://img.shields.io/badge/MSRV-1.88-blue)](Cargo.toml) [![ADRs](https://img.shields.io/badge/ADRs-38-blue)](docs/adr/README.md) [![Hygiene](https://img.shields.io/badge/Hygiene-12-brightgreen)](scripts/check.sh) [![Lizenz](https://img.shields.io/badge/Lizenz-AGPL--3.0--or--later-blue)](LICENSE)
+[![Zeilenabdeckung](https://img.shields.io/badge/Coverage-92.4%25-brightgreen)](docs/coverage.json) [![MSRV](https://img.shields.io/badge/MSRV-1.88-blue)](Cargo.toml) [![ADRs](https://img.shields.io/badge/ADRs-39-blue)](docs/adr/README.md) [![Hygiene](https://img.shields.io/badge/Hygiene-12-brightgreen)](scripts/check.sh) [![Lizenz](https://img.shields.io/badge/Lizenz-AGPL--3.0--or--later-blue)](LICENSE)
 <!-- badges:end -->
 
 <!-- claude-cost:start -->
