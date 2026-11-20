@@ -11,6 +11,7 @@ pub mod enlarge;
 pub mod model;
 pub mod read;
 pub mod symbol_set;
+pub mod view;
 
 pub use coord::MapCoord;
 pub use model::{
@@ -18,6 +19,7 @@ pub use model::{
     TemplateRef, closed_ring,
 };
 pub use symbol_set::{SymbolCode, SymbolSet};
+pub use view::{Preset, SymbolColours, View, ViewError};
 
 /// Deepest XML element nesting the readers accept. Real OOM files nest about a dozen levels; a
 /// deeper file is broken or hostile, and the limit keeps parsing and dropping the element tree

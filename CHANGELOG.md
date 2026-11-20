@@ -9,6 +9,7 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ### Hinzugefügt
 
+- `freemapper-omap`: Das Modul `view` wählt aus einer fertigen Karte, was eine Ansicht behält (ADR 0039): die Voreinstellungen `no-paths`, `brown-only` und `no-north-lines`, die Listen `no:<Codes>` und `only:<Codes>`, kombiniert mit `+`. `View::parse` meldet Fehler als Daten, `View::keeps` antwortet auch für Codes ohne Objekt, `View::keeps_frame` erkennt den Rahmen der Karte, `SymbolColours` liest die Farben der Symbole aus dem Symbolsatz.
 - Die READMEs tragen Badges für Zeilenabdeckung, MSRV, ADRs, Zahl der Prüfungen und Lizenz. `scripts/badges.sh` schreibt sie aus den Daten im Repository, und die Prüfung scheitert, wenn sie veralten (Nachtrag zu ADR 0038).
 
 ### Geändert
