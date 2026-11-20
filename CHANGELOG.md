@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- Entscheidung 0044 hält fest, was der Betrieb der Tests und des Mutations-Gates gezeigt hat: Exit-Codes von `mutants`, ein Test, der den Zahlenwert einer geänderten Rechnung festlegt, die Reihenfolge `tests --fix` vor `badges.sh`, kein Mutationslauf über den ganzen Workspace als Gate und keine Mutationsläufe neben Zeitmessungen.
+
 ## [0.31.2] - 2026-11-20
 
 ### Behoben

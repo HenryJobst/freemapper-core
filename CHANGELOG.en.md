@@ -7,6 +7,10 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Decision 0044 records what running the tests and the mutation gate has shown: the exit codes of `mutants`, a test that pins the value of a changed calculation, the order `tests --fix` before `badges.sh`, no whole-workspace mutation run as a gate and no mutation runs next to timing measurements.
+
 ## [0.31.2] - 2026-11-20
 
 ### Fixed
