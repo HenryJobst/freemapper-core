@@ -7,6 +7,15 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- CI mutates the Rust lines a branch changes (`cargo-mutants --in-diff`, job `mutants`) and fails when a test does not catch a mutant; a job `hack` checks every combination of features; `scripts/check.sh complexity` fails above the cognitive complexity of 33 (`clippy.toml`). No SBOM: the core ships libraries only (ADR 0040).
+- `freemapper-omap`: a property test for `View::parse` and its canonical form, with `proptest` (ADR 0040).
+
+### Changed
+
+- The `check` job runs the tests with `cargo-nextest`, 14 s instead of 101 s, and the doc tests with `cargo test --doc` (ADR 0040).
+
 ## [0.30.1] - 2026-11-20
 
 ### Added

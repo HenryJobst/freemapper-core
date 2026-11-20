@@ -34,7 +34,8 @@ before changing code.
   `cargo clippy --workspace --all-targets --all-features -- -D warnings` and
   `cargo test --workspace --all-features` must pass; CI runs them on Linux, macOS and Windows.
 - `scripts/check.sh` holds the housekeeping gates (licence line, spelling, links, history, dependencies, action
-  pins, ADR index, changelog pair) and `scripts/check.sh doc coverage msrv` the three that build (ADR 0038).
+  pins, ADR index, changelog pair) and `scripts/check.sh doc coverage msrv complexity hack mutants` the ones that build
+  (ADR 0038, 0040). `cargo nextest run --workspace --all-features` and `cargo test --doc` run the tests in CI.
 - Public API: a crate is unstable (0.x) until its first release in an app; breaking changes then need a minor
   version step and a changelog entry under "Geändert"/"Changed" that says what the apps must change.
 - Apps depend on core through git dependencies pinned to a tag, and during development through a `[patch]` to

@@ -16,6 +16,9 @@ env:
   GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
   CARGO_MACHETE_VERSION: "0.9.1"
   CARGO_LLVM_COV_VERSION: "0.9.1"
+  CARGO_MUTANTS_VERSION: "27.1.0"
+  CARGO_HACK_VERSION: "0.6.46"
+  CARGO_NEXTEST_VERSION: "0.9.152"
 
 jobs:
   check:
@@ -41,7 +44,17 @@ jobs:
       - if: steps.crates.outputs.any == 'true'
         run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
       - if: steps.crates.outputs.any == 'true'
-        run: cargo test --locked --workspace --all-features
+        name: Install cargo-nextest
+        shell: bash
+        run: |
+          cargo nextest --version 2>/dev/null | grep -q "$CARGO_NEXTEST_VERSION" ||
+            cargo install cargo-nextest --locked --version "$CARGO_NEXTEST_VERSION" --force
+      # nextest runs the test binaries side by side: 14 s against 101 s for `cargo test` (ADR 0040).
+      - if: steps.crates.outputs.any == 'true'
+        run: cargo nextest run --locked --workspace --all-features
+      # nextest does not run doc tests.
+      - if: steps.crates.outputs.any == 'true'
+        run: cargo test --locked --workspace --all-features --doc
       # The shared types of the contract crate must build and pass without the map reader.
       - if: steps.crates.outputs.any == 'true'
         run: cargo test --locked -p freemapper-contract --no-default-features
@@ -139,3 +152,48 @@ jobs:
             git --no-pager diff docs/coverage.json || true
             exit 1
           fi
+
+  # Clippy's cognitive complexity against the baseline in clippy.toml (ADR 0040).
+  complexity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - run: scripts/check.sh complexity
+
+  # Every combination of features, 20 of them, as a compile check (ADR 0040).
+  hack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: Install cargo-hack
+        run: |
+          cargo hack --version 2>/dev/null | grep -q "$CARGO_HACK_VERSION" ||
+            cargo install cargo-hack --locked --version "$CARGO_HACK_VERSION" --force
+      - run: scripts/check.sh hack
+
+  # Mutation tests on the lines the pull request changes, not on the workspace (ADR 0040).
+  mutants:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      MUTANTS_BASE: origin/${{ github.base_ref }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The diff needs the base branch.
+          fetch-depth: 0
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: Install cargo-mutants
+        run: |
+          cargo mutants --version 2>/dev/null | grep -q "$CARGO_MUTANTS_VERSION" ||
+            cargo install cargo-mutants --locked --version "$CARGO_MUTANTS_VERSION" --force
+      - run: scripts/check.sh mutants
+      - name: The mutants that survived
+        if: failure()
+        run: cat mutants.out/missed.txt || true
