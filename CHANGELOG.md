@@ -11,6 +11,7 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ### Hinzugefügt
 
+- `freemapper-omap`: `View::file_token()` ist die kanonische Form als Dateiname (`no:505,506` wird `no-505_506`), damit freemapper und freemapper-print gleich benennen.
 - `freemapper-omap`: `SymbolColours::from_xml(colors_xml, symbols_xml)` liest die Farben der Symbole auch aus den Textfragmenten eines Symbolsatzes, für Programme mit eigenem Satz-Typ (ADR 0039).
 
 ## [0.30.0] - 2026-11-20

@@ -145,6 +145,12 @@ impl View {
             && self.only.as_ref().is_none_or(|only| only.contains(code))
     }
 
+    /// The canonical form as part of a file name: `:` becomes `-` and `,` becomes `_`, so `no:505,506` is
+    /// `no-505_506`. freemapper and freemapper-print name their files alike with it.
+    pub fn file_token(&self) -> String {
+        self.to_string().replace(':', "-").replace(',', "_")
+    }
+
     /// Whether an object belongs to the frame of the map, which no view leaves out: it lies in the part
     /// [`FRAME_PART`] or carries the tag `freemapper:source=sheet`.
     pub fn keeps_frame(part_name: &str, tags: &[(String, String)]) -> bool {
@@ -309,6 +315,10 @@ mod tests {
             "no:505,506+only:101,102"
         );
         assert!(View::default().is_empty());
+        assert_eq!(
+            view("no:506,505+no-paths").file_token(),
+            "no-paths+no-505_506"
+        );
     }
 
     #[test]
