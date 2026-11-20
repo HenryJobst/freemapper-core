@@ -51,3 +51,4 @@ status to `Superseded by NNNN`.
 | [0040](0040-mutation-properties-complexity-nextest.md) | Mutation tests on the diff, property tests, nextest and a complexity limit |
 | [0041](0041-utm-zone-34-and-pl-1992.md) | UTM zone 34 and the Polish grid |
 | [0042](0042-crate-layers-as-a-gate.md) | The crate layers are a gate | Accepted | 2026-11-20 |
+| [0043](0043-test-count-and-budget.md) | The test count and the test budget are data | Accepted | 2026-11-20 |

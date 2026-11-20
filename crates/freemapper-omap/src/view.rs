@@ -367,7 +367,10 @@ mod tests {
     #[test]
     fn the_north_line_symbols_601_1_to_601_4_go_with_the_north_lines() {
         for code in ["601", "601.1", "601.2", "601.3", "601.4"] {
-            assert!(!view("no-north-lines").keeps(code, &["Black 100%"]), "{code}");
+            assert!(
+                !view("no-north-lines").keeps(code, &["Black 100%"]),
+                "{code}"
+            );
             assert!(!view("brown-only").keeps(code, &["Brown 100%"]), "{code}");
             assert!(view("no-paths").keeps(code, &["Black 100%"]), "{code}");
         }
