@@ -776,6 +776,18 @@ mod tests {
     }
 
     #[test]
+    fn the_cup_is_as_wide_as_its_size_less_the_line_between_the_line_centres() {
+        let cup = water((10.0, 10.0), 4.0, 0.4);
+        let inner = 3.6;
+        // The two sides run from x = ±1340 to ±820 of OOM's 2680 µm wide cup.
+        let (left, right) = (path(&cup[0]), path(&cup[1]));
+        assert!(near(left[0].0, 10.0 - inner / 2.0), "{left:?}");
+        assert!(near(left[1].0, 10.0 - 820.0 / 2680.0 * inner), "{left:?}");
+        assert!(near(right[0].0, 10.0 + inner / 2.0), "{right:?}");
+        assert!(near(right[1].0, 10.0 + 820.0 / 2680.0 * inner), "{right:?}");
+    }
+
+    #[test]
     fn the_symbols_of_points_are_drawn_around_their_centre() {
         let aid = first_aid((10.0, 10.0), 4.0, 1.0);
         assert_eq!(aid.len(), 2);
