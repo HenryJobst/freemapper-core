@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.31.2] - 2026-11-20
+
 ### Fixed
 
 - `freemapper-render`: The refreshment point (cup) produced NaN coordinates when its size was not larger than the line width. It now collapses to a point at the centre.
