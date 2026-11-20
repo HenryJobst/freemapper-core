@@ -59,6 +59,8 @@ sha2 = "=0.11.1"
 flate2 = "=1.1.11"
 # Test only: temporary folders.
 tempfile = "3.27.0"
+# Tests only: property tests for the parsers (ADR 0039 amendment).
+proptest = { version = "1.7.0", default-features = false, features = ["std"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

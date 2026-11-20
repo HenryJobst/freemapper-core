@@ -48,3 +48,4 @@ status to `Superseded by NNNN`.
 | [0037](0037-skrifa-reads-the-fonts.md) | skrifa reads the fonts |
 | [0038](0038-housekeeping-gates.md) | The repository checks its own housekeeping |
 | [0039](0039-views-of-a-finished-map.md) | Views of a finished map |
+| [0040](0040-mutation-properties-complexity-nextest.md) | Mutation tests on the diff, property tests, nextest and a complexity limit |

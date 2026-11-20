@@ -419,4 +419,51 @@ mod tests {
             ]
         );
     }
+
+    #[test]
+    fn a_view_is_empty_until_something_is_left_out() {
+        assert!(View::default().is_empty());
+        assert!(!View::preset(Preset::NoPaths).is_empty());
+        assert!(!view("no:505").is_empty());
+        assert!(!view("only:505").is_empty());
+        assert_eq!(View::preset(Preset::NoPaths), view("no-paths"));
+    }
+
+    /// A view text of presets and lists, as `parse` takes it.
+    fn view_text() -> impl proptest::strategy::Strategy<Value = String> {
+        use proptest::prelude::*;
+        let code = (0u16..1000, proptest::option::of(0u8..10))
+            .prop_map(|(n, sub)| sub.map_or(n.to_string(), |s| format!("{n}.{s}")));
+        let part = prop_oneof![
+            Just("no-paths".to_string()),
+            Just("brown-only".to_string()),
+            Just("no-north-lines".to_string()),
+            proptest::collection::vec(code.clone(), 1..5)
+                .prop_map(|c| format!("no:{}", c.join(","))),
+            proptest::collection::vec(code, 1..5).prop_map(|c| format!("only:{}", c.join(","))),
+        ];
+        proptest::collection::vec(part, 1..5).prop_map(|parts| parts.join("+"))
+    }
+
+    proptest::proptest! {
+        /// The canonical form reads back as the same view, so two programs that name a file after it agree. A view
+        /// whose `only:` lists share no code prints as `only:` and is refused on reading; that is the one exception.
+        #[test]
+        fn the_canonical_form_reads_back(text in view_text()) {
+            let parsed = View::parse(&text).unwrap();
+            let shown = parsed.to_string();
+            if parsed.only.as_ref().is_some_and(BTreeSet::is_empty) {
+                proptest::prop_assert_eq!(View::parse(&shown), Err(ViewError::EmptyList("only:".to_string())));
+            } else {
+                proptest::prop_assert_eq!(View::parse(&shown), Ok(parsed.clone()));
+                proptest::prop_assert_eq!(parsed.file_token().contains([':', ',']), false);
+            }
+        }
+
+        /// Any text is read or refused; it never panics.
+        #[test]
+        fn arbitrary_text_never_panics(text in "\\PC{0,40}") {
+            let _ = View::parse(&text);
+        }
+    }
 }

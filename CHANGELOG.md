@@ -7,6 +7,15 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- CI mutiert die Rust-Zeilen, die ein Branch ändert (`cargo-mutants --in-diff`, Job `mutants`), und scheitert, wenn kein Test einen Mutanten fängt; ein Job `hack` prüft jede Kombination der Features; `scripts/check.sh complexity` scheitert oberhalb der kognitiven Komplexität 33 (`clippy.toml`). Kein SBOM: der Kern liefert nur Bibliotheken aus (Entscheidung 0040).
+- `freemapper-omap`: ein Property-Test mit `proptest` für `View::parse` und seine kanonische Form (Entscheidung 0040).
+
+### Geändert
+
+- Der Job `check` führt die Tests mit `cargo-nextest` aus, 14 s statt 101 s, und die Doctests mit `cargo test --doc` (Entscheidung 0040).
+
 ## [0.30.1] - 2026-11-20
 
 ### Hinzugefügt

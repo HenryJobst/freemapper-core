@@ -18,9 +18,13 @@
 #   doc        rustdoc builds without warnings
 #   coverage   line coverage is not below its floor or its snapshot
 #   msrv       the workspace builds with the documented MSRV
+#   complexity no function is more complex than the baseline in `clippy.toml`
+#   hack       the workspace checks with every combination of features
+#   mutants    every mutant of the changed lines is caught by a test
 #
-# `coverage`, `doc` and `msrv` build the workspace and stay out of the default
-# run; CI gives each its own job. The tools installed on the runner are pinned
+# `coverage`, `doc`, `msrv`, `complexity`, `hack` and `mutants` build the
+# workspace and stay out of the default run; CI gives each its own job.
+# `mutants` reads the diff against `$MUTANTS_BASE` (default `github/main`). The tools installed on the runner are pinned
 # in `.github/workflows/ci.yml`; locally, `cargo install` or a release archive
 # of the same version does the job.
 set -euo pipefail
@@ -266,6 +270,46 @@ gate_msrv() {
     report "the workspace does not build with the documented MSRV $msrv"
 }
 
+# The threshold in `clippy.toml` is the highest complexity the code had when
+# the gate came; the lint is off elsewhere, so only this gate enforces it
+# (ADR 0040).
+gate_complexity() {
+  cargo clippy --locked --workspace --all-targets -- -D clippy::cognitive_complexity ||
+    report "a function is more complex than the threshold in clippy.toml"
+}
+
+gate_hack() {
+  # No `--locked`: `--no-dev-deps` rewrites the manifests and with them the lock file while it runs.
+  cargo hack check --workspace --feature-powerset --no-dev-deps ||
+    report "the workspace does not check with every combination of features"
+}
+
+# Mutation testing on the diff only: a whole-workspace run would take hours.
+# `cargo-mutants` copies the tree without `.git`, so a test that reads the
+# repository's own history fails the baseline there (ADR 0040).
+gate_mutants() {
+  local base=${MUTANTS_BASE:-github/main}
+  local diff=target/mutants.diff
+
+  mkdir -p target
+  git diff "$base"...HEAD -- '*.rs' >"$diff"
+
+  if [ ! -s "$diff" ]; then
+    echo "check.sh: no Rust change against $base, nothing to mutate"
+    return
+  fi
+
+  # Exit code 2 is a missed mutant, 3 a timeout: a mutant that makes a loop
+  # endless was stopped by the clock, which is how a test catches it.
+  local status=0
+  cargo mutants --in-diff "$diff" --jobs 2 --timeout-multiplier 5 --no-shuffle || status=$?
+  case "$status" in
+  0) ;;
+  3) echo "check.sh: some mutants ran into the timeout; they count as caught" >&2 ;;
+  *) report "a mutant of the changed lines survived or the baseline failed; see mutants.out/" ;;
+  esac
+}
+
 cheap=(spdx typos links secrets machete actions adr changelog badges)
 gates=()
 spdx_fix=0
@@ -284,7 +328,7 @@ fi
 for gate in "${gates[@]}"; do
   case "$gate" in
   spdx) gate_spdx "$spdx_fix" ;;
-  typos | links | secrets | machete | actions | adr | changelog | badges | doc | coverage | msrv)
+  typos | links | secrets | machete | actions | adr | changelog | badges | doc | coverage | msrv | complexity | hack | mutants)
     "gate_$gate"
     ;;
   *)
