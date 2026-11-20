@@ -554,4 +554,233 @@ mod tests {
         assert_eq!(hatch(square, &[PI / 2.0], 0.6, 0.25, &mut budget).len(), 3);
         assert!(budget.cut);
     }
+
+    fn near(a: f64, b: f64) -> bool {
+        (a - b).abs() < 1e-9
+    }
+
+    fn path(shape: &Shape) -> &[Pt] {
+        match shape {
+            Shape::Stroke { path, .. } => path,
+            other => panic!("not a stroke: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn the_direction_of_two_equal_points_is_none() {
+        assert_eq!(direction((1.0, 1.0), (1.0, 1.0)), None);
+        // Page frame: +y is down, so a point below is a quarter turn.
+        assert!(near(direction((0.0, 0.0), (0.0, 2.0)).unwrap(), PI / 2.0));
+        assert!(near(direction((0.0, 0.0), (-1.0, 0.0)).unwrap(), PI));
+    }
+
+    #[test]
+    fn a_path_is_measured_through_its_bends() {
+        assert_eq!(length(&[]), 0.0);
+        assert_eq!(length(&[(1.0, 1.0)]), 0.0);
+        assert!(near(length(&[(0.0, 0.0), (3.0, 0.0), (3.0, 4.0)]), 7.0));
+    }
+
+    #[test]
+    fn the_exit_from_a_circle_skips_bends_inside_it() {
+        // Straight out: the path leaves at the radius.
+        assert!(near(exit_length(&[(0.0, 0.0), (10.0, 0.0)], 3.0), 3.0));
+        // The first bend lies inside the circle: the path is longer than the radius when it leaves.
+        let bent = [(0.0, 0.0), (0.0, 2.0), (10.0, 2.0)];
+        let exit = exit_length(&bent, 3.0);
+        assert!(
+            near(exit, 2.0 + (9.0f64 - 4.0).sqrt() - 0.0 - 0.0),
+            "{exit}"
+        );
+        // A path that stays inside the circle never leaves it: its whole length.
+        assert!(near(exit_length(&[(0.0, 0.0), (1.0, 0.0)], 3.0), 1.0));
+        // No radius, no path.
+        assert_eq!(exit_length(&[(0.0, 0.0), (5.0, 0.0)], 0.0), 0.0);
+        assert_eq!(exit_length(&[], 3.0), 0.0);
+    }
+
+    #[test]
+    fn pieces_keep_the_bends_between_their_ends() {
+        let l = [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)];
+        let whole = pieces(&l, 2.0, 18.0, &[]);
+        assert_eq!(whole, [vec![(2.0, 0.0), (10.0, 0.0), (10.0, 8.0)]]);
+        // A gap across the bend leaves one piece on each side and drops the bend.
+        let cut = pieces(&l, 2.0, 18.0, &[(9.0, 12.0)]);
+        assert_eq!(
+            cut,
+            [vec![(2.0, 0.0), (9.0, 0.0)], vec![(10.0, 2.0), (10.0, 8.0)]]
+        );
+        // Unsorted and non-finite gaps do not disturb the result.
+        let odd = pieces(
+            &l,
+            0.0,
+            20.0,
+            &[(15.0, 16.0), (f64::NAN, 3.0), (5.0, 6.0), (7.0, 7.0)],
+        );
+        assert_eq!(odd.len(), 3);
+    }
+
+    #[test]
+    fn dashes_start_with_a_dash_and_ignore_a_useless_pattern() {
+        let mut budget = Budget::new(100);
+        let line_ = [(0.0, 0.0), (10.0, 0.0)];
+        let d = dashes(&line_, 2.0, 1.0, 0.3, &mut budget);
+        // Dashes at 0, 3, 6 and 9; the last is cut at the end of the line.
+        assert_eq!(d.len(), 4);
+        assert_eq!(path(&d[0]), [(0.0, 0.0), (2.0, 0.0)]);
+        assert_eq!(path(&d[3]), [(9.0, 0.0), (10.0, 0.0)]);
+        assert!(!budget.cut);
+        for (dash, gap) in [
+            (0.0, 1.0),
+            (-1.0, 3.0),
+            (f64::NAN, 1.0),
+            (2.0, f64::NAN),
+            (1.0, -1.0),
+        ] {
+            assert!(
+                dashes(&line_, dash, gap, 0.3, &mut budget).is_empty(),
+                "{dash} {gap}"
+            );
+        }
+        // No gap at all is a solid line of dashes end to end.
+        assert_eq!(dashes(&line_, 5.0, 0.0, 0.3, &mut budget).len(), 2);
+    }
+
+    #[test]
+    fn crosses_are_spread_evenly_and_a_short_path_gets_one() {
+        let mut budget = Budget::new(100);
+        let l = [(0.0, 0.0), (30.0, 0.0)];
+        let c = crosses_along(&l, 3.0, 5.0, 0.3, &mut budget);
+        // Six equal parts, a cross (two strokes) in the middle of each, the first at 2.5.
+        assert_eq!(c.len(), 12);
+        let mid = |i: usize| {
+            let p = path(&c[i]);
+            ((p[0].0 + p[1].0) / 2.0, (p[0].1 + p[1].1) / 2.0)
+        };
+        assert!(near(mid(0).0, 2.5) && near(mid(10).0, 27.5));
+        // A path shorter than the spacing still gets its one cross, in the middle.
+        let short = crosses_along(&[(0.0, 0.0), (1.0, 0.0)], 3.0, 5.0, 0.3, &mut budget);
+        assert_eq!(short.len(), 2);
+        // A budget of three crosses two and a half: the third stroke pair is cut.
+        let mut small = Budget::new(2);
+        assert_eq!(crosses_along(&l, 3.0, 5.0, 0.3, &mut small).len(), 4);
+        assert!(small.cut);
+    }
+
+    #[test]
+    fn a_cross_is_two_strokes_at_45_degrees_to_the_given_angle() {
+        let [a, b] = cross((5.0, 5.0), 2.0, 0.0, 0.3);
+        // Arms of length 2 through the centre, at +45 and -45 degrees.
+        let r = 2.0f64.sqrt() / 2.0;
+        assert!(near(path(&a)[0].0, 5.0 + r) && near(path(&a)[0].1, 5.0 + r));
+        assert!(near(path(&a)[1].0, 5.0 - r));
+        assert!(near(path(&b)[0].0, 5.0 + r) && near(path(&b)[0].1, 5.0 - r));
+    }
+
+    #[test]
+    fn a_circle_without_gaps_is_one_closed_stroke_and_with_gaps_one_arc_per_piece() {
+        let whole = circle((10.0, 10.0), 3.0, 0.4, &[]);
+        assert_eq!(whole.len(), 1);
+        assert!(matches!(whole[0], Shape::Stroke { closed: true, .. }));
+        assert_eq!(path(&whole[0]).len(), CIRCLE_SEGMENTS);
+        assert!(
+            path(&whole[0])
+                .iter()
+                .all(|p| near(dist(*p, (10.0, 10.0)), 3.0))
+        );
+        // Two gaps leave two arcs, each starting and ending on the circle.
+        let arcs = circle((10.0, 10.0), 3.0, 0.4, &[(0.0, 30.0), (180.0, 210.0)]);
+        assert_eq!(arcs.len(), 2);
+        for a in &arcs {
+            assert!(matches!(a, Shape::Stroke { closed: false, .. }));
+            assert!(path(a).iter().all(|p| near(dist(*p, (10.0, 10.0)), 3.0)));
+        }
+        // The first arc runs from 30 to 180 degrees.
+        let p = path(&arcs[0]);
+        assert!(near(p[0].0, 10.0 + 3.0 * 30f64.to_radians().cos()));
+        assert!(near(p.last().unwrap().0, 7.0));
+        // A gap of the whole circle leaves nothing.
+        assert!(circle((0.0, 0.0), 3.0, 0.4, &[(0.0, 360.0)]).is_empty());
+    }
+
+    #[test]
+    fn a_triangle_has_its_corner_towards_the_given_direction() {
+        let t = triangle((1.0, 1.0), 6.0, 0.0, 0.4);
+        let p = path(&t);
+        assert_eq!(p.len(), 3);
+        assert!(matches!(t, Shape::Stroke { closed: true, .. }));
+        let r = triangle_radius(6.0);
+        assert!(near(p[0].0, 1.0 + r) && near(p[0].1, 1.0));
+        // Equal sides of the given length.
+        assert!(near(dist(p[0], p[1]), 6.0) && near(dist(p[1], p[2]), 6.0));
+    }
+
+    #[test]
+    fn a_hatch_of_nothing_or_with_a_useless_spacing_is_empty() {
+        let mut budget = Budget::new(10);
+        assert!(hatch(Vec::new(), &[0.0], 1.0, 0.2, &mut budget).is_empty());
+        assert!(hatch(vec![Vec::new()], &[0.0], 1.0, 0.2, &mut budget).is_empty());
+        let ring = vec![vec![(0.0, 0.0), (5.0, 0.0), (5.0, 5.0)]];
+        for spacing in [0.0, -1.0, f64::NAN] {
+            assert!(hatch(ring.clone(), &[0.0], spacing, 0.2, &mut budget).is_empty());
+        }
+        assert!(!budget.cut);
+    }
+
+    #[test]
+    fn a_control_number_is_centred_on_its_point() {
+        let Shape::Text {
+            origin, size, text, ..
+        } = number("12", (10.0, 20.0), 4.0)
+        else {
+            panic!("text")
+        };
+        let (_, w, h) = number_metrics("12", 4.0);
+        assert_eq!(text, "12");
+        assert!(near(origin.0, 10.0 - w / 2.0));
+        // The baseline lies half the digit height below the centre.
+        assert!(near(origin.1, 20.0 + h / 2.0));
+        assert!(
+            size > 4.0,
+            "the font size is larger than the digit height: {size}"
+        );
+    }
+
+    #[test]
+    fn text_lines_leave_out_blank_lines_but_keep_their_height() {
+        let l = text_lines("one\n  \ntwo", (5.0, 10.0), 2.0);
+        assert_eq!(l.len(), 2);
+        let y = |s: &Shape| match s {
+            Shape::Text { origin, .. } => origin.1,
+            _ => panic!("text"),
+        };
+        // `two` is the third line: two line spacings below `one`.
+        assert!(near(y(&l[1]) - y(&l[0]), 2.0 * fonts::LINE_SPACING * 2.0));
+        assert!(near(y(&l[0]), 10.0 + fonts::ASCENT * 2.0));
+        assert!(text_lines("", (0.0, 0.0), 2.0).is_empty());
+    }
+
+    #[test]
+    fn the_symbols_of_points_are_drawn_around_their_centre() {
+        let aid = first_aid((10.0, 10.0), 4.0, 1.0);
+        assert_eq!(aid.len(), 2);
+        assert_eq!(path(&aid[0]), [(8.0, 10.0), (12.0, 10.0)]);
+        assert_eq!(path(&aid[1]), [(10.0, 8.0), (10.0, 12.0)]);
+        // The cup stays within its outside measure.
+        let cup = water((10.0, 10.0), 4.0, 0.4);
+        assert_eq!(cup.len(), 4);
+        for shape in &cup {
+            for p in path(shape) {
+                assert!(
+                    (p.0 - 10.0).abs() <= 2.0 && (p.1 - 10.0).abs() <= 2.0,
+                    "{p:?}"
+                );
+            }
+        }
+        // A crossing point has two lines on either side of the way through.
+        let x = crossing_point((0.0, 0.0), 3.0, 0.0, 0.3);
+        assert_eq!(x.len(), 2);
+        let ys: Vec<f64> = x.iter().map(|s| path(s)[0].1).collect();
+        assert!(ys[0] > 0.0 && ys[1] < 0.0 && near(ys[0], -ys[1]));
+    }
 }
