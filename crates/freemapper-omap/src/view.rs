@@ -20,7 +20,7 @@ use crate::symbol_set::attribute;
 pub const FRAME_PART: &str = "peripheral information";
 /// The tag value of `freemapper:source` on the objects of the frame.
 pub const FRAME_SOURCE: (&str, &str) = ("freemapper:source", "sheet");
-/// The magnetic north lines.
+/// The magnetic north lines (601, with the sub-numbers 601.1 to 601.4).
 pub const NORTH_LINE_CODE: &str = "601";
 
 /// Roads, paths and stairs: 502 to 507, the paved paths 501.6 to 501.8 and the stairs 532.
@@ -56,13 +56,18 @@ impl Preset {
         match self {
             Preset::NoPaths => !is_path_code(code),
             Preset::BrownOnly => {
-                code != NORTH_LINE_CODE
+                !is_north_line_code(code)
                     && !colours.is_empty()
                     && colours.iter().all(|c| is_brown(c))
             }
-            Preset::NoNorthLines => code != NORTH_LINE_CODE,
+            Preset::NoNorthLines => !is_north_line_code(code),
         }
     }
+}
+
+/// Whether a symbol code is a north line: 601 and its sub-numbers 601.1 to 601.4.
+fn is_north_line_code(code: &str) -> bool {
+    code.split('.').next().unwrap_or(code) == NORTH_LINE_CODE
 }
 
 /// Whether a symbol code is a road, path or stair: 502 to 507, 501.6 to 501.8, 532 and their sub-numbers.
@@ -357,6 +362,16 @@ mod tests {
         assert!(!v.keeps("104", &["Brown 100%", "Black 100%"]));
         assert!(!v.keeps("601", &["Brown 100%"]));
         assert!(!v.keeps("999", &[]));
+    }
+
+    #[test]
+    fn the_north_line_symbols_601_1_to_601_4_go_with_the_north_lines() {
+        for code in ["601", "601.1", "601.2", "601.3", "601.4"] {
+            assert!(!view("no-north-lines").keeps(code, &["Black 100%"]), "{code}");
+            assert!(!view("brown-only").keeps(code, &["Brown 100%"]), "{code}");
+            assert!(view("no-paths").keeps(code, &["Black 100%"]), "{code}");
+        }
+        assert!(view("no-north-lines").keeps("602", &["Black 100%"]));
     }
 
     #[test]

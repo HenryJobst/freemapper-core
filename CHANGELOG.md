@@ -11,6 +11,12 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 - `scripts/check.sh architecture` scheitert, wenn ein Crate von einem Geschwister-Crate abhängt, das seine Zeile in der Schichtentabelle nicht nennt, oder ein Drittanbieter-Crate nutzt, das einem anderen Crate gehört (Web-Stack, PDF- und Schriftstack, Update-Archive und -Hashes, Lokalisierung); ein neues Crate muss einer Schicht zugeordnet werden (Entscheidung 0042).
 
+## [0.31.1] - 2026-11-20
+
+### Behoben
+
+- `freemapper-omap`: Die Ansicht `no-north-lines` (und `brown-only`) ließ die Nordlinien auf der Karte stehen, weil sie den Code `601` mit den Codes `601.1` bis `601.4` der Symbole verglich. Sie nimmt jetzt die ganze Familie, 601 mit seinen Unternummern.
+
 ## [0.31.0] - 2026-11-20
 
 ### Hinzugefügt

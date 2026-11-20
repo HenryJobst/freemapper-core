@@ -11,6 +11,12 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `scripts/check.sh architecture` fails when a crate depends on a sibling its row in the layer table does not list, or on a third-party crate that belongs to another crate (web stack, PDF and font stack, update archives and hashes, localisation); a new crate has to be placed in a layer (ADR 0042).
 
+## [0.31.1] - 2026-11-20
+
+### Fixed
+
+- `freemapper-omap`: the view `no-north-lines` (and `brown-only`) left the north lines on the map, because it compared the code `601` with the codes `601.1` to `601.4` of the symbols. It now takes the whole family, 601 and its sub-numbers.
+
 ## [0.31.0] - 2026-11-20
 
 ### Added
