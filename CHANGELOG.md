@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.30.0] - 2026-11-20
+
 ### Hinzugefügt
 
 - `freemapper-omap`: Das Modul `view` wählt aus einer fertigen Karte, was eine Ansicht behält (ADR 0039): die Voreinstellungen `no-paths`, `brown-only` und `no-north-lines`, die Listen `no:<Codes>` und `only:<Codes>`, kombiniert mit `+`. `View::parse` meldet Fehler als Daten, `View::keeps` antwortet auch für Codes ohne Objekt, `View::keeps_frame` erkennt den Rahmen der Karte, `SymbolColours` liest die Farben der Symbole aus dem Symbolsatz.

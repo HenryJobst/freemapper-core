@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-11-20
+
 ### Added
 
 - `freemapper-omap`: the module `view` selects from a finished map what a view keeps (ADR 0039): the presets `no-paths`, `brown-only` and `no-north-lines`, the lists `no:<codes>` and `only:<codes>`, combined with `+`. `View::parse` reports errors as data, `View::keeps` also answers for codes without an object, `View::keeps_frame` recognises the frame of the map, and `SymbolColours` reads the colours of the symbols from the symbol set.
