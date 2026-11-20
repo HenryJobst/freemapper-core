@@ -7,6 +7,12 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.30.1] - 2026-11-20
+
+### Hinzugefügt
+
+- `freemapper-omap`: `SymbolColours::from_xml(colors_xml, symbols_xml)` liest die Farben der Symbole auch aus den Textfragmenten eines Symbolsatzes, für Programme mit eigenem Satz-Typ (ADR 0039).
+
 ## [0.30.0] - 2026-11-20
 
 ### Hinzugefügt

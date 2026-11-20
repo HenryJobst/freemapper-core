@@ -204,9 +204,15 @@ pub struct SymbolColours {
 impl SymbolColours {
     /// The colours of every symbol of `set`: the colours its definition names, as the names of the colour table.
     pub fn of(set: &SymbolSet) -> Self {
-        let names = colour_names(&set.colors_xml);
+        Self::from_xml(&set.colors_xml, &set.symbols_xml)
+    }
+
+    /// The same from the `<colors>` and `<symbols>` fragments of a symbol set, for a program whose own set type
+    /// keeps them as text.
+    pub fn from_xml(colors_xml: &str, symbols_xml: &str) -> Self {
+        let names = colour_names(colors_xml);
         let mut by_code = BTreeMap::new();
-        let mut reader = Reader::from_str(&set.symbols_xml);
+        let mut reader = Reader::from_str(symbols_xml);
         let (mut code, mut in_symbol): (Option<String>, usize) = (None, 0);
         let mut found: BTreeSet<String> = BTreeSet::new();
         while let Ok(event) = reader.read_event() {

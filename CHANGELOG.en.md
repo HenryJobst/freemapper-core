@@ -7,6 +7,12 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.30.1] - 2026-11-20
+
+### Added
+
+- `freemapper-omap`: `SymbolColours::from_xml(colors_xml, symbols_xml)` reads the colours of the symbols from the text fragments of a symbol set too, for programs with a symbol set type of their own (ADR 0039).
+
 ## [0.30.0] - 2026-11-20
 
 ### Added
