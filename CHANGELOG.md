@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.31.0] - 2026-11-20
+
 ### Hinzugefügt
 
 - CI mutiert die Rust-Zeilen, die ein Branch ändert (`cargo-mutants --in-diff`, Job `mutants`), und scheitert, wenn kein Test einen Mutanten fängt; ein Job `hack` prüft jede Kombination der Features; `scripts/check.sh complexity` scheitert oberhalb der kognitiven Komplexität 33 (`clippy.toml`). Kein SBOM: der Kern liefert nur Bibliotheken aus (Entscheidung 0040).

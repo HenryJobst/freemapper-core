@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-11-20
+
 ### Added
 
 - CI mutates the Rust lines a branch changes (`cargo-mutants --in-diff`, job `mutants`) and fails when a test does not catch a mutant; a job `hack` checks every combination of features; `scripts/check.sh complexity` fails above the cognitive complexity of 33 (`clippy.toml`). No SBOM: the core ships libraries only (ADR 0040).
