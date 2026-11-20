@@ -7,6 +7,10 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `freemapper-render`: The refreshment point (cup) produced NaN coordinates when its size was not larger than the line width. It now collapses to a point at the centre.
+
 ### Added
 
 - Two badges in the READMEs: the number of tests and the test budget (2 min). `docs/tests.json` holds both; `scripts/check.sh tests` counts the `#[test]` in the sources and fails on a difference (`tests --fix` rewrites it), and the Linux test run in CI fails when it exceeds the budget (ADR 0043).

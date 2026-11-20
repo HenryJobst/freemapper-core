@@ -7,6 +7,10 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+### Behoben
+
+- `freemapper-render`: Der Erfrischungspunkt (Becher) erzeugte NaN-Koordinaten, wenn sein Maß nicht größer war als die Linienbreite. Er schrumpft jetzt auf einen Punkt in der Mitte.
+
 ### Hinzugefügt
 
 - Zwei Badges in den READMEs: die Zahl der Tests und das Testbudget (2 min). `docs/tests.json` hält beides; `scripts/check.sh tests` zählt die `#[test]` im Quelltext und scheitert bei Abweichung (`tests --fix` schreibt neu), und der Linux-Testlauf in der CI scheitert, wenn er das Budget überschreitet (Entscheidung 0043).
