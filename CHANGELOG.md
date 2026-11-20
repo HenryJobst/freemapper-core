@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.31.2] - 2026-11-20
+
 ### Behoben
 
 - `freemapper-render`: Der Erfrischungspunkt (Becher) erzeugte NaN-Koordinaten, wenn sein Maß nicht größer war als die Linienbreite. Er schrumpft jetzt auf einen Punkt in der Mitte.
