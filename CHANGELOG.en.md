@@ -11,6 +11,7 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - CI mutates the Rust lines a branch changes (`cargo-mutants --in-diff`, job `mutants`) and fails when a test does not catch a mutant; a job `hack` checks every combination of features; `scripts/check.sh complexity` fails above the cognitive complexity of 33 (`clippy.toml`). No SBOM: the core ships libraries only (ADR 0040).
 - `freemapper-omap`: a property test for `View::parse` and its canonical form, with `proptest` (ADR 0040).
+- `freemapper-georef`: `Crs::Utm34` (EPSG:25834), `Crs::for_position` (the zone by longitude: 32, 33 or 34) and `Pl1992`, the Polish national grid EPSG:2180 as a source grid with `forward` (ADR 0041).
 
 ### Changed
 

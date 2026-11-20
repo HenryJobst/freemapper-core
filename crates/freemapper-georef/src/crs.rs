@@ -76,13 +76,15 @@ pub const EPSG_UTM33: u32 = 25833;
 /// Central meridian of UTM zone 33 in degrees (zone 32: 9°).
 use crate::tm::{GRS80, Projected, TransverseMercator};
 
-/// A projected CRS freemapper works in: ETRS89 / UTM zone 32N or 33N.
+/// A projected CRS freemapper works in: ETRS89 / UTM zone 32N, 33N or 34N.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Crs {
     /// EPSG:25832, Saxony-Anhalt, Hamburg, Thuringia, Hesse.
     Utm32,
     /// EPSG:25833, Brandenburg, Berlin, Saxony.
     Utm33,
+    /// EPSG:25834, Poland east of about 18° E.
+    Utm34,
 }
 
 impl Crs {
@@ -90,6 +92,7 @@ impl Crs {
         match self {
             Self::Utm32 => 25832,
             Self::Utm33 => EPSG_UTM33,
+            Self::Utm34 => 25834,
         }
     }
 
@@ -97,15 +100,29 @@ impl Crs {
         match epsg {
             25832 => Some(Self::Utm32),
             EPSG_UTM33 => Some(Self::Utm33),
+            25834 => Some(Self::Utm34),
             _ => None,
         }
     }
 
-    /// UTM zone number: 32 or 33.
+    /// UTM zone number: 32, 33 or 34.
     pub fn utm_zone(self) -> u8 {
         match self {
             Self::Utm32 => 32,
             Self::Utm33 => 33,
+            Self::Utm34 => 34,
+        }
+    }
+
+    /// The zone of `p` by its longitude: below 12° E zone 32, from 12° to below 18° zone 33, from 18°
+    /// zone 34. The three zones freemapper knows; a position farther away still gets the nearest.
+    pub fn for_position(p: LatLon) -> Self {
+        if p.lon < 12.0 {
+            Self::Utm32
+        } else if p.lon < 18.0 {
+            Self::Utm33
+        } else {
+            Self::Utm34
         }
     }
 
@@ -161,6 +178,30 @@ impl Crs {
             return Some(p);
         }
         from.inverse(p).map(|q| self.forward(q))
+    }
+}
+
+/// ETRS89 / Poland CS92 (EPSG:2180, PL-1992): a source grid of the Polish national data, not a
+/// grid a project is made in. Transverse Mercator on GRS80, central meridian 19° E, scale 0.9993,
+/// false easting 500 000 m, false northing -5 300 000 m.
+pub struct Pl1992;
+
+impl Pl1992 {
+    fn projection() -> TransverseMercator {
+        TransverseMercator {
+            ellipsoid: GRS80,
+            lat0: 0.0,
+            lon0: 19.0,
+            k0: 0.9993,
+            false_easting: 500_000.0,
+            false_northing: -5_300_000.0,
+        }
+    }
+
+    /// Projects a geographic position to PL-1992.
+    pub fn forward(p: LatLon) -> ProjectedPoint {
+        let (easting, northing) = Self::projection().forward(p.lat, p.lon);
+        ProjectedPoint { easting, northing }
     }
 }
 
@@ -337,5 +378,82 @@ mod tests {
             let s = point_scale_factor(LatLon { lat, lon });
             assert!((s - k).abs() < 1e-8, "scale factor {s} vs {k}");
         }
+    }
+
+    // The reference values of the next tests come from an independent Redfearn series (lambda^6,
+    // GRS80), not from PROJ, which was not at hand; see the ledger of the Poland plan. Within 2 degrees
+    // of the central meridian it is good to well below the 2 mm tolerance.
+    #[test]
+    fn utm34_reference_points() {
+        // Warsaw, 1.01 degrees east of the central meridian of zone 34.
+        let warsaw = LatLon {
+            lat: 52.2297,
+            lon: 21.0122,
+        };
+        let p = Crs::Utm34.forward(warsaw);
+        assert!((p.easting - 500_833.243).abs() < 0.002, "{p:?}");
+        assert!((p.northing - 5_786_586.672).abs() < 0.002, "{p:?}");
+        assert_eq!(Crs::Utm34.epsg(), 25834);
+        assert_eq!(Crs::Utm34.utm_zone(), 34);
+        assert_eq!(Crs::from_epsg(25834), Some(Crs::Utm34));
+        let back = Crs::Utm34.inverse(p).unwrap();
+        assert!((back.lat - warsaw.lat).abs() < 1e-9 && (back.lon - warsaw.lon).abs() < 1e-9);
+    }
+
+    #[test]
+    fn pl1992_reference_points() {
+        for (lat, lon, e, n) in [
+            (52.2297, 21.0122, 637_382.204, 486_757.210),
+            (54.3520, 18.6466, 477_037.599, 720_936.521),
+        ] {
+            let p = Pl1992::forward(LatLon { lat, lon });
+            assert!(
+                (p.easting - e).abs() < 0.002,
+                "easting {} vs {e}",
+                p.easting
+            );
+            assert!(
+                (p.northing - n).abs() < 0.002,
+                "northing {} vs {n}",
+                p.northing
+            );
+        }
+    }
+
+    #[test]
+    fn pl1992_is_utm_on_meridian_19_scaled() {
+        // The projection is linear in the scale factor: with the central meridian 19 degrees, the
+        // northing and easting offsets of PL-1992 are those of a UTM-like projection times 0.9993 / 0.9996.
+        let utm19 = TransverseMercator {
+            ellipsoid: GRS80,
+            lat0: 0.0,
+            lon0: 19.0,
+            k0: 0.9996,
+            false_easting: 0.0,
+            false_northing: 0.0,
+        };
+        for (lat, lon) in [(52.349, 14.556), (50.06, 19.94), (49.3, 22.5), (54.5, 18.0)] {
+            let q = Pl1992::forward(LatLon { lat, lon });
+            let (e, n) = utm19.forward(lat, lon);
+            let ratio = 0.9993 / 0.9996;
+            assert!(
+                (q.easting - 500_000.0 - e * ratio).abs() < 1e-6,
+                "{lat} {lon}"
+            );
+            assert!(
+                (q.northing + 5_300_000.0 - n * ratio).abs() < 1e-6,
+                "{lat} {lon}"
+            );
+        }
+    }
+
+    #[test]
+    fn for_position_picks_the_zone_by_longitude() {
+        let at = |lon| Crs::for_position(LatLon { lat: 52.0, lon });
+        assert_eq!(at(11.99), Crs::Utm32);
+        assert_eq!(at(12.0), Crs::Utm33);
+        assert_eq!(at(17.99), Crs::Utm33);
+        assert_eq!(at(18.0), Crs::Utm34);
+        assert_eq!(at(24.1), Crs::Utm34);
     }
 }
