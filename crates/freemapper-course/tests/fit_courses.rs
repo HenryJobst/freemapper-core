@@ -733,3 +733,33 @@ fn map_grid_converts_between_map_mm_and_lat_lng_on_luebeck() {
         Err(SkipReason::NotGeoreferenced)
     ));
 }
+
+#[test]
+fn zone_34_map_is_georeferenced_and_checked() {
+    // Warsaw in EPSG:25834; `utm_from_crs` read zone 34 before the library knew `Crs::Utm34`, so this pins
+    // the behaviour (ADR 0041, freemapper-print and freemapper-courseplan rely on it for the Polish maps).
+    let mut map = plain_map((0, 0), (200_000, 100_000));
+    map.georef.crs_spec = Some("EPSG:25834".into());
+    map.georef.ref_projected = Some((500_833.243, 5_786_586.672));
+    map.georef.combined_scale_factor = 1.0;
+    let grid = MapGrid::of(&map.georef).unwrap();
+    let (lat, lng) = grid.latlon_of((0.0, 0.0));
+    assert!(
+        (lat - 52.2297).abs() < 1e-5 && (lng - 21.0122).abs() < 1e-5,
+        "{lat} {lng}"
+    );
+    let at = grid.latlon_of((50.0, 30.0));
+    let ev = event(vec![
+        control("31", Some((50.0, 30.0)), Some(at)),
+        control("32", Some((150.0, 80.0)), None),
+    ]);
+    let fitted = fit(ev, &map, &FitOptions::default()).unwrap();
+    assert!(
+        !fitted
+            .notes
+            .iter()
+            .any(|n| matches!(n, FitNote::GeorefSkipped(SkipReason::UnsupportedCrs(_)))),
+        "{:?}",
+        fitted.notes
+    );
+}

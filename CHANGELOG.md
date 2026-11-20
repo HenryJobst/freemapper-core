@@ -11,6 +11,7 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 - CI mutiert die Rust-Zeilen, die ein Branch ändert (`cargo-mutants --in-diff`, Job `mutants`), und scheitert, wenn kein Test einen Mutanten fängt; ein Job `hack` prüft jede Kombination der Features; `scripts/check.sh complexity` scheitert oberhalb der kognitiven Komplexität 33 (`clippy.toml`). Kein SBOM: der Kern liefert nur Bibliotheken aus (Entscheidung 0040).
 - `freemapper-omap`: ein Property-Test mit `proptest` für `View::parse` und seine kanonische Form (Entscheidung 0040).
+- `freemapper-georef`: `Crs::Utm34` (EPSG:25834), `Crs::for_position` (die Zone nach Längengrad: 32, 33 oder 34) und `Pl1992`, das polnische Landesraster EPSG:2180 als Quellraster mit `forward` (Entscheidung 0041).
 
 ### Geändert
 
