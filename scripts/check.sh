@@ -15,6 +15,7 @@
 #   adr        `docs/adr/README.md` lists exactly the ADRs that exist
 #   changelog  `CHANGELOG.md` and `CHANGELOG.en.md` match `Cargo.toml`
 #   badges     the README badges match the data in the repository
+#   architecture the crates depend on each other and on third-party crates only as the layers allow
 #   doc        rustdoc builds without warnings
 #   coverage   line coverage is not below its floor or its snapshot
 #   msrv       the workspace builds with the documented MSRV
@@ -310,7 +311,72 @@ gate_mutants() {
   esac
 }
 
-cheap=(spdx typos links secrets machete actions adr changelog badges)
+# The crates form layers: a leaf (omap, georef, fs, rules, text, web) knows no sibling, and
+# every edge between crates is listed here. A third-party crate that carries a concern (the web
+# server, the PDF and font stack, the update's hashing and archives, the localisation) may be
+# used by one crate only, so the concern cannot leak into the others (ADR 0042). A new crate or
+# a new edge is a decision: it is made in this table, with a reason in an ADR.
+gate_architecture() {
+  cargo metadata --format-version 1 --no-deps --locked | python3 -c '
+import json
+import sys
+
+ALLOWED = {
+    "freemapper-omap": set(),
+    "freemapper-georef": set(),
+    "freemapper-fs": set(),
+    "freemapper-rules": set(),
+    "freemapper-text": set(),
+    "freemapper-web": set(),
+    "freemapper-contract": {"freemapper-omap"},
+    "freemapper-course": {"freemapper-georef", "freemapper-omap"},
+    "freemapper-render": {"freemapper-course", "freemapper-omap"},
+    "freemapper-update": {"freemapper-fs"},
+    "freemapper-printrules": {
+        "freemapper-contract", "freemapper-course", "freemapper-render", "freemapper-rules",
+    },
+}
+# Third-party crate -> the only crates that may depend on it.
+OWNED = {
+    "axum": {"freemapper-web"},
+    "tokio": {"freemapper-web"},
+    "rust-embed": {"freemapper-web"},
+    "pdf-writer": {"freemapper-render"},
+    "subsetter": {"freemapper-render"},
+    "skrifa": {"freemapper-render"},
+    "image": {"freemapper-render"},
+    "flate2": {"freemapper-update"},
+    "minisign-verify": {"freemapper-update"},
+    "sha2": {"freemapper-update"},
+    "fluent-bundle": {"freemapper-text"},
+    "fluent-syntax": {"freemapper-text"},
+    "unic-langid": {"freemapper-text"},
+}
+
+packages = json.load(sys.stdin)["packages"]
+members = {package["name"] for package in packages}
+problems = []
+for package in packages:
+    name = package["name"]
+    if name not in ALLOWED:
+        problems.append(f"{name} is in no layer; add it to ALLOWED in gate_architecture")
+        continue
+    for dependency in package["dependencies"]:
+        if dependency["kind"] == "dev":
+            continue
+        target = dependency["name"]
+        if target in members and target not in ALLOWED[name]:
+            problems.append(f"{name} may not depend on {target}")
+        if target in OWNED and name not in OWNED[target]:
+            problems.append(f"{name} may not depend on {target}; only {sorted(OWNED[target])} may")
+
+for problem in problems:
+    print(problem, file=sys.stderr)
+sys.exit(1 if problems else 0)
+' || report "the crate layers are violated (ADR 0042)"
+}
+
+cheap=(spdx typos links secrets machete actions adr changelog badges architecture)
 gates=()
 spdx_fix=0
 
@@ -328,7 +394,7 @@ fi
 for gate in "${gates[@]}"; do
   case "$gate" in
   spdx) gate_spdx "$spdx_fix" ;;
-  typos | links | secrets | machete | actions | adr | changelog | badges | doc | coverage | msrv | complexity | hack | mutants)
+  typos | links | secrets | machete | actions | adr | changelog | badges | architecture | doc | coverage | msrv | complexity | hack | mutants)
     "gate_$gate"
     ;;
   *)
