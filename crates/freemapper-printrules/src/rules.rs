@@ -2153,4 +2153,143 @@ mod tests {
             }
         }
     }
+
+    fn rows(text: &str) -> Value {
+        let table: Table = format!("rows = {text}").parse().unwrap();
+        table["rows"].clone()
+    }
+
+    #[test]
+    fn scale_rows_read_the_scale_the_factor_and_the_standard_flag() {
+        let got = scale_rows(&rows(
+            "[{ scale = 10000, size_factor = 1 }, { scale = 7500, size_factor = 0.75, standard = false }]",
+        ))
+        .unwrap();
+        assert_eq!(
+            got,
+            [
+                ScaleEntry {
+                    scale: 10_000,
+                    size_factor: 1.0,
+                    standard: true
+                },
+                ScaleEntry {
+                    scale: 7_500,
+                    size_factor: 0.75,
+                    standard: false
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn a_malformed_scale_row_names_its_place_and_its_fault() {
+        for (text, want) in [
+            ("[]", "empty"),
+            ("[1]", "row 1 is not"),
+            ("[{ scale = 1, size_factor = 1 }, 7]", "row 2 is not"),
+            (
+                "[{ scale = 1, size_factor = 1, colour = 3 }]",
+                "unknown field colour",
+            ),
+            ("[{ size_factor = 1 }]", "row 1: scale"),
+            (
+                "[{ scale = 0, size_factor = 1 }]",
+                "scale is no scale denominator",
+            ),
+            (
+                "[{ scale = -5, size_factor = 1 }]",
+                "scale is no scale denominator",
+            ),
+            (
+                "[{ scale = 5000000000, size_factor = 1 }]",
+                "scale is no scale denominator",
+            ),
+            (
+                "[{ scale = 1.5, size_factor = 1 }]",
+                "scale is no scale denominator",
+            ),
+            ("[{ scale = 1 }]", "size_factor is not a number above 0"),
+            (
+                "[{ scale = 1, size_factor = 0 }]",
+                "size_factor is not a number above 0",
+            ),
+            (
+                "[{ scale = 1, size_factor = -1.5 }]",
+                "size_factor is not a number above 0",
+            ),
+            (
+                "[{ scale = 1, size_factor = \"1\" }]",
+                "size_factor is not a number above 0",
+            ),
+            (
+                "[{ scale = 1, size_factor = 1, standard = 1 }]",
+                "standard is not true or false",
+            ),
+        ] {
+            let err = scale_rows(&rows(text)).unwrap_err();
+            assert!(err.contains(want), "{text}: {err}");
+        }
+        // Not a list at all.
+        let err = scale_rows(&Value::Integer(3)).unwrap_err();
+        assert!(err.contains("not a list"), "{err}");
+    }
+
+    #[test]
+    fn the_scales_of_a_table_must_ascend_strictly() {
+        let ascending = "[{ scale = 4000, size_factor = 1 }, { scale = 5000, size_factor = 1 }]";
+        assert!(check_scale_rows(&rows(ascending)).is_ok());
+        for text in [
+            "[{ scale = 5000, size_factor = 1 }, { scale = 4000, size_factor = 1 }]",
+            "[{ scale = 5000, size_factor = 1 }, { scale = 5000, size_factor = 2 }]",
+        ] {
+            let err = check_scale_rows(&rows(text)).unwrap_err();
+            assert!(err.contains("ascending"), "{text}: {err}");
+        }
+        // A broken row is reported before the order is looked at.
+        let err = check_scale_rows(&rows("[{ scale = 0, size_factor = 1 }]")).unwrap_err();
+        assert!(err.contains("row 1"), "{err}");
+    }
+
+    #[test]
+    fn a_rule_value_is_one_number_in_range() {
+        assert_eq!(
+            check_value("course_symbol", "line_width_mm", &Value::Integer(1)),
+            None
+        );
+        assert_eq!(
+            check_value("course_symbol", "line_width_mm", &Value::Float(0.35)),
+            None
+        );
+        // The table rows are checked on their own.
+        assert_eq!(check_value("scale_table", "rows", &rows("[1]")), None);
+        let list = check_value("course_symbol", "line_width_mm", &rows("[1, 2]")).unwrap();
+        assert!(list.contains("list"), "{list}");
+        let text =
+            check_value("course_symbol", "line_width_mm", &Value::String("1".into())).unwrap();
+        assert!(text.contains("not a number"), "{text}");
+        // The description box cell has the range the project file allows.
+        assert!(check_value("description_box", "cell_mm", &Value::Float(MIN_CELL_MM)).is_none());
+        assert!(check_value("description_box", "cell_mm", &Value::Float(MAX_CELL_MM)).is_none());
+        assert!(
+            check_value(
+                "description_box",
+                "cell_mm",
+                &Value::Float(MIN_CELL_MM - 0.5)
+            )
+            .is_some()
+        );
+        assert!(
+            check_value(
+                "description_box",
+                "cell_mm",
+                &Value::Float(MAX_CELL_MM + 0.5)
+            )
+            .is_some()
+        );
+        // Other values are not held to the range of the cell.
+        assert!(
+            check_value("course_symbol", "cell_mm", &Value::Float(MAX_CELL_MM + 0.5)).is_none()
+        );
+    }
 }

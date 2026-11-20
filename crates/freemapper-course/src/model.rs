@@ -514,3 +514,285 @@ pub enum CourseNote {
     /// export writes each variation as its own course.
     Variations(String),
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn p(x: f64, y: f64) -> RawPoint {
+        RawPoint { x_mm: x, y_mm: y }
+    }
+
+    /// One of each special object, with ids 1 to 10 in this order, on the course `A`.
+    fn every_special() -> Vec<Special<RawPoint>> {
+        let only_a = || CourseFilter::Only(vec!["A".to_string()]);
+        let ring = || {
+            vec![
+                vec![p(0.0, 0.0), p(1.0, 0.0), p(1.0, 1.0)],
+                vec![p(5.0, 5.0)],
+            ]
+        };
+        let path = || vec![p(2.0, 3.0), p(4.0, 5.0)];
+        vec![
+            Special::OutOfBounds {
+                id: Some(1),
+                rings: ring(),
+                courses: only_a(),
+            },
+            Special::Dangerous {
+                id: Some(2),
+                rings: ring(),
+                courses: only_a(),
+            },
+            Special::ForbiddenRoute {
+                id: Some(3),
+                path: path(),
+                courses: only_a(),
+            },
+            Special::Boundary {
+                id: Some(4),
+                path: path(),
+                courses: only_a(),
+            },
+            Special::MarkedRoute {
+                id: Some(5),
+                path: path(),
+                courses: only_a(),
+            },
+            Special::FirstAid {
+                id: Some(6),
+                pt: p(7.0, 8.0),
+                courses: only_a(),
+            },
+            Special::Water {
+                id: Some(7),
+                pt: p(7.0, 8.0),
+                courses: only_a(),
+            },
+            Special::Text {
+                id: Some(8),
+                pt: p(7.0, 8.0),
+                text: "Water".into(),
+                size_mm: 3.0,
+                courses: only_a(),
+            },
+            Special::Line {
+                id: Some(9),
+                path: path(),
+                courses: only_a(),
+            },
+            Special::WhiteOut {
+                id: Some(10),
+                rings: ring(),
+                courses: only_a(),
+            },
+        ]
+    }
+
+    #[test]
+    fn every_special_names_its_id_and_its_courses() {
+        for (i, s) in every_special().iter().enumerate() {
+            assert_eq!(s.id(), Some(i as u32 + 1), "{s:?}");
+            assert_eq!(
+                s.courses(),
+                &CourseFilter::Only(vec!["A".to_string()]),
+                "{s:?}"
+            );
+        }
+        let none = Special::FirstAid {
+            id: None,
+            pt: p(0.0, 0.0),
+            courses: CourseFilter::All,
+        };
+        assert_eq!(none.id(), None);
+        assert_eq!(none.courses(), &CourseFilter::All);
+    }
+
+    #[test]
+    fn mapping_the_points_of_a_special_keeps_everything_else() {
+        let shift = |q: RawPoint| (q.x_mm + 100.0, -q.y_mm);
+        for s in every_special() {
+            let (id, courses) = (s.id(), s.courses().clone());
+            let mapped = s.clone().map_points(shift);
+            assert_eq!(mapped.id(), id);
+            assert_eq!(mapped.courses(), &courses);
+            // Same kind of special object, with every point moved and none lost.
+            match (&s, &mapped) {
+                (
+                    Special::OutOfBounds { rings: a, .. }
+                    | Special::Dangerous { rings: a, .. }
+                    | Special::WhiteOut { rings: a, .. },
+                    Special::OutOfBounds { rings: b, .. }
+                    | Special::Dangerous { rings: b, .. }
+                    | Special::WhiteOut { rings: b, .. },
+                ) => {
+                    assert_eq!(a.len(), b.len());
+                    for (ra, rb) in a.iter().zip(b) {
+                        let want: Vec<_> = ra.iter().map(|q| shift(*q)).collect();
+                        assert_eq!(&want, rb);
+                    }
+                }
+                (
+                    Special::ForbiddenRoute { path: a, .. }
+                    | Special::Boundary { path: a, .. }
+                    | Special::MarkedRoute { path: a, .. }
+                    | Special::Line { path: a, .. },
+                    Special::ForbiddenRoute { path: b, .. }
+                    | Special::Boundary { path: b, .. }
+                    | Special::MarkedRoute { path: b, .. }
+                    | Special::Line { path: b, .. },
+                ) => {
+                    let want: Vec<_> = a.iter().map(|q| shift(*q)).collect();
+                    assert_eq!(&want, b);
+                }
+                (
+                    Special::FirstAid { pt: a, .. } | Special::Water { pt: a, .. },
+                    Special::FirstAid { pt: b, .. } | Special::Water { pt: b, .. },
+                ) => assert_eq!(shift(*a), *b),
+                (
+                    Special::Text {
+                        pt: a,
+                        text: ta,
+                        size_mm: sa,
+                        ..
+                    },
+                    Special::Text {
+                        pt: b,
+                        text: tb,
+                        size_mm: sb,
+                        ..
+                    },
+                ) => {
+                    assert_eq!(shift(*a), *b);
+                    assert_eq!((ta, sa), (tb, sb));
+                }
+                (a, b) => panic!("the kind changed: {a:?} became {b:?}"),
+            }
+        }
+    }
+
+    fn event() -> RawEvent {
+        CourseEvent {
+            controls: vec![
+                Control {
+                    id: Some(4),
+                    code: "31".into(),
+                    kind: ControlKind::Control,
+                    position: Some(p(10.0, 20.0)),
+                    geo: Some((48.0, 11.0)),
+                    description: None,
+                },
+                Control {
+                    id: None,
+                    code: "32".into(),
+                    kind: ControlKind::Control,
+                    position: None,
+                    geo: None,
+                    description: None,
+                },
+            ],
+            courses: vec![Course {
+                id: Some(1),
+                name: "A".into(),
+                family: Some("F".into()),
+                kind: CourseKind::Normal,
+                legs: vec![Leg {
+                    bends: vec![p(1.0, 2.0), p(3.0, 4.0)],
+                    gaps: vec![(0.5, 1.5)],
+                    marked_route: true,
+                }],
+                stops: vec![
+                    Stop {
+                        control: "31".into(),
+                        kind: None,
+                        number: None,
+                        number_text_at: Some(Offset {
+                            dx_mm: 1.0,
+                            dy_mm: 2.0,
+                        }),
+                        circle_gaps: vec![(10.0, 20.0)],
+                        map_flip: true,
+                    },
+                    Stop {
+                        control: "32".into(),
+                        kind: Some(ControlKind::Finish),
+                        number: None,
+                        number_text_at: None,
+                        circle_gaps: Vec::new(),
+                        map_flip: false,
+                    },
+                ],
+                climb_m: Some(50.0),
+                length_m: Some(2500.0),
+                print_scale_hint: Some(10_000),
+                course_obj_ratio: Some(1.5),
+                secondary_title: Some("Second".into()),
+            }],
+            specials: every_special(),
+            source: CourseSource {
+                format: SourceFormat::PurplePen,
+                event_name: Some("Event".into()),
+                event_date: None,
+                organiser: None,
+                map_scale: Some(10_000),
+                item_scaling: Some(ItemScaling::RelativeToMap),
+            },
+            notes: vec![CourseNote::NoDescriptions],
+        }
+    }
+
+    #[test]
+    fn mapping_an_event_converts_points_and_offsets_and_keeps_the_rest() {
+        let ev = event();
+        let mapped = ev.clone().map_points(
+            |q| (q.x_mm * 2.0, q.y_mm * 2.0),
+            |o| Offset {
+                dx_mm: o.dx_mm + 10.0,
+                dy_mm: -o.dy_mm,
+            },
+        );
+        // Controls: the position, and nothing else, goes through the point function.
+        assert_eq!(mapped.controls[0].position, Some((20.0, 40.0)));
+        assert_eq!(mapped.controls[1].position, None);
+        assert_eq!(mapped.controls[0].geo, Some((48.0, 11.0)));
+        assert_eq!(mapped.controls[0].id, Some(4));
+        assert_eq!(mapped.controls[0].code, "31");
+        // Legs: the bends move, gaps and marking stay.
+        let leg = &mapped.courses[0].legs[0];
+        assert_eq!(leg.bends, [(2.0, 4.0), (6.0, 8.0)]);
+        assert_eq!(leg.gaps, [(0.5, 1.5)]);
+        assert!(leg.marked_route);
+        // Stops: the number offset goes through the offset function, circle gaps and the flip stay.
+        let stop = &mapped.courses[0].stops[0];
+        assert_eq!(
+            stop.number_text_at,
+            Some(Offset {
+                dx_mm: 11.0,
+                dy_mm: -2.0
+            })
+        );
+        assert_eq!(stop.circle_gaps, [(10.0, 20.0)]);
+        assert!(stop.map_flip);
+        assert_eq!(mapped.courses[0].stops[1].number_text_at, None);
+        assert_eq!(mapped.courses[0].stops[1].kind, Some(ControlKind::Finish));
+        // Course data.
+        let c = &mapped.courses[0];
+        let o = &ev.courses[0];
+        assert_eq!(
+            (&c.id, &c.name, &c.family, &c.kind, &c.climb_m, &c.length_m),
+            (&o.id, &o.name, &o.family, &o.kind, &o.climb_m, &o.length_m)
+        );
+        assert_eq!(
+            (&c.print_scale_hint, &c.course_obj_ratio, &c.secondary_title),
+            (&o.print_scale_hint, &o.course_obj_ratio, &o.secondary_title)
+        );
+        // Specials, source and notes.
+        assert_eq!(mapped.specials.len(), 10);
+        assert!(matches!(
+            &mapped.specials[5],
+            Special::FirstAid { pt, .. } if *pt == (14.0, 16.0)
+        ));
+        assert_eq!(mapped.source, ev.source);
+        assert_eq!(mapped.notes, ev.notes);
+    }
+}

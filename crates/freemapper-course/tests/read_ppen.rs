@@ -1130,3 +1130,95 @@ fn course_obj_ratio_is_public() {
     );
     assert_eq!(course_obj_ratio(ItemScaling::None, None, Some(7500.0)), 1.0);
 }
+
+/// The message of the XML error a malformed file gives.
+fn xml_error(body: &[u8]) -> String {
+    match read_ppen(body) {
+        Err(CourseError::Xml(m)) => m,
+        other => panic!(
+            "expected an XML error, got {:?}",
+            other.map(|e| e.courses.len())
+        ),
+    }
+}
+
+#[test]
+fn a_missing_required_attribute_names_the_element_and_the_attribute() {
+    for (body, want) in [
+        (
+            "<control kind=\"normal\"><code>1</code></control>",
+            "<control> lacks id",
+        ),
+        (
+            "<course kind=\"normal\"><name>A</name></course>",
+            "<course> lacks id",
+        ),
+        (
+            "<course-control control=\"1\"/>",
+            "<course-control> lacks id",
+        ),
+        (
+            "<course-control id=\"1\"/>",
+            "<course-control> lacks control",
+        ),
+        ("<leg start-control=\"1\"/>", "<leg> lacks end-control"),
+        (
+            "<course id=\"1\" kind=\"normal\"><name>A</name><first/></course>",
+            "<first> lacks course-control",
+        ),
+        (
+            "<course-control id=\"1\" control=\"1\"><next/></course-control>",
+            "<next> lacks course-control",
+        ),
+    ] {
+        let m = xml_error(&ppen(body));
+        assert!(m.contains(want), "{body}: {m}");
+    }
+}
+
+#[test]
+fn a_malformed_number_or_flag_names_where_it_is() {
+    let m = xml_error(&ppen(&TWO.replace("x=\"10\"", "x=\"ten\"")));
+    assert!(m.contains("x") && m.contains("ten"), "{m}");
+    let flag = TWO.replace(
+        "<course-control id=\"2\" control=\"2\"/>",
+        "<course-control id=\"2\" control=\"2\" map-exchange=\"maybe\"/>",
+    );
+    let m = xml_error(&ppen(&flag));
+    assert!(m.contains("maybe"), "{m}");
+    // The two spellings of true are accepted.
+    for yes in ["true", "1"] {
+        let flag = TWO.replace(
+            "<course-control id=\"2\" control=\"2\"/>",
+            &format!("<course-control id=\"2\" control=\"2\" map-exchange=\"{yes}\"/>"),
+        );
+        assert!(read_ppen(&ppen(&flag)).is_ok(), "{yes}");
+    }
+}
+
+#[test]
+fn a_second_root_or_an_unbalanced_end_tag_is_refused() {
+    let doubled = format!(
+        "{}{}",
+        String::from_utf8(ppen(TWO)).unwrap(),
+        String::from_utf8(ppen("")).unwrap()
+    );
+    let m = xml_error(doubled.as_bytes());
+    assert!(m.contains("second"), "{m}");
+    assert!(read_ppen(b"<course-scribe-event></control></course-scribe-event>").is_err());
+}
+
+#[test]
+fn a_close_that_does_not_match_its_open_is_refused() {
+    // A description, control, course, course-control or leg that closes without having opened.
+    for body in [
+        "</description>",
+        "</control>",
+        "</course>",
+        "</course-control>",
+        "</leg>",
+        "</special-object>",
+    ] {
+        assert!(read_ppen(&ppen(body)).is_err(), "{body}");
+    }
+}

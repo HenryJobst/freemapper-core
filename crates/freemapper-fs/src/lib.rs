@@ -902,4 +902,82 @@ mod tests {
         let (path, e) = open_source_with(dir.path(), &from, &swap_back).unwrap_err();
         assert_eq!((path, e.to_string()), (from, NOT_COPIED.to_string()));
     }
+
+    #[test]
+    fn a_group_of_project_files_is_written_together_or_not_at_all() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("project");
+        std::fs::create_dir_all(&root).unwrap();
+        let (image, world) = (root.join("img/a.png"), root.join("img/a.pgw"));
+        write_files_inside(&root, &[(&image, b"image"), (&world, b"world")]).unwrap();
+        assert_eq!(std::fs::read(&image).unwrap(), b"image");
+        assert_eq!(std::fs::read(&world).unwrap(), b"world");
+        // One target outside the project: the whole group is refused and nothing of it is written.
+        let outside = dir.path().join("elsewhere.pgw");
+        let (path, e) =
+            write_files_inside(&root, &[(&image, b"new image"), (&outside, b"world")]).unwrap_err();
+        assert_eq!(path, outside);
+        assert_eq!(e.to_string(), OUTSIDE_PROJECT);
+        assert_eq!(std::fs::read(&image).unwrap(), b"image");
+        assert!(!outside.exists());
+        let parts: Vec<_> = std::fs::read_dir(root.join("img"))
+            .unwrap()
+            .flatten()
+            .filter(|e| e.file_name().to_string_lossy().ends_with(".part"))
+            .collect();
+        assert!(parts.is_empty(), "{parts:?}");
+    }
+
+    #[test]
+    fn remove_inside_removes_project_files_and_nothing_outside() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("project");
+        std::fs::create_dir_all(&root).unwrap();
+        let inside = root.join("old.bak");
+        let outside = dir.path().join("keep.txt");
+        std::fs::write(&inside, b"x").unwrap();
+        std::fs::write(&outside, b"y").unwrap();
+        remove_inside(&root, &outside);
+        assert!(outside.exists(), "a file outside the project stays");
+        remove_inside(&root, &inside);
+        assert!(!inside.exists());
+        // A file that is not there is no error.
+        remove_inside(&root, &inside);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn remove_inside_does_not_follow_a_linked_folder_but_removes_a_link_itself() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path().join("project");
+        let elsewhere = dir.path().join("elsewhere");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::create_dir_all(&elsewhere).unwrap();
+        std::fs::write(elsewhere.join("victim.txt"), b"keep").unwrap();
+        std::os::unix::fs::symlink(&elsewhere, root.join("linked")).unwrap();
+        remove_inside(&root, &root.join("linked/victim.txt"));
+        assert!(elsewhere.join("victim.txt").exists());
+        // A link at the path itself is removed, its target is not.
+        std::os::unix::fs::symlink(elsewhere.join("victim.txt"), root.join("l.txt")).unwrap();
+        remove_inside(&root, &root.join("l.txt"));
+        assert!(std::fs::symlink_metadata(root.join("l.txt")).is_err());
+        assert!(elsewhere.join("victim.txt").exists());
+    }
+
+    #[test]
+    fn cache_cleanup_removes_old_partial_files_only() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("old.part"), b"x").unwrap();
+        std::fs::write(dir.path().join("keep.png"), b"y").unwrap();
+        std::fs::create_dir(dir.path().join("folder.part")).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        // A partial file younger than the limit may belong to a run in progress.
+        remove_stale_cache_parts(dir.path(), std::time::Duration::from_secs(3600));
+        assert!(dir.path().join("old.part").exists());
+        remove_stale_cache_parts(dir.path(), std::time::Duration::ZERO);
+        assert!(!dir.path().join("old.part").exists());
+        assert!(dir.path().join("keep.png").exists(), "only *.part goes");
+        // A folder that is missing is no error.
+        remove_stale_cache_parts(&dir.path().join("missing"), std::time::Duration::ZERO);
+    }
 }
