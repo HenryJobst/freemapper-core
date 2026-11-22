@@ -9,6 +9,7 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- `freemapper-render`: `fonts::PageFonts` and `fonts::FontObjects` are public, so an app that writes its own PDF page can embed the Arimo subset and show letters such as ł, č or ř (decision 0045). The PDFs the core writes stay the same.
 - Decision 0044 records what running the tests and the mutation gate has shown: the exit codes of `mutants`, a test that pins the value of a changed calculation, the order `tests --fix` before `badges.sh`, no whole-workspace mutation run as a gate and no mutation runs next to timing measurements.
 
 ## [0.31.2] - 2026-11-20
