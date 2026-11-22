@@ -9,6 +9,7 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ### Hinzugefügt
 
+- `freemapper-render`: `fonts::PageFonts` und `fonts::FontObjects` sind öffentlich. Eine App, die ihre PDF-Seite selbst schreibt, kann so die Arimo-Teilmenge einbetten und Buchstaben wie ł, č oder ř zeigen (Entscheidung 0045). Die PDFs des Cores bleiben gleich.
 - Entscheidung 0044 hält fest, was der Betrieb der Tests und des Mutations-Gates gezeigt hat: Exit-Codes von `mutants`, ein Test, der den Zahlenwert einer geänderten Rechnung festlegt, die Reihenfolge `tests --fix` vor `badges.sh`, kein Mutationslauf über den ganzen Workspace als Gate und keine Mutationsläufe neben Zeitmessungen.
 
 ## [0.31.2] - 2026-11-20

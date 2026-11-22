@@ -315,14 +315,22 @@ impl FaceUse {
     }
 }
 
-/// The fonts of one PDF page: which glyphs of which faces its texts use.
-pub(crate) struct PageFonts {
+/// The fonts of one PDF page: which glyphs of which faces its texts use. An app that writes its own page calls
+/// [`encode`](Self::encode) for every text, then [`finish`](Self::finish) and writes the objects (ADR 0045).
+pub struct PageFonts {
     used: [Option<FaceUse>; 4],
     missing: BTreeSet<char>,
 }
 
+impl Default for PageFonts {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PageFonts {
-    pub(crate) fn new() -> Self {
+    #[must_use]
+    pub fn new() -> Self {
         PageFonts {
             used: [None, None, None, None],
             missing: BTreeSet::new(),
@@ -330,7 +338,8 @@ impl PageFonts {
     }
 
     /// The resource name of `face` on the page.
-    pub(crate) fn resource_name(face: FontFace) -> Name<'static> {
+    #[must_use]
+    pub fn resource_name(face: FontFace) -> Name<'static> {
         Name(match face {
             FontFace::Regular => b"F1",
             FontFace::Bold => b"F2",
@@ -341,7 +350,7 @@ impl PageFonts {
 
     /// `text` as two-byte CIDs of `face` for a show-text operator. The glyphs join the face's
     /// subset; a character without a glyph is shown as `.notdef` (CID 0) and reported.
-    pub(crate) fn encode(&mut self, face: FontFace, text: &str) -> Vec<u8> {
+    pub fn encode(&mut self, face: FontFace, text: &str) -> Vec<u8> {
         let usage = self.used[face.index()].get_or_insert_with(FaceUse::new);
         let mut cids = Vec::with_capacity(2 * text.len());
         for c in text.chars() {
@@ -370,7 +379,7 @@ impl PageFonts {
     }
 
     /// Allocates the PDF objects of the used faces from `next`.
-    pub(crate) fn finish(self, next: &mut Ref) -> FontObjects {
+    pub fn finish(self, next: &mut Ref) -> FontObjects {
         let mut fonts = Vec::new();
         for (face, usage) in FACES.into_iter().zip(self.used) {
             if let Some(usage) = usage {
@@ -403,22 +412,23 @@ struct FontObject {
 }
 
 /// The font objects of a page, with their references allocated, ready to be written.
-pub(crate) struct FontObjects {
+#[must_use]
+pub struct FontObjects {
     fonts: Vec<FontObject>,
     /// Characters without a glyph in the face that was to show them.
-    pub(crate) missing: BTreeSet<char>,
+    pub missing: BTreeSet<char>,
 }
 
 impl FontObjects {
     /// (resource name, Type0 font) of each embedded face, for the page's resources.
-    pub(crate) fn resources(&self) -> impl Iterator<Item = (Name<'static>, Ref)> + '_ {
+    pub fn resources(&self) -> impl Iterator<Item = (Name<'static>, Ref)> + '_ {
         self.fonts
             .iter()
             .map(|f| (PageFonts::resource_name(f.face), f.type0))
     }
 
     /// Writes every used face as a Type0 font over a CIDFontType2 with the subset embedded.
-    pub(crate) fn write(&self, pdf: &mut Pdf) -> Result<(), PdfError> {
+    pub fn write(&self, pdf: &mut Pdf) -> Result<(), PdfError> {
         for font in &self.fonts {
             write_font(pdf, font)?;
         }
