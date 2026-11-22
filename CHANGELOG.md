@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.32.0] - 2026-11-22
+
 ### Hinzugefügt
 
 - `freemapper-render`: `fonts::PageFonts` und `fonts::FontObjects` sind öffentlich. Eine App, die ihre PDF-Seite selbst schreibt, kann so die Arimo-Teilmenge einbetten und Buchstaben wie ł, č oder ř zeigen (Entscheidung 0045). Die PDFs des Cores bleiben gleich.

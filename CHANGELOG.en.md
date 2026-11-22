@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-11-22
+
 ### Added
 
 - `freemapper-render`: `fonts::PageFonts` and `fonts::FontObjects` are public, so an app that writes its own PDF page can embed the Arimo subset and show letters such as ł, č or ř (decision 0045). The PDFs the core writes stay the same.
