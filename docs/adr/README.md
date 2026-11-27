@@ -54,3 +54,4 @@ status to `Superseded by NNNN`.
 | [0043](0043-test-count-and-budget.md) | The test count and the test budget are data | Accepted | 2026-11-20 |
 | [0044](0044-findings-on-running-tests-and-mutation-tests.md) | Findings on running tests and mutation tests | Accepted | 2026-11-20 |
 | [0045](0045-the-page-fonts-are-public.md) | The page fonts are public | Accepted | 2026-11-22 |
+| [0046](0046-paper-frames-in-the-contract.md) | Paper frames in the contract | Accepted | 2026-11-27 |

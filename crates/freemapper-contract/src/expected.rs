@@ -32,6 +32,22 @@ pub struct Expected {
     /// empty for a fixture that shows what freemapper writes today.
     #[serde(default)]
     pub breaks: Vec<String>,
+    /// The paper frames of the template map `templates/paper-frame.omap`, in its order; empty for a
+    /// fixture without one.
+    #[serde(default)]
+    pub paper_frames: Vec<ExpectedFrame>,
+}
+
+/// A paper frame a reader must find in the template map of the paper frames.
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+pub struct ExpectedFrame {
+    /// The value of `freemapper:paper`, one of [`crate::tags::PAPERS`].
+    pub paper: String,
+    /// The value of `freemapper:orientation`, one of [`crate::tags::ORIENTATIONS`].
+    pub orientation: String,
+    /// The frame's box in map coordinates (0.001 mm, y down): min x, min y, max x, max y. Its middle is
+    /// the centre of the sheet.
+    pub bbox: [i32; 4],
 }
 
 impl Expected {
@@ -83,6 +99,38 @@ mod tests {
         let expected = Expected::from_toml(&text).unwrap();
         assert_eq!(expected.title, None);
         assert_eq!(expected.breaks, ["TitlePresent"]);
+    }
+
+    #[test]
+    fn reads_the_paper_frames_in_their_order() {
+        let objects = "[objects]\nsheet = 0\nbase = 0\nnorth_lines = 0\ncontent = 0\n";
+        assert!(
+            Expected::from_toml(&format!("{HEAD}{objects}"))
+                .unwrap()
+                .paper_frames
+                .is_empty()
+        );
+        let text = format!(
+            "{HEAD}{objects}[[paper_frames]]\npaper = \"A4\"\norientation = \"portrait\"\n\
+             bbox = [-105000, -148500, 105000, 148500]\n\
+             [[paper_frames]]\npaper = \"A5\"\norientation = \"landscape\"\nbbox = [0, 0, 210000, 148000]\n"
+        );
+        let frames = Expected::from_toml(&text).unwrap().paper_frames;
+        assert_eq!(
+            frames,
+            [
+                ExpectedFrame {
+                    paper: "A4".into(),
+                    orientation: "portrait".into(),
+                    bbox: [-105_000, -148_500, 105_000, 148_500],
+                },
+                ExpectedFrame {
+                    paper: "A5".into(),
+                    orientation: "landscape".into(),
+                    bbox: [0, 0, 210_000, 148_000],
+                },
+            ]
+        );
     }
 
     #[test]

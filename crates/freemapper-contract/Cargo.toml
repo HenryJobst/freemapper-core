@@ -24,7 +24,7 @@ default = ["check"]
 # Census, vocabulary and the rules: everything that reads a map. Without it the crate holds the shared
 # types only (map kinds, the sidecar reader, object classes, the reserved words).
 check = ["dep:freemapper-omap"]
-# The fixtures, embedded: about 540 kB of map text. For the tests of the apps.
+# The fixtures, embedded: about 1.6 MB of map text. For the tests of the apps.
 fixtures = ["check"]
 
 [[test]]

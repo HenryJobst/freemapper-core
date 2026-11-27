@@ -4,7 +4,7 @@
 
 
 <!-- badges:start -->
-[![Tests](https://img.shields.io/badge/Tests-913-blue)](docs/tests.json) [![Testbudget](https://img.shields.io/badge/Testbudget-2_min-blue)](docs/tests.json) [![Zeilenabdeckung](https://img.shields.io/badge/Coverage-95.9%25-brightgreen)](docs/coverage.json) [![MSRV](https://img.shields.io/badge/MSRV-1.88-blue)](Cargo.toml) [![ADRs](https://img.shields.io/badge/ADRs-45-blue)](docs/adr/README.md) [![Hygiene](https://img.shields.io/badge/Hygiene-18-brightgreen)](scripts/check.sh) [![Lizenz](https://img.shields.io/badge/Lizenz-AGPL--3.0--or--later-blue)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-926-blue)](docs/tests.json) [![Testbudget](https://img.shields.io/badge/Testbudget-2_min-blue)](docs/tests.json) [![Zeilenabdeckung](https://img.shields.io/badge/Coverage-95.9%25-brightgreen)](docs/coverage.json) [![MSRV](https://img.shields.io/badge/MSRV-1.88-blue)](Cargo.toml) [![ADRs](https://img.shields.io/badge/ADRs-46-blue)](docs/adr/README.md) [![Hygiene](https://img.shields.io/badge/Hygiene-18-brightgreen)](scripts/check.sh) [![Lizenz](https://img.shields.io/badge/Lizenz-AGPL--3.0--or--later-blue)](LICENSE)
 <!-- badges:end -->
 
 <!-- claude-cost:start -->
@@ -35,7 +35,7 @@ Das Projekt beginnt gerade. Enthalten sind bisher `freemapper-contract`, `freema
 | `freemapper-render` | Kartendarstellung: OOM-Symbole zeichnen, Seitenaufbau, Seitenmodell, PDF- und SVG-Ausgabe, Treffertest, eingebettete Schrift Arimo | freemapper-print | enthalten |
 | `freemapper-printrules` | Druckregeln als Daten: Kartenarten, Symbolgrößentabelle je Druckmaßstab, Nordlinienabstand, Kurssymbolgrößen des Profils `iof-print` | freemapper-print | enthalten |
 | `freemapper-web` | Rahmen für lokale Webseiten: Server auf 127.0.0.1 mit Token im Pfad, Host- und Origin-Prüfung, Sicherheitsheader, eingebettete Dateien, Browser öffnen; die Suite-Oberfläche (gemeinsames CSS und Module unter `/{token}/suite/`, Revision, Sprache der Seitentexte, Prüfung der Seitenregeln) | freemapper, freemapper-courseplan | enthalten |
-| `freemapper-contract` | Vertrag zwischen freemapper und seinen Lesern: Kartenart, Leser der Begleitdatei, reservierte Wörter, Objektklassen, Bestandsaufnahme, Vokabular und Regeln für Karte und Begleitdatei; mit dem Feature `fixtures` vier Karten von freemapper samt Erwartungswerten für die Tests der Anwendungen | freemapper | enthalten |
+| `freemapper-contract` | Vertrag zwischen freemapper und seinen Lesern: Kartenart, Leser der Begleitdatei, reservierte Wörter, Objektklassen, Bestandsaufnahme, Vokabular und Regeln für Karte und Begleitdatei; mit dem Feature `fixtures` fünf Karten von freemapper samt Erwartungswerten für die Tests der Anwendungen | freemapper | enthalten |
 | `freemapper-course` | Bahnen, .ppen und IOF-XML lesen, Einpassung in die Karte, Nummernplatzierung für eine ganze Bahn, Symbole der Postenbeschreibung; schreibt auch .ppen, neu oder als Patch einer vorhandenen Datei | freemapper-print, freemapper-courseplan | enthalten |
 | `freemapper-update` | Selbst-Aktualisierung aus signierten Veröffentlichungen: Manifest, minisign-Prüfung mit Schlüsselliste, Versionen, Hostregel, Prüfvermerk und Modus, Tausch der Programmdatei mit Rückweg; das Netz liefern die Anwendungen über `UpdateSource` | freemapper | enthalten |
 
