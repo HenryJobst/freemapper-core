@@ -6,6 +6,8 @@
 pub(crate) struct TestObject {
     pub tags: Vec<(&'static str, &'static str)>,
     pub coords: Vec<(i32, i32)>,
+    /// The last point carries OOM's close flag.
+    pub closed: bool,
 }
 
 impl TestObject {
@@ -13,6 +15,18 @@ impl TestObject {
         Self {
             tags: tags.to_vec(),
             coords: coords.to_vec(),
+            closed: false,
+        }
+    }
+
+    /// A closed ring through `corners`: the first corner again at the end, with the close flag.
+    pub(crate) fn closed(tags: &[(&'static str, &'static str)], corners: &[(i32, i32)]) -> Self {
+        let mut coords = corners.to_vec();
+        coords.push(corners[0]);
+        Self {
+            tags: tags.to_vec(),
+            coords,
+            closed: true,
         }
     }
 }
@@ -57,10 +71,19 @@ fn object_xml(object: &TestObject) -> String {
         .iter()
         .map(|(k, v)| format!(r#"<t k="{k}">{v}</t>"#))
         .collect();
+    let last = object.coords.len().saturating_sub(1);
     let coords: String = object
         .coords
         .iter()
-        .map(|(x, y)| format!("{x} {y};"))
+        .enumerate()
+        .map(|(i, (x, y))| {
+            if object.closed && i == last {
+                // OOM's hole and close flags, as freemapper writes the last point of a ring.
+                format!("{x} {y} 18;")
+            } else {
+                format!("{x} {y};")
+            }
+        })
         .collect();
     format!(
         r#"<object type="1" symbol="0"><tags>{tags}</tags><coords count="{}">{coords}</coords></object>"#,
@@ -111,6 +134,24 @@ pub(crate) fn good_parts() -> Vec<(&'static str, Vec<TestObject>)> {
 /// [`good_parts`] as a schoolyard map at 1:1000 in EPSG:25833.
 pub(crate) fn good_map() -> String {
     test_map(1000, "+init=epsg:25833", &good_parts())
+}
+
+/// A paper frame as freemapper writes it: A4 portrait at 1:1000, its top left corner on the map's origin.
+pub(crate) fn good_frame() -> TestObject {
+    TestObject::closed(
+        &[
+            ("freemapper:source", "paper-frame"),
+            ("freemapper:paper", "A4"),
+            ("freemapper:orientation", "portrait"),
+            ("freemapper:name", "A4 portrait"),
+        ],
+        &[(0, 0), (210_000, 0), (210_000, 297_000), (0, 297_000)],
+    )
+}
+
+/// The template map of the paper frames that belongs to [`good_map`], with `frames` in its one part.
+pub(crate) fn frames_map(frames: Vec<TestObject>) -> String {
+    test_map(1000, "+init=epsg:25833", &[("paper frames", frames)])
 }
 
 /// The sidecar that belongs to [`good_map`], with one key outside the contract.

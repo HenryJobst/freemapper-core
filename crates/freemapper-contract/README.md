@@ -13,7 +13,8 @@ drei Dinge ab:
   Kartenkoordinaten.
 - `Vocabulary::of` sammelt die Wörter der Datei ohne ihren Inhalt: Namen der Kartenteile, Tags in den Teilen
   „peripheral information“ und „base“, Form des KRS-Texts, Vertragsschlüssel der Begleitdatei.
-- `check` prüft zwölf Regeln für die Ausgabe von freemapper und nennt jeden Verstoß mit Fundstelle.
+- `check` prüft dreizehn Regeln für die Ausgabe von freemapper und nennt jeden Verstoß mit Fundstelle.
+  `check_paper_frames` prüft die Vorlage der Papierrahmen, `templates/paper-frame.omap`, mit vier weiteren.
 
 Karte und Begleitdatei gehen als Text hinein. Kein Typ von freemapper-omap steht in der Schnittstelle, deshalb
 kann jede Anwendung denselben Text mit dem Leser der core-Version lesen, die sie selbst einbindet.
@@ -32,7 +33,8 @@ selbst zu schreiben:
 - `ObjectClass::of` bestimmt die Objektklasse aus den Tags eines Objekts, `is_map_content` sagt, ob sie zum
   Karteninhalt zählt.
 - `tags`: `SOURCE_KEY`, `ROLE_KEY`, die reservierten Quellen, `SHEET_PART`, `BASE_PART`, `SIDECAR_FILE` und
-  die Vertragsschlüssel.
+  die Vertragsschlüssel, dazu die Wörter der Papierrahmen: `SOURCE_PAPER_FRAME`, `PAPER_KEY` mit `PAPERS`,
+  `ORIENTATION_KEY` mit `ORIENTATIONS` und `PAPER_FRAME_FILE`.
 
 Diese Typen brauchen keinen Kartenleser. Wer nur sie ins Programm einbindet, schaltet die Standard-Features ab;
 `census`, `Vocabulary` und `check` liegen hinter dem Feature `check`:
@@ -49,6 +51,12 @@ Mit dem Feature `fixtures` enthält die Bibliothek zwei Karten, die freemapper 0
 `vocabulary.toml` (was freemapper einhalten muss). Die Karten nennen Kartenvorlagen, die nicht mitgeliefert
 werden.
 
+`paper-frames` ist `sprint-4000` mit zwei Papierrahmen, A4 hoch und A5 quer, in
+`templates/paper-frame.omap` (`Fixture::paper_frame_omap`). Ein Rahmen ist eine geschlossene Linie mit den
+Tags `freemapper:source=paper-frame`, `freemapper:paper` und `freemapper:orientation`, der ganze Bogen im
+Maßstab der Karte. `Expected::paper_frames` nennt Papier, Ausrichtung und Rahmen jedes Bogens
+(Entscheidung 0046).
+
 Zwei weitere Fixtures sind nur für die Leser da und verstoßen absichtlich gegen Regeln; `breaks` in ihrer
 `expected.toml` nennt sie. `legacy-0.9.0-scale-bar` ist eine Karte von freemapper 0.9.0: Die Maßstabsleiste
 trägt `freemapper:source=scale-bar`, und die Begleitdatei hat keinen `title`. `future-kind` hat
@@ -61,8 +69,9 @@ Fixture stammt, steht in `fixtures/README.md`.
 freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.10.0", features = ["fixtures"] }
 ```
 
-Ein Leser testet sich so: Er legt jedes Fixture mit `Fixture::write_into` in einen Ordner, liest es mit eigenem
-Code und vergleicht Kartenart, Titel, Objektzahlen und Ausdehnung mit `Fixture::expected`. Die Tests heißen
+Ein Leser testet sich so: Er legt jedes Fixture mit `Fixture::write_into` in einen Ordner (mit der Vorlage der
+Papierrahmen, wo es eine gibt), liest es mit eigenem Code und vergleicht Kartenart, Titel, Objektzahlen und
+Ausdehnung mit `Fixture::expected`. Die Tests heißen
 `contract_*`.
 
 freemapper prüft seine Ausgabe in jedem Testlauf mit `check` und vergleicht ihr Vokabular mit dem des Fixtures.
@@ -84,7 +93,8 @@ that:
   coordinates.
 - `Vocabulary::of` collects the words of the file without its content: part names, tags in the parts
   "peripheral information" and "base", the form of the CRS text, the contract keys of the sidecar file.
-- `check` tests twelve rules for freemapper's output and reports every violation with its place.
+- `check` tests thirteen rules for freemapper's output and reports every violation with its place.
+  `check_paper_frames` tests the template of the paper frames, `templates/paper-frame.omap`, against four more.
 
 Map and sidecar file go in as text. No type of freemapper-omap is part of the API, so each app can read the
 same text with the reader of the core version it pins.
@@ -102,7 +112,8 @@ own:
 - `ObjectClass::of` derives the object class from the tags of an object; `is_map_content` tells whether it
   counts as map content.
 - `tags`: `SOURCE_KEY`, `ROLE_KEY`, the reserved sources, `SHEET_PART`, `BASE_PART`, `SIDECAR_FILE` and the
-  contract keys.
+  contract keys, and the words of the paper frames: `SOURCE_PAPER_FRAME`, `PAPER_KEY` with `PAPERS`,
+  `ORIENTATION_KEY` with `ORIENTATIONS` and `PAPER_FRAME_FILE`.
 
 These types need no map reader. An app that links only them turns the default features off; `census`,
 `Vocabulary` and `check` sit behind the feature `check`:
@@ -118,6 +129,11 @@ With the feature `fixtures` the crate contains two maps written by freemapper 0.
 `sprint-4000`. Each has an `expected.toml` (what a reader must derive) and a `vocabulary.toml` (what freemapper
 must keep). The maps name templates that are not shipped.
 
+`paper-frames` is `sprint-4000` with two paper frames, A4 portrait and A5 landscape, in
+`templates/paper-frame.omap` (`Fixture::paper_frame_omap`). A frame is a closed line tagged
+`freemapper:source=paper-frame`, `freemapper:paper` and `freemapper:orientation`, and it covers the whole
+sheet at the map's scale. `Expected::paper_frames` gives the paper, orientation and box of each sheet (decision 0046).
+
 Two more fixtures are for the readers only and break rules on purpose; `breaks` in their `expected.toml` names
 them. `legacy-0.9.0-scale-bar` is a map from freemapper 0.9.0: the scale bar carries
 `freemapper:source=scale-bar`, and the sidecar file has no `title`. `future-kind` has `map_kind = "gym"`, an
@@ -129,8 +145,8 @@ no error and still reads the title. `fixtures/README.md` says where each fixture
 freemapper-contract = { git = "https://github.com/HenryJobst/freemapper-core", tag = "v0.10.0", features = ["fixtures"] }
 ```
 
-A reader tests itself like this: it puts each fixture into a folder with `Fixture::write_into`, reads it with
-its own code and compares map kind, title, object counts and extent with `Fixture::expected`. The tests are
+A reader tests itself like this: it puts each fixture into a folder with `Fixture::write_into` (with the
+template of the paper frames where there is one), reads it with its own code and compares map kind, title, object counts and extent with `Fixture::expected`. The tests are
 named `contract_*`.
 
 freemapper tests its output in every test run with `check` and compares its vocabulary with the fixture's. A

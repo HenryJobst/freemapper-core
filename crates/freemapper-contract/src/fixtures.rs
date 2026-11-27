@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 //! The fixtures: maps and sidecars exactly as freemapper wrote them, each with its expected values and
-//! its vocabulary.
+//! its vocabulary, and the template map of the paper frames where the project has frames.
 
 use std::path::{Path, PathBuf};
 
+use crate::tags::PAPER_FRAME_FILE;
 use crate::{Expected, Vocabulary};
 
 /// A map and its sidecar as freemapper wrote them, with the two files that describe them.
@@ -20,23 +21,41 @@ pub struct Fixture {
     pub expected_toml: &'static str,
     /// The text of `vocabulary.toml`; see [`Fixture::vocabulary`].
     pub vocabulary_toml: &'static str,
+    /// The template map of the paper frames as OOM XML ([`PAPER_FRAME_FILE`]); `None` for a project
+    /// without frames.
+    pub paper_frame_omap: Option<&'static str>,
 }
 
 macro_rules! fixture {
     ($name:literal) => {
+        fixture!($name, None)
+    };
+    ($name:literal, paper_frames) => {
+        fixture!(
+            $name,
+            Some(include_str!(concat!(
+                "../fixtures/v1/",
+                $name,
+                "/templates/paper-frame.omap"
+            )))
+        )
+    };
+    ($name:literal, $paper_frames:expr) => {
         Fixture {
             name: $name,
             omap_xml: include_str!(concat!("../fixtures/v1/", $name, "/map.omap")),
             sidecar_toml: include_str!(concat!("../fixtures/v1/", $name, "/freemapper.toml")),
             expected_toml: include_str!(concat!("../fixtures/v1/", $name, "/expected.toml")),
             vocabulary_toml: include_str!(concat!("../fixtures/v1/", $name, "/vocabulary.toml")),
+            paper_frame_omap: $paper_frames,
         }
     };
 }
 
-static FIXTURES: [Fixture; 4] = [
+static FIXTURES: [Fixture; 5] = [
     fixture!("schoolyard-1000"),
     fixture!("sprint-4000"),
+    fixture!("paper-frames", paper_frames),
     fixture!("legacy-0.9.0-scale-bar"),
     fixture!("future-kind"),
 ];
@@ -59,12 +78,20 @@ impl Fixture {
             .expect("the crate's tests read every vocabulary.toml")
     }
 
-    /// Writes the map as `<name>.omap` and the sidecar as `freemapper.toml` into `dir`, the way a project
-    /// folder holds them, and returns the map's path.
+    /// Writes the map as `<name>.omap` and the sidecar as `freemapper.toml` into `dir`, and the template
+    /// map of the paper frames, if there is one, as `templates/paper-frame.omap`, the way a project folder
+    /// holds them. Returns the map's path.
     pub fn write_into(&self, dir: &Path) -> std::io::Result<PathBuf> {
         let map = dir.join(format!("{}.omap", self.name));
         std::fs::write(&map, self.omap_xml)?;
         std::fs::write(dir.join("freemapper.toml"), self.sidecar_toml)?;
+        if let Some(frames) = self.paper_frame_omap {
+            let file = dir.join(PAPER_FRAME_FILE);
+            if let Some(folder) = file.parent() {
+                std::fs::create_dir_all(folder)?;
+            }
+            std::fs::write(file, frames)?;
+        }
         Ok(map)
     }
 }
@@ -78,4 +105,70 @@ pub fn fixtures() -> &'static [Fixture] {
 /// The fixture called `name`.
 pub fn fixture(name: &str) -> Option<&'static Fixture> {
     FIXTURES.iter().find(|f| f.name == name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ExpectedFrame;
+    use crate::class::tag;
+    use crate::tags::{ORIENTATION_KEY, PAPER_KEY, SOURCE_KEY, SOURCE_PAPER_FRAME};
+
+    /// The frames of a template map as a reader finds them: the objects tagged as paper frames, with
+    /// their tags and the box of their points.
+    fn frames_of(frames_xml: &str) -> Vec<ExpectedFrame> {
+        let doc = crate::read_map(frames_xml).unwrap();
+        doc.parts
+            .iter()
+            .flat_map(|p| &p.objects)
+            .filter(|o| tag(&o.tags, SOURCE_KEY) == Some(SOURCE_PAPER_FRAME))
+            .map(|o| {
+                let xs = o.coords.iter().map(|c| c.x);
+                let ys = o.coords.iter().map(|c| c.y);
+                ExpectedFrame {
+                    paper: tag(&o.tags, PAPER_KEY).unwrap().to_string(),
+                    orientation: tag(&o.tags, ORIENTATION_KEY).unwrap().to_string(),
+                    bbox: [
+                        xs.clone().min().unwrap(),
+                        ys.clone().min().unwrap(),
+                        xs.max().unwrap(),
+                        ys.max().unwrap(),
+                    ],
+                }
+            })
+            .collect()
+    }
+
+    #[test]
+    fn the_expected_frames_are_those_of_the_template() {
+        for fixture in fixtures() {
+            let expected = fixture.expected().paper_frames;
+            match fixture.paper_frame_omap {
+                Some(frames) => assert_eq!(frames_of(frames), expected, "{}", fixture.name),
+                None => assert!(expected.is_empty(), "{}", fixture.name),
+            }
+        }
+    }
+
+    #[test]
+    fn the_frame_fixture_holds_an_a4_portrait_and_an_a5_landscape_sheet_at_its_scale() {
+        let fixture = fixture("paper-frames").unwrap();
+        let frames = fixture.expected().paper_frames;
+        let sizes: Vec<(&str, &str, i32, i32)> = frames
+            .iter()
+            .map(|f| {
+                let [x0, y0, x1, y1] = f.bbox;
+                (f.paper.as_str(), f.orientation.as_str(), x1 - x0, y1 - y0)
+            })
+            .collect();
+        // At 1:4000 on a 1:4000 map the frame is the sheet itself: A4 is 210 x 297 mm, A5 210 x 148 mm.
+        assert_eq!(
+            sizes,
+            [
+                ("A4", "portrait", 210_000, 297_000),
+                ("A5", "landscape", 210_000, 148_000)
+            ]
+        );
+        assert_eq!(fixture.expected().scale_denominator, 4000);
+    }
 }

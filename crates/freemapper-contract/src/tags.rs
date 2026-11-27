@@ -3,8 +3,9 @@
 //! The reserved words of the contract: tag keys and values, part names, the sidecar's file name and keys.
 //! freemapper writes them from here and the readers compare against them, so a word exists once.
 
-/// Tag that names where an object comes from. The values [`SOURCE_SHEET`], [`SOURCE_BASE`] and
-/// [`SOURCE_NORTH_LINES`] are reserved; every other value is the identifier of a data source.
+/// Tag that names where an object comes from. The values [`SOURCE_SHEET`], [`SOURCE_BASE`],
+/// [`SOURCE_NORTH_LINES`] and [`SOURCE_PAPER_FRAME`] are reserved; every other value is the identifier of
+/// a data source.
 pub const SOURCE_KEY: &str = "freemapper:source";
 /// Tag that names the role of a sheet object, e.g. [`ROLE_SCALE_BAR`]. A reader meets roles it does not
 /// know and treats their objects as sheet objects all the same.
@@ -24,6 +25,25 @@ pub const LEGACY_SOURCE_SCALE_BAR: &str = "scale-bar";
 
 /// Role of the objects that make up the scale bar.
 pub const ROLE_SCALE_BAR: &str = "scale-bar";
+
+/// Source of a paper frame: a closed line, the whole sheet of a paper at the map's scale, in the
+/// template map [`PAPER_FRAME_FILE`] only, never in the map itself.
+pub const SOURCE_PAPER_FRAME: &str = "paper-frame";
+/// Tag of a paper frame that names its paper, one of [`PAPERS`].
+pub const PAPER_KEY: &str = "freemapper:paper";
+/// Tag of a paper frame that names its orientation, one of [`ORIENTATIONS`].
+pub const ORIENTATION_KEY: &str = "freemapper:orientation";
+/// The papers a paper frame can have, smallest first.
+pub const PAPERS: [&str; 5] = ["A6", "A5", "A4", "A3", "A2"];
+/// Orientation of a paper frame that is wider than high on the map.
+pub const ORIENTATION_LANDSCAPE: &str = "landscape";
+/// Orientation of a paper frame that is higher than wide on the map.
+pub const ORIENTATION_PORTRAIT: &str = "portrait";
+/// The orientations a paper frame can have.
+pub const ORIENTATIONS: [&str; 2] = [ORIENTATION_LANDSCAPE, ORIENTATION_PORTRAIT];
+/// The template map of the paper frames, relative to the folder of the map. It is there only when the
+/// project has frames.
+pub const PAPER_FRAME_FILE: &str = "templates/paper-frame.omap";
 
 /// The part with the sheet objects.
 pub const SHEET_PART: &str = "peripheral information";

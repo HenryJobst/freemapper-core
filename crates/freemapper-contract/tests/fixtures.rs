@@ -4,8 +4,10 @@
 
 use std::collections::BTreeSet;
 
+use freemapper_contract::tags::PAPER_FRAME_FILE;
 use freemapper_contract::{
-    CONTRACT_VERSION, ObjectClass, Sidecar, Vocabulary, census, check, fixture, fixtures,
+    CONTRACT_VERSION, ObjectClass, Rule, Sidecar, Vocabulary, census, check, check_paper_frames,
+    fixture, fixtures,
 };
 
 #[test]
@@ -16,6 +18,7 @@ fn the_fixtures_are_named_as_the_spec_says() {
         [
             "schoolyard-1000",
             "sprint-4000",
+            "paper-frames",
             "legacy-0.9.0-scale-bar",
             "future-kind"
         ]
@@ -36,7 +39,7 @@ fn every_fixture_breaks_exactly_the_rules_it_names() {
         assert_eq!(broken, named, "{}", fixture.name);
     }
     // What freemapper writes today breaks none.
-    for name in ["schoolyard-1000", "sprint-4000"] {
+    for name in ["schoolyard-1000", "sprint-4000", "paper-frames"] {
         assert!(
             fixture(name).unwrap().expected().breaks.is_empty(),
             "{name}"
@@ -125,18 +128,53 @@ fn write_into_puts_map_and_sidecar_side_by_side() {
             std::fs::read_to_string(dir.path().join("freemapper.toml")).unwrap(),
             fixture.sidecar_toml
         );
+        let frames = dir.path().join(PAPER_FRAME_FILE);
+        match fixture.paper_frame_omap {
+            Some(text) => assert_eq!(std::fs::read_to_string(frames).unwrap(), text),
+            None => assert!(!frames.exists(), "{}", fixture.name),
+        }
     }
+}
+
+/// The template maps of the paper frames keep their rules, and none passes for a map.
+#[test]
+fn every_frame_template_keeps_the_rules_of_the_frames() {
+    let mut seen = 0;
+    for fixture in fixtures() {
+        let Some(frames) = fixture.paper_frame_omap else {
+            continue;
+        };
+        seen += 1;
+        assert_eq!(
+            check_paper_frames(frames, fixture.omap_xml).unwrap(),
+            [],
+            "{}",
+            fixture.name
+        );
+        let as_map: Vec<Rule> = check(frames, fixture.sidecar_toml)
+            .unwrap()
+            .iter()
+            .map(|v| v.rule)
+            .collect();
+        assert_eq!(
+            as_map,
+            vec![Rule::NoPaperFrameInMap; fixture.expected().paper_frames.len()],
+            "{}",
+            fixture.name
+        );
+    }
+    assert_eq!(seen, 1);
 }
 
 #[test]
 fn every_map_stays_under_400_kb() {
     for fixture in fixtures() {
-        assert!(
-            fixture.omap_xml.len() < 400_000,
-            "{}: {} bytes",
-            fixture.name,
-            fixture.omap_xml.len()
-        );
+        for map in [Some(fixture.omap_xml), fixture.paper_frame_omap]
+            .into_iter()
+            .flatten()
+        {
+            assert!(map.len() < 400_000, "{}: {} bytes", fixture.name, map.len());
+        }
     }
 }
 
@@ -150,6 +188,7 @@ fn no_fixture_has_a_carriage_return() {
             fixture.sidecar_toml,
             fixture.expected_toml,
             fixture.vocabulary_toml,
+            fixture.paper_frame_omap.unwrap_or_default(),
         ] {
             assert!(!text.contains('\r'), "{}", fixture.name);
         }

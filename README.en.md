@@ -4,7 +4,7 @@
 
 
 <!-- badges:start -->
-[![Tests](https://img.shields.io/badge/Tests-913-blue)](docs/tests.json) [![Test budget](https://img.shields.io/badge/Test_budget-2_min-blue)](docs/tests.json) [![Line coverage](https://img.shields.io/badge/Coverage-95.9%25-brightgreen)](docs/coverage.json) [![MSRV](https://img.shields.io/badge/MSRV-1.88-blue)](Cargo.toml) [![ADRs](https://img.shields.io/badge/ADRs-45-blue)](docs/adr/README.md) [![Hygiene](https://img.shields.io/badge/Hygiene-18-brightgreen)](scripts/check.sh) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-926-blue)](docs/tests.json) [![Test budget](https://img.shields.io/badge/Test_budget-2_min-blue)](docs/tests.json) [![Line coverage](https://img.shields.io/badge/Coverage-95.9%25-brightgreen)](docs/coverage.json) [![MSRV](https://img.shields.io/badge/MSRV-1.88-blue)](Cargo.toml) [![ADRs](https://img.shields.io/badge/ADRs-46-blue)](docs/adr/README.md) [![Hygiene](https://img.shields.io/badge/Hygiene-18-brightgreen)](scripts/check.sh) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue)](LICENSE)
 <!-- badges:end -->
 
 <!-- claude-cost:start -->
@@ -35,7 +35,7 @@ The project is just starting. So far it contains `freemapper-contract`, `freemap
 | `freemapper-render` | map rendering: drawing OOM symbols, the page builder, the page model, PDF and SVG output, hit test, the embedded Arimo font | freemapper-print | included |
 | `freemapper-printrules` | print rules as data: map kinds, symbol size table by print scale, north-line spacing, course symbol sizes of the profile `iof-print` | freemapper-print | included |
 | `freemapper-web` | shell for local web pages: server on 127.0.0.1 with token path, host and origin checks, security headers, embedded assets, opening the browser; the suite page frame (shared CSS and modules under `/{token}/suite/`, revision, language of the page texts, page rules check) | freemapper, freemapper-courseplan | included |
-| `freemapper-contract` | contract between freemapper and its readers: map kind, sidecar reader, reserved words, object classes, census, vocabulary and rules for map and sidecar file; with the feature `fixtures`, four maps written by freemapper with their expected values for the apps' tests | freemapper | included |
+| `freemapper-contract` | contract between freemapper and its readers: map kind, sidecar reader, reserved words, object classes, census, vocabulary and rules for map and sidecar file; with the feature `fixtures`, five maps written by freemapper with their expected values for the apps' tests | freemapper | included |
 | `freemapper-course` | courses, reading .ppen and IOF XML, fitting to the map, number placement for a whole course, control description symbols; also writes .ppen, new or as a patch of an existing file | freemapper-print, freemapper-courseplan | included |
 | `freemapper-update` | self-update from signed releases: manifest, minisign check against a key list, versions, host rule, check record and mode, swapping the executable with a way back; the apps bring the network through `UpdateSource` | freemapper | included |
 

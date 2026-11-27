@@ -1,0 +1,4 @@
+# The mutation gate (`scripts/check.sh mutants`, ADR 0040) builds with every feature, as the test run does
+# (`cargo test --workspace --all-features`): code behind a feature such as the contract's `fixtures` is
+# tested only with it.
+all_features = true

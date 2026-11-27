@@ -5,7 +5,9 @@
 //!
 //! The crate sorts every object of a map into an [`ObjectClass`] and derives three things from that: a
 //! [`Census`] (how many objects of each class, and where), a [`Vocabulary`] (the words of the file, without
-//! its content) and the [`Violation`]s of the rules freemapper's output must keep ([`check`]).
+//! its content) and the [`Violation`]s of the rules freemapper's output must keep ([`check`]). A project
+//! with paper frames also has their template map, `templates/paper-frame.omap`, with rules of its own
+//! ([`check_paper_frames`]).
 //!
 //! With the feature `fixtures` the crate also carries maps and sidecars exactly as freemapper wrote them
 //! (`fixtures()`), each with the values a reader must derive from it ([`Expected`]).
@@ -38,10 +40,10 @@ mod vocabulary;
 #[cfg(feature = "check")]
 pub use census::{Bbox, Census, ClassBoxes, ClassCounts, census};
 #[cfg(feature = "check")]
-pub use check::{Rule, Violation, check};
+pub use check::{Rule, Violation, check, check_paper_frames};
 pub use class::{ObjectClass, tag};
 #[cfg(feature = "check")]
-pub use expected::Expected;
+pub use expected::{Expected, ExpectedFrame};
 #[cfg(feature = "fixtures")]
 pub use fixtures::{Fixture, fixture, fixtures};
 pub use kind::{MapKind, UnknownKind};
