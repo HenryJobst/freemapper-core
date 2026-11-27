@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-11-27
+
 ### Added
 
 - `freemapper-contract`: reserved words for paper frames in `tags`: the source `paper-frame`, the keys `freemapper:paper` (`A6` to `A2`) and `freemapper:orientation` (`landscape`, `portrait`) and the file `templates/paper-frame.omap`. The rule `NoPaperFrameInMap` in `check` keeps the template from passing for a map. `check_paper_frames` checks the template itself: only frames, both tags with an allowed value, a closed line, the map's georeferencing. A fifth fixture `paper-frames` holds an A4 portrait and an A5 landscape frame. `Fixture::paper_frame_omap` and `Expected::paper_frames` give the values a reader must find, and `write_into` puts the template where a project folder has it (ADR 0046).

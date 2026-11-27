@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.33.0] - 2026-11-27
+
 ### Hinzugefügt
 
 - `freemapper-contract`: reservierte Wörter für Papierrahmen in `tags`: die Quelle `paper-frame`, die Schlüssel `freemapper:paper` (`A6` bis `A2`) und `freemapper:orientation` (`landscape`, `portrait`) und die Datei `templates/paper-frame.omap`. Die Regel `NoPaperFrameInMap` in `check` sorgt dafür, dass die Vorlage nie als Karte durchgeht. `check_paper_frames` prüft die Vorlage selbst: nur Rahmen, beide Tags mit erlaubtem Wert, geschlossene Linie, Georeferenzierung der Karte. Ein fünftes Fixture `paper-frames` mit einem Rahmen A4 hoch und einem A5 quer. `Fixture::paper_frame_omap` und `Expected::paper_frames` geben die Werte, die ein Leser finden muss, und `write_into` legt die Vorlage dorthin, wo ein Projektordner sie hat (Entscheidung 0046).
