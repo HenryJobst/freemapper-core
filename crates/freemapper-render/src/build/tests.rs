@@ -901,3 +901,20 @@ fn source_objects_name_the_position_in_the_map() {
         page.primitives.iter().map(|p| p.object).collect();
     assert_eq!(numbers.into_iter().collect::<Vec<_>>(), [0, 1, 2]);
 }
+
+#[test]
+fn paper_sizes_are_the_din_formats_in_portrait() {
+    let sizes: Vec<_> = [Paper::A6, Paper::A5, Paper::A4, Paper::A3, Paper::A2]
+        .map(Paper::size_mm)
+        .into();
+    assert_eq!(
+        sizes,
+        [
+            (105.0, 148.0),
+            (148.0, 210.0),
+            (210.0, 297.0),
+            (297.0, 420.0),
+            (420.0, 594.0)
+        ]
+    );
+}

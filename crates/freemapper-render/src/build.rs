@@ -68,16 +68,22 @@ const UM_PER_MM: f64 = 1000.0;
 /// Paper sizes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum Paper {
+    A6,
+    A5,
     A4,
     A3,
+    A2,
 }
 
 impl Paper {
     /// Width and height in portrait orientation (mm).
     pub fn size_mm(self) -> (f64, f64) {
         match self {
+            Paper::A6 => (105.0, 148.0),
+            Paper::A5 => (148.0, 210.0),
             Paper::A4 => (210.0, 297.0),
             Paper::A3 => (297.0, 420.0),
+            Paper::A2 => (420.0, 594.0),
         }
     }
 }
@@ -101,7 +107,7 @@ pub struct PageSpec {
     pub geometry_factor: f64,
     pub paper: Paper,
     /// A page of this size (width and height in portrait, mm) instead of `paper`, for a map that fits
-    /// neither A4 nor A3. Each side must be finite and within [`MIN_PAGE_MM`] and [`MAX_PAGE_MM`], or
+    /// no [`Paper`]. Each side must be finite and within [`MIN_PAGE_MM`] and [`MAX_PAGE_MM`], or
     /// [`build_page`] returns [`BuildError::PageSize`]. The orientation applies to it as to a paper.
     pub page_mm: Option<(f64, f64)>,
     pub orientation: Orientation,
