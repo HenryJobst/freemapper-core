@@ -7,6 +7,8 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-11-28
+
 ### Added
 
 - `freemapper-render`: `Paper` has the values `A6`, `A5` and `A2` besides `A4` and `A3`; `size_mm` gives their portrait sizes. A page of another size still takes `PageSpec::page_mm` (ADR 0047).

@@ -7,6 +7,8 @@ Bibliothek. Das Format folgt [Keep a Changelog](https://keepachangelog.com/de/1.
 
 ## [Unveröffentlicht]
 
+## [0.34.0] - 2026-11-28
+
 ### Hinzugefügt
 
 - `freemapper-render`: `Paper` hat neben `A4` und `A3` auch `A6`, `A5` und `A2`; `size_mm` liefert ihre Maße hochkant. Eine Seite in anderer Größe nimmt weiter `PageSpec::page_mm` (Entscheidung 0047).
