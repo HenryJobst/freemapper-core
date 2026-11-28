@@ -55,3 +55,4 @@ status to `Superseded by NNNN`.
 | [0044](0044-findings-on-running-tests-and-mutation-tests.md) | Findings on running tests and mutation tests | Accepted | 2026-11-20 |
 | [0045](0045-the-page-fonts-are-public.md) | The page fonts are public | Accepted | 2026-11-22 |
 | [0046](0046-paper-frames-in-the-contract.md) | Paper frames in the contract | Accepted | 2026-11-27 |
+| [0047](0047-more-paper-sizes.md) | More paper sizes | Accepted | 2026-11-28 |

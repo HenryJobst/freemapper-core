@@ -7,6 +7,14 @@ format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `freemapper-render`: `Paper` has the values `A6`, `A5` and `A2` besides `A4` and `A3`; `size_mm` gives their portrait sizes. A page of another size still takes `PageSpec::page_mm` (ADR 0047).
+
+### Changed
+
+- `freemapper-render`: code that matches `Paper` without a wildcard must handle the three new values; no app does so today.
+
 ## [0.33.0] - 2026-11-27
 
 ### Added
